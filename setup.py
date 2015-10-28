@@ -37,6 +37,10 @@ setup(
                  'nimg'},
     include_package_data=True,
     install_requires=requirements,
+    entry_points={ 'console_scripts': [
+                    'dark = nimg.dark:main',
+                   ],
+    },
     license="new-bsd",
     zip_safe=False,
     keywords='nimg',
