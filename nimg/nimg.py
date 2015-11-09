@@ -29,7 +29,6 @@ def myhist(im, bins=60, log=False, nf=0):
     if nf:
         plt.figure()
     plt.plot(bin_centers, hist, lw=2)
-    #plt.text(0.57, 0.8, 'histogram', fontsize=14, transform = plt.gca().transAxes)
     if log:
         plt.yscale('log')
 
@@ -57,8 +56,9 @@ def plot_otsu(im, cm=plt.cm.gray):
 
 def im_median(im,  radius=0, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])):
     """Return the median filtered image *im*
-    Default footprint is equivalent to skimage.morphology.disk(1). and plane by plane
-    with e.g. radius=3 calculate 3D median filter.
+    Default footprint is equivalent to skimage.morphology.disk(1) (= 0.5 in
+    Fiji). 
+    plane by plane with e.g. radius=3 calculate 3D median filter.
     """
     if radius:
         return ndimage.filters.median_filter(im, size=radius)
@@ -116,3 +116,54 @@ def flat(im, dark, method='overall'):
             ims[i] = ims[i] / np.mean(ims[i])
         flat = np.median(ims, axis=0)
     return flat
+
+
+def dark(fp, thr=95):
+    """
+    Read zip; median z-project; median filter(1).
+    Return imf. Plot imf and its histogram.
+    thr: float threshold for hot pixels calculation.
+    """
+    #sns.pointplot(imf.flatten(), kde=False, hist_kws={"histtype": "step", "linewidth": 3})
+    #myhist(imf, log=True)sns.set_style('ticks', {'axes.grid': True})
+    im = zipread(fp)
+    zp = zproject_median(im)
+    imf = im_median(zp)
+    f = plt.figure(figsize=(6.75, 9.25))
+    plt.suptitle('DARK stack')
+    #
+    #sns.set_style('ticks', {'axes.grid': True})
+    with plt.style.context('seaborn-ticks'): 
+        plt.subplot(321)
+        plt.hist(imf.ravel(), bins=256, histtype='step', lw=4)
+        plt.yscale('log')
+        plt.title('histogram of calculated DARK')
+    #
+    plt.subplot(322)
+    plt.imshow(imf, cmap=plt.cm.inferno_r)
+    plt.colorbar()
+    plt.axis('off')
+    plt.title('exported DARK image')
+    #
+    with plt.style.context('seaborn-ticks'):
+        plt.subplot(323)
+        plt.hist(im.ravel(), bins=256, histtype='step', lw=4)
+        plt.yscale('log')
+        plt.title('histogram of the whole stack')
+    #
+    plt.subplot(324)
+    # hot pixels; cast to float because uint screwed up to range max
+    d = imf.astype(float) - zp.astype(float)
+    thr = np.std(d) * thr
+    hot_pixels = np.nonzero(abs(d)>thr)
+    df_hp = pd.DataFrame({'row': hot_pixels[0],
+                          'col': hot_pixels[1],
+                          'val': zp[hot_pixels]})
+    plt.imshow(zp)
+    plt.plot(hot_pixels[1],hot_pixels[0],'r+',mfc='none',mec='w',ms=18)
+    plt.colorbar()
+    plt.axis('off')
+    plt.title('projected stack')
+    #
+    return imf, df_hp, f
+

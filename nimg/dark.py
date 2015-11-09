@@ -1,33 +1,41 @@
-'''dark
+'''
+Read a stack of dark images (tiff-zip) and save:
+- plot (histograms, median, projection, hot pixels)
+- a single DARK image i.e. median filter of median projection
+- txt file containing coordinates of hotpixels
+in the current dir.
 
 Usage:
-  dark ship new <name>...
-  dark ship <name> move <x> <y> [--speed=<kn>]
-  dark ship shoot <x> <y>
-  dark mine (set|remove) <x> <y> [--moored|--drifting]
+  dark <zipfile>
   dark -h | --help
   dark --version
 
 Options:
   -h --help     Show this screen.
   --version     Show version.
-  --speed=<kn>  Speed in knots [default: 10].
-  --moored      Moored (anchored) mine.
-  --drifting    Drifting mine.
 '''
 
-#from __future__ import unicode_literals, print_function
 from docopt import docopt
+from nimg import nimg
+import os
+from skimage import io
 
-__version__ = "{{ cookiecutter.version }}"
-__author__ = "{{ cookiecutter.full_name }}"
+__version__ = "0.0.1"
+__author__ = "Daniele Arosio"
 __license__ = "MIT"
 
 
 def main():
     '''Main entry point for the {{ cookiecutter.script_name }} CLI.'''
     args = docopt(__doc__, version=__version__)
-    print(args)
+    if args['<zipfile>']:
+        dark_im, dark_hotpixels, f = nimg.dark(args['<zipfile>'])
+        bname = 'dark-' + \
+                os.path.splitext(os.path.basename(args['<zipfile>']))[0]
+        f.savefig(bname + '.pdf')
+        io.imsave(bname + '.png', dark_im)
+        dark_hotpixels.to_csv(bname + '.csv')
+
 
 if __name__ == '__main__':
     main()
