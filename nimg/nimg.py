@@ -10,12 +10,14 @@ import matplotlib.image as mpimg
 
 import zipfile
 import sys
+import os
 #import seaborn as sns
 #%matplotlib inline
 
 from skimage import data, io, filters
 from skimage.morphology import disk
 import skimage.feature
+import tifffile
 
 
 def im_print(im):
@@ -99,8 +101,11 @@ def zproject_median(im):
 
 
 def flat(im, dark, method='overall'):
-    """Return a flat image:
-        dark subtracted and normalized either at each plane 'single' or after median projection 'overall'
+    """
+    Return a flat image:
+    dark subtracted and normalized either:
+    at each plane 'single' or
+    after median projection 'overall'
     """
     if not im.shape[1:] == dark.shape:
         sys.exit('flat images serie and dark image size mismatch')
@@ -115,7 +120,40 @@ def flat(im, dark, method='overall'):
             ims[i] = im_median(im)
             ims[i] = ims[i] / np.mean(ims[i])
         flat = np.median(ims, axis=0)
-    return flat
+    # Pdf output
+    f = plt.figure(figsize=(6.75, 9.25))
+    f.suptitle('FLAT stack')
+    # table
+    ax = plt.subplot2grid((6, 4), (0, 0), colspan=4)
+    ax.set_axis_off()
+    # FLAT
+    ax0 = plt.subplot2grid((6, 4), (1, 0), colspan=3, rowspan=3)
+    plt.axis('off')
+    img0 = ax0.imshow(flat)
+    plt.title('exported FLAT image')
+    ax1 = plt.subplot2grid((6, 4), (1, 3), colspan=1, rowspan=3)
+    plt.axis('off')
+    plt.colorbar(img0, ax=ax1, fraction=0.9, shrink=0.78, aspect=14)
+    #
+    # hist flat
+    with plt.style.context('seaborn-ticks'):
+        plt.subplot2grid((6, 4), (4, 0), colspan=2, rowspan=2)
+        plt.hist(flat.ravel(), bins=256, histtype='step', lw=2,
+                 color='crimson')
+        plt.yscale('log')
+        plt.grid()
+        plt.title('FLAT image')
+    # hist stack
+    with plt.style.context('seaborn-ticks'):
+        plt.subplot2grid((6, 4), (4, 2), colspan=2, rowspan=2)
+        plt.hist(im.ravel(), bins=256, histtype='step', lw=2, color='grey')
+        plt.yscale('log')
+        plt.ylim(.1,)
+        plt.grid()
+        plt.title('original stack')
+    #
+    plt.tight_layout()
+    return flat, f, ax
 
 
 def dark(fp, thr=95):
@@ -167,3 +205,15 @@ def dark(fp, thr=95):
     #
     return imf, df_hp, f
 
+
+def common_path(path1, path2):
+    """
+    Input: 2 file paths
+
+    Output: a tupla for common abs path, path 1 and path2 (relative to common)
+    """
+    fcommon = os.path.commonprefix([os.path.abspath(path1),
+                                    os.path.abspath(path2)])
+    f1 = os.path.relpath(path1, start=fcommon)
+    f2 = os.path.relpath(path2, start=fcommon)
+    return fcommon, f1, f2
