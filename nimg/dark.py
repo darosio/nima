@@ -33,7 +33,7 @@ def main():
         bname = 'dark-' + \
                 os.path.splitext(os.path.basename(args['<zipfile>']))[0]
         f.savefig(bname + '.pdf')
-        io.imsave(bname + '.png', dark_im)
+        io.imsave(bname + '.tif', dark_im, plugin='tifffile')
         dark_hotpixels.to_csv(bname + '.csv')
 
 
