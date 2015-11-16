@@ -31,6 +31,10 @@ class TestScript(unittest.TestCase):
         im = np.random.rand(20, 50)
         im[10, 25] = 10
 
+        a = np.random.poisson(2, 1000)
+        a = np.floor( np.random.normal(2.5,.6, 1000) + np.random.normal(1.3,.3, 1000) )
+        a.reshape(20,50).astype('uint')
+
         pass
 
     def tearDown(self):
