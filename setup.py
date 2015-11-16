@@ -38,7 +38,7 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     entry_points={ 'console_scripts': [
-                    'dark = nimg.dark:main',
+                    'dark = nimg.scripts:dark',
                    ],
     },
     license="new-bsd",
