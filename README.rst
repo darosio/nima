@@ -37,9 +37,11 @@ when done
 finally
 
 	git rebase -i origin/master
-	git push -force (but you may want to keep the branch as it is on remote \*)
+	git push --force
 	git co master
 	(git pull)
 	git merge --no-ff dev..
-	git push   (\* now the history is shorter and focused in master)
+	git push
+	
+now the history is shorter and focused in master.
 

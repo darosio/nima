@@ -1,23 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-import scipy
 from scipy import ndimage
 import pandas as pd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 
 import zipfile
 import sys
 import os
-#import seaborn as sns
-#%matplotlib inline
 
-from skimage import data, io, filters
-from skimage.morphology import disk
-import skimage.feature
-import tifffile
+from skimage import io, filters
+# from skimage.morphology import disk
 
 
 def im_print(im):
@@ -26,6 +19,9 @@ def im_print(im):
 
 
 def myhist(im, bins=60, log=False, nf=0):
+    # sns.set_style('ticks', {'axes.grid': True})
+    # sns.pointplot(imf.flatten(), kde=False,
+    #               hist_kws={"histtype": "step", "linewidth": 3})
     hist, bin_edges = np.histogram(im, bins=bins)
     bin_centers = 0.5*(bin_edges[:-1] + bin_edges[1:])
     if nf:
@@ -46,7 +42,8 @@ def plot_im_series(im, cm=plt.cm.gray, horizontal=True, **kw):
         plt.subplot(s+i)
         plt.imshow(img, cmap=cm, **kw)
         plt.axis('off')
-    plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0, left=0, right=1)
+    plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0,
+                        left=0, right=1)
 
 
 def plot_otsu(im, cm=plt.cm.gray):
@@ -56,10 +53,11 @@ def plot_otsu(im, cm=plt.cm.gray):
     return mask
 
 
-def im_median(im,  radius=0, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])):
+def im_median(im,  radius=0,
+              footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])):
     """Return the median filtered image *im*
     Default footprint is equivalent to skimage.morphology.disk(1) (= 0.5 in
-    Fiji). 
+    Fiji).
     plane by plane with e.g. radius=3 calculate 3D median filter.
     """
     if radius:
@@ -70,8 +68,9 @@ def im_median(im,  radius=0, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]
         else:
             imf = np.zeros(im.shape).astype(im.dtype)
             for i, img in enumerate(im):
-                imf[i] = ndimage.filters.median_filter(img, footprint=footprint)
-            return  imf
+                imf[i] = ndimage.filters.median_filter(img,
+                                                       footprint=footprint)
+            return imf
 
 
 def zipread(fp):
@@ -92,10 +91,11 @@ def zproject_median(im):
         sys.exit('only 3D-grayscale (pln, row, col)')
     # maintain same dtype as input im
     zproj = np.zeros(im.shape[1:]).astype(im.dtype)
-    if len(im)%2:
+    if len(im) % 2:
         np.median(im, axis=0, out=zproj)
     else:
-        # skip first plane to project even number of pln (to correctly maintain int types)
+        # to correctly maintain uint types
+        # skip first plane to project even number of pln
         np.median(im[1:], axis=0, out=zproj)
     return zproj
 
@@ -162,20 +162,17 @@ def dark(fp, thr=95):
     Return imf. Plot imf and its histogram.
     thr: float threshold for hot pixels calculation.
     """
-    #sns.pointplot(imf.flatten(), kde=False, hist_kws={"histtype": "step", "linewidth": 3})
-    #myhist(imf, log=True)sns.set_style('ticks', {'axes.grid': True})
     im = zipread(fp)
     zp = zproject_median(im)
     imf = im_median(zp)
     f = plt.figure(figsize=(6.75, 9.25))
     plt.suptitle('DARK stack')
     #
-    #sns.set_style('ticks', {'axes.grid': True})
-    with plt.style.context('seaborn-ticks'): 
+    with plt.style.context('seaborn-ticks'):
         plt.subplot(321)
         plt.hist(imf.ravel(), bins=256, histtype='step', lw=4)
         plt.yscale('log')
-        plt.title('histogram of calculated DARK')
+        plt.title('DARK image')
     #
     plt.subplot(322)
     plt.imshow(imf, cmap=plt.cm.inferno_r)
@@ -187,22 +184,23 @@ def dark(fp, thr=95):
         plt.subplot(323)
         plt.hist(im.ravel(), bins=256, histtype='step', lw=4)
         plt.yscale('log')
-        plt.title('histogram of the whole stack')
+        plt.title('original stack')
     #
     plt.subplot(324)
     # hot pixels; cast to float because uint screwed up to range max
     d = imf.astype(float) - zp.astype(float)
     thr = np.std(d) * thr
-    hot_pixels = np.nonzero(abs(d)>thr)
+    hot_pixels = np.nonzero(abs(d) > thr)
     df_hp = pd.DataFrame({'row': hot_pixels[0],
                           'col': hot_pixels[1],
                           'val': zp[hot_pixels]})
     plt.imshow(zp)
-    plt.plot(hot_pixels[1],hot_pixels[0],'r+',mfc='none',mec='w',ms=18)
+    plt.plot(hot_pixels[1], hot_pixels[0], 'r+', mfc='none', mec='w', ms=18)
     plt.colorbar()
     plt.axis('off')
     plt.title('projected stack')
     #
+    plt.tight_layout()
     return imf, df_hp, f
 
 
