@@ -39,6 +39,7 @@ setup(
     install_requires=requirements,
     entry_points={ 'console_scripts': [
                     'dark = nimg.scripts:dark',
+                    'flat = nimg.scripts:flat',
                    ],
     },
     license="new-bsd",
