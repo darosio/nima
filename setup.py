@@ -40,6 +40,7 @@ setup(
     entry_points={ 'console_scripts': [
                     'dark = nimg.scripts:dark',
                     'flat = nimg.scripts:flat',
+                    'nimg = nimg.scripts:main',
                    ],
     },
     license="new-bsd",
