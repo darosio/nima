@@ -50,6 +50,37 @@ finally
 now the history is shorter and focused in master.
 
 
+TODO
+----
+* cm= -> cmap= sticking to convention
+* im_print improve:
+  print(i, np.count_nonzero(im[i]),
+	im[i].size,
+	np.count_nonzero(im[i] == 0),
+	np.count_nonzero(im[i] > 700))
+
+* d_show(color=, colormap=False, im_print=True)
+cm=plt.cm.Greens, cm=plt.cm.Reds, cm=plt.cm.Blues
+
+* nimg buffer ZIP DARK FLAT -> float value, fig(image, profile, distribution)
+
+# conclusion: Andor bg is  not flat and is changing in the timelapse
+# TODO simulation of ratio on curved bg and subtraction of average
+# best would be:
+# flat-dark correct
+# subtract Black (ideally with cells non transfected for AF correction)
+# remember:: proper subtraction is especially important when weak and good signals mix.
+
+To be used
+----------
+
+feature.match_template(G[2], G[3])
+
+feature.register_translation(G[0], G[1])
+
+### remember:
+    mapmem for very large data (image5d)
+
 IDEAs
 -----
 
@@ -59,9 +90,14 @@ hotpixels:
 3 recursively identify new one until matching stop criteria
 plt.contour(im[2])
 
-### remember:
-    mapmem for very large data (image5d)
+Doc
+---
 
-feature.match_template(G[2], G[3])
+0. read
+1. hotpixel
+2. shading (clip=True)
+3. bg (clip=True)
 
-feature.register_translation(G[0], G[1])
+dict of 3D arrays, a 3D (time, x, y) array for each channel
+
+It can be convenient to build a class around this data structure.
