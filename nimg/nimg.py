@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from scipy import ndimage
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy import ndimage
+from scipy import signal
 
 import zipfile
 import sys
@@ -11,6 +12,8 @@ import os
 
 import skimage
 import skimage.transform
+import skimage.feature
+import skimage.segmentation
 from skimage import io, filters
 from skimage.morphology import disk
 
@@ -244,24 +247,26 @@ def d_show(d_im, **kws):
     """
     MAX_ROWS = 9
     n_channels = len(d_im.keys())
-    f = plt.figure(figsize=(16, 16))
+    n_times = len(d_im[list(d_im.keys())[0]]) 
+    if n_times <= MAX_ROWS:
+        rng = range(n_times)
+        n_rows = n_times
+    else:
+        step = np.ceil(n_times / MAX_ROWS).astype(int)
+        rng = range(0, n_times, step)
+        n_rows = len(rng)
 
+    f = plt.figure(figsize=(16, 16))
     for n, ch in enumerate(sorted(d_im.keys())):
-        n_times = len(d_im[ch])
-        if n_times <= MAX_ROWS:
-            rng = range(n_times)
-            n_rows = n_times
-        else:
-            rng = range(0, n_times, n_times // (MAX_ROWS - 1))
-            n_rows = MAX_ROWS
         for i, r in enumerate(rng):
             plt.subplot(n_rows, n_channels, i * n_channels + n + 1)
             img0 = plt.imshow(d_im[ch][r], **kws)
-            plt.colorbar(img0, orientation='horizontal')
-            plt.axis('off')
-            plt.title(ch + ' @ t = ' + str(r))
-    plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0,
-                        left=0, right=1)
+            plt.colorbar(img0, orientation='vertical', pad=0.02, shrink=.85)
+            plt.xticks([])
+            plt.yticks([])
+            plt.ylabel(ch + ' @ t = ' + str(r))
+    plt.subplots_adjust(wspace=0.2, hspace=0.02, top=.9, bottom=.1, left=0,
+            right=1)
     return f
 
 
@@ -423,4 +428,194 @@ def d_bg(d_im, downscale=None, kind='li_adaptive', clip=True, **kw):
     if clip:
         for k in d_cor.keys():
             d_cor[k] = d_cor[k].clip(0)
+    d_bg = pd.DataFrame(d_bg)
     return d_cor, d_bg, d_fig, d_bg_values
+
+
+def d_mask_label(d_im, min_size=640, channels=['C', 'G', 'R'],
+                 threshold_method='yen', wiener=False, watershed=False,
+                 clear_border=False, randomwalk=False):
+    "add two keys, mask and label, to the d_im"
+    ga = d_im[channels[0]].copy()
+    for ch in channels[1:]:
+        ga *= d_im[ch]
+    ga = np.power(ga, 1/len(channels))
+    if wiener:
+        ga_wiener = np.zeros_like(d_im['G'])
+        shape = (3, 3) # for 3D (1, 4, 4)
+        for i, im in enumerate(ga):
+            ga_wiener[i] = signal.wiener(im, shape)
+    else:
+        ga_wiener = ga
+    if threshold_method == 'yen':
+        threshold_function = skimage.filters.threshold_yen
+    elif threshold_method == 'li':
+        threshold_function = skimage.filters.threshold_li
+    mask = []
+    for i, im in enumerate(ga_wiener):
+        m = im > threshold_function(im)
+        m = skimage.morphology.remove_small_objects(m, min_size=min_size)
+        m = skimage.morphology.closing(m)
+        # clear border always
+        if clear_border:
+            m = skimage.segmentation.clear_border(m)
+        mask.append(m)
+    d_im['mask'] = mask
+    labels, n_labels = ndimage.label(mask)
+    # TODO if any timepoint mask is empty cluster labels
+
+    if watershed:
+        # TODO: label can change from time to time, Need more robust here. may
+        # use props[0].label == 1
+        # TODO: Voronoi? depends critically on max_diameter.
+        distance = ndimage.distance_transform_edt(mask)
+        pr = skimage.measure.regionprops(labels[0], intensity_image = d_im[channels[0]][0])
+        max_diameter = pr[0].equivalent_diameter
+        size = max_diameter * 2.20
+        for p in pr[1:]:
+            max_diameter = max(max_diameter, p.equivalent_diameter)
+        print(max_diameter)
+        # for time, (d, l) in enumerate(zip(ga_wiener, labels)):
+        for time, (d, l) in enumerate(zip(distance, labels)):
+            local_maxi = skimage.feature.peak_local_max(d, labels=l,
+                    footprint=np.ones((size, size)), min_distance=size,
+                    indices=False, exclude_border=False)
+            markers = skimage.measure.label(local_maxi)
+            print(np.unique(markers))
+            if randomwalk:
+                markers[~mask[time]] = -1
+                labels_ws = skimage.segmentation.random_walker(mask[time], markers)
+            else: 
+                labels_ws = skimage.morphology.watershed(-d, markers, mask=l)
+            labels[time] = labels_ws
+
+    d_im['labels'] = labels
+
+
+def d_ratio(d_im, name='r_cl', channels=['C', 'R'], radii=(7, 3)):
+    """add masked median-filtered ratio for 2 channels to d_im
+    d_im must already contain a mask along with (obviously) the 2 required channels.
+    replace -inf, nan and inf with 0 and mask False is also replaced with 0.
+    inf should be present in the bg only. r[dim3['labels']==4].min() 
+    """
+    ratio = d_im[channels[0]] / d_im[channels[1]]
+    for i, r in enumerate(ratio):
+        ratio[i] = pd.DataFrame(r).replace([-np.inf, np.nan, np.inf], 0)
+        for radius in radii:
+            ratio[i] = ndimage.median_filter(ratio[i], radius)
+        ratio[i] *= d_im['mask'][i]
+    d_im[name] = ratio
+
+
+def d_meas_props(d_im, channels=['C', 'G', 'R'], channels_cl=['C', 'R'],
+        channels_pH=['G', 'C'], ratios_from_image=True):
+    '''return
+    meas: dict of dict of list ('label', 'ch mean_intensity and are and equivalent-radius', time)
+        dict of dataframes seems better
+    pr: dict of list of list ('ch', time, label)
+    '''
+    pr = {}
+    for ch in channels:
+        pr[ch] = []
+        for time, label_im in enumerate(d_im['labels']):
+            im = d_im[ch][time]
+            props = skimage.measure.regionprops(label_im, intensity_image = im)
+            pr[ch].append(props)    
+
+    meas = {}  
+    # labels are 3D and "0" is always label for background
+    labels = np.unique(d_im['labels'])[1:]
+    for label in labels:
+        idx = []
+        d = {ch: [] for ch in channels}
+        d['equivalent_diameter'] = []
+        d['eccentricity'] = []
+        d['area'] = []
+        for time, props in enumerate(pr[channels[0]]):
+            try:
+                i_label = [prop.label == label for prop in props].index(True)
+                prop_ch0 = props[i_label]
+                idx.append(time)
+                d['equivalent_diameter'].append(prop_ch0.equivalent_diameter)
+                d['eccentricity'].append(prop_ch0.eccentricity)
+                d['area'].append(prop_ch0.area)
+                for ch in pr:
+                    d[ch].append(pr[ch][time][i_label].mean_intensity)
+            except ValueError:
+                pass  # label is absent in this timepoint
+        df = pd.DataFrame(d, index=idx)
+        df['r_cl'] = df[channels_cl[0]] / df[channels_cl[1]]
+        df['r_pH'] = df[channels_pH[0]] / df[channels_pH[1]]
+        meas[label] = df
+
+    if ratios_from_image:
+        d_ratio(d_im, 'r_cl', channels=channels_cl)
+        d_ratio(d_im, 'r_pH', channels=channels_pH)
+        r_pH = []
+        r_cl = []
+        for time, (pH, cl) in enumerate(zip(d_im['r_pH'], d_im['r_cl'])):
+            r_pH.append(ndimage.median(pH, d_im['labels'][time], index=labels))
+            r_cl.append(ndimage.median(cl, d_im['labels'][time], index=labels))
+        ratios_pH = np.array(r_pH)
+        ratios_cl = np.array(r_cl)
+        for label in meas:
+            df = pd.DataFrame({'r_pH_median': ratios_pH[:, label-1],
+                               'r_cl_median': ratios_cl[:, label-1]})
+            # concat only on index that are present in both 
+            meas[label] = pd.concat([meas[label], df], axis=1, join='inner')
+
+    return meas, pr
+
+
+
+def d_plot_meas(bgs, meas, channels):
+    ''' plot r_cl and r_pH for each label for bname.png export.
+    '''
+    colors = ['k', 'b', 'g', 'r', 'y', 'c', 'm']
+    NCOLS = 2
+    n_axes = len(channels) + 3  # 2 ratios and 1 bg axes
+    nrows = int(np.ceil(n_axes / NCOLS))
+    fig, axes = plt.subplots(nrows, NCOLS, figsize=(NCOLS * 5, nrows * 3))
+    # r_pH with legend
+    legend = []
+    for k, df in meas.items():
+        legend.append(k)
+        color = colors[(k-1) % len(colors)]
+        df['r_pH'].plot(marker='o', color=color, ax=axes[0,0])
+        df['r_cl'].plot(marker='o', color=color, ax=axes[0,1])
+    for k, df in meas.items():
+        color = colors[(k-1) % len(colors)]
+        if 'r_pH_median' in df:
+            df['r_pH_median'].plot(style='--', color=color, lw=2, ax=axes[0,0])
+        if 'r_cl_median' in df:
+            df['r_cl_median'].plot(style='--', color=color, lw=2, ax=axes[0,1])
+    axes[0,0].set_ylabel('r_pH')
+    axes[0,0].grid()
+    axes[0,1].set_ylabel('r_cl')
+    axes[0,1].grid()
+    axes[0,0].set_title('pH')
+    axes[0,1].set_title('Cl')
+    axes[0,0].legend(legend)
+
+    for n, ch in enumerate(channels, 2):
+        i = n // NCOLS
+        j = n % NCOLS #* 2
+        for k, df in meas.items():
+            color = colors[(k-1) % len(colors)]
+            df[ch].plot(marker='o', color=color, ax=axes[i, j])
+        axes[i, j].set_title(ch)
+        axes[i,j].grid()
+
+    if n_axes == nrows * NCOLS:
+        axes.ravel()[-2].set_xlabel('time')
+        axes.ravel()[-1].set_xlabel('time')
+        bgs.plot(ax = axes[nrows-1, NCOLS-1], grid=True)
+    else:
+        axes.ravel()[-3].set_xlabel('time')
+        axes.ravel()[-2].set_xlabel('time')
+        bgs.plot(ax = axes[nrows-1, NCOLS-2], grid=True)
+        ax = axes.ravel()[-1]
+        plt.delaxes(ax)
+
+    fig.tight_layout()
+    return fig

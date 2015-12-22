@@ -7,7 +7,9 @@ import pandas as pd
 import matplotlib as mpl
 mpl.rcParams['figure.max_open_warning'] = 99
 
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
+from scipy import ndimage
+import tifffile
 # import numpy as np
 
 __version__ = "0.0.3"
@@ -42,6 +44,15 @@ def main():
       --adaptive-radius R       Radius for adaptive methods.
       --percentile P            Percentile for entropy or arcsinh methods.
       --percentile-filter P     Percentile filter for arcsinh method.
+
+      --threshold_method MTH    Method for fg estimation - must be indicated.
+                                Available method: li, 
+      --min_size PIXELS         
+      --wiener
+      --watershed
+      --randomwalk
+
+
     '''
     methods_bg = ('entropy', 'arcsinh', 'adaptive', 'li_adaptive', 'li_li')
     args = docopt(main.__doc__, version=__version__)
@@ -87,23 +98,62 @@ def main():
         # output plots
         bname = os.path.basename(args['TIFFSTK'])
         bname = os.path.splitext(bname)[0]
-        bname = os.path.join('bg', bname)
-        if not os.path.exists(bname):
-            os.makedirs(bname)
+        #bname = os.path.join('bg', bname)
+        bname = os.path.join('nimg', bname)
+        # if not os.path.exists(bname):
+            # os.makedirs(bname)
+        bname_bg = os.path.join(bname, "bg")
+        if not os.path.exists(bname_bg):
+            os.makedirs(bname_bg)
         for k in ff.keys():
             for t, f in enumerate(ff[k]):
                 fname = method + '-' + k + '-t' + str(t) + '.png'
-                f[0].savefig(os.path.join(bname, fname))
+                f[0].savefig(os.path.join(bname_bg, fname))
                 if len(f) == 2:
                     fname1 = method + '1-' + k + '-t' + str(t) + '.png'
-                    f[1].savefig(os.path.join(bname, fname1))
-        bgs = pd.DataFrame(bgs)
-        bgs.to_csv(bname + '.csv')
+                    f[1].savefig(os.path.join(bname_bg, fname1))
+        bgs.to_csv(bname_bg + '.csv')
         # TODO: plt.close('all') or control mpl warning
         if not args['--silent']:
-            print(bgs)
-        f = nimg.d_show(d_im_bg)
-        f.savefig(bname + '.png')
+            # print(bgs)
+            pass
+        ## dim
+        # i got a problem with 'li' and unique label for 19 1.10_15 af16 ds
+        nimg.d_mask_label(d_im_bg, channels=channel_list, threshold_method='yen',
+                  min_size=12000, watershed=False, randomwalk=False)
+
+        # show all channels and labels only.
+        d = {ch: d_im_bg[ch] for ch in channel_list}
+        d['labels'] = d_im_bg['labels']
+        f = nimg.d_show(d, cmap=plt.cm.inferno_r)
+        f.savefig(bname + '_dim.png')
+        ## meas
+        # TODO channels_cl and channels_pH in input
+        meas, pr = nimg.d_meas_props(d_im_bg, channels=channel_list,
+                channels_cl=[channel_list[2], channel_list[1]],
+                channels_pH=[channel_list[0], channel_list[2]])
+        # TODO channel_list --> channels and add optparse for channels_pH
+        # channels_cl
+        #meas3, pr3 = nimg.d_meas_props(dim3, channels=['C', 'G', 'G2', 'R'], channels_pH=['G2', 'C'] )
+        ##
+        # f, f_ch = nimg.d_plot_meas(meas, channels=channel_list)
+        # f.savefig(bname + '_meas.png')
+        # f_ch.savefig(bname + '_meas_ch.png')
+        f = nimg.d_plot_meas(bgs, meas, channels=channel_list)
+        f.savefig(bname + '_meas.png')
+
+        # fig = nimg.d_plot_bg_ratio_ch(meas, channels=channel_list)
+        # fig.savefig(bname + '_meas.png')
+        ## meas csv
+        for k, df in meas.items():
+            df.to_csv(os.path.join(bname, "label" + str(k) + ".csv"))
+        ## labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
+        objs = ndimage.find_objects(d_im_bg['labels'])
+        for k, o in enumerate(objs):
+            name = os.path.join(bname, "label" + str(k + 1) + "_rcl.tif")
+            tifffile.imsave(name, d_im_bg['r_cl'][o], compress=9)
+            name = os.path.join(bname, "label" + str(k + 1) + "_rpH.tif")
+            tifffile.imsave(name, d_im_bg['r_pH'][o], compress=9)
 
 
 def dark():
