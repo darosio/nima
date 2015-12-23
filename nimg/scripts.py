@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib as mpl
 mpl.rcParams['figure.max_open_warning'] = 99
 
+from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from scipy import ndimage
 import tifffile
@@ -100,18 +101,16 @@ def main():
         bname = os.path.splitext(bname)[0]
         #bname = os.path.join('bg', bname)
         bname = os.path.join('nimg', bname)
-        # if not os.path.exists(bname):
-            # os.makedirs(bname)
+        if not os.path.exists(bname):
+            os.makedirs(bname)
         bname_bg = os.path.join(bname, "bg")
-        if not os.path.exists(bname_bg):
-            os.makedirs(bname_bg)
-        for k in ff.keys():
-            for t, f in enumerate(ff[k]):
-                fname = method + '-' + k + '-t' + str(t) + '.png'
-                f[0].savefig(os.path.join(bname_bg, fname))
-                if len(f) == 2:
-                    fname1 = method + '1-' + k + '-t' + str(t) + '.png'
-                    f[1].savefig(os.path.join(bname_bg, fname1))
+
+        for ch in ff.keys():
+            pp = PdfPages(bname_bg + '-' + ch + '-' + method + '.pdf')
+            for t, f in enumerate(ff[ch]):
+                for f_i in f:
+                    pp.savefig(f_i)  # e.g. entropy output 2 figs
+            pp.close()
         bgs.to_csv(bname_bg + '.csv')
         # TODO: plt.close('all') or control mpl warning
         if not args['--silent']:

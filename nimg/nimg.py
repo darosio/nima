@@ -367,7 +367,7 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
     plt.tight_layout()
 
     if lim_:
-        f2 = plt.figure(figsize=(14, 5))
+        f2 = plt.figure(figsize=(9, 4))
         plt.subplot(131)
         img0 = plt.imshow(lim)
         plt.colorbar(img0, orientation='horizontal')
@@ -397,6 +397,7 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
             median.append(np.median(im[m]))
         host.plot(rng, median, "o")
         par.errorbar(p, ave, sd)
+        f2.tight_layout()
         return iqr[1], result, [f1, f2]
     else:
         return iqr[1], result, [f1]
