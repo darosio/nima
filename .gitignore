@@ -1,4 +1,6 @@
 .ipynb_checkpoints/
+.cache
+prof.*
 
 *.py[cod]
 

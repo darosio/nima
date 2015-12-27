@@ -1,15 +1,16 @@
-# -*- coding: utf-8 -*-
+"""nimg module contains functions for the analysis of multichannel timelapse
+images. It can be used to apply dark, flat correction; segment cells from bg;
+label cells; obtain statistics for each label; compute ratio and ratio images
+between channels.
 
+"""
+import os
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import ndimage
 from scipy import signal
-
-import zipfile
-import sys
-import os
-
 import skimage
 import skimage.transform
 import skimage.feature
@@ -19,11 +20,17 @@ from skimage.morphology import disk
 
 
 def im_print(im):
+    """Print useful information about im."""
     print("ndim = ", im.ndim, "| shape = ", im.shape, '| max = ', im.max(),
           '| min = ', im.min(), "| size = ", im.size, "| dtype = ", im.dtype)
 
 
 def myhist(im, bins=60, log=False, nf=0):
+    """Plot image intensity as histogram.
+
+    ..note:: Consider deprecation.
+
+    """
     # sns.set_style('ticks', {'axes.grid': True})
     # sns.pointplot(imf.flatten(), kde=False,
     #               hist_kws={"histtype": "step", "linewidth": 3})
@@ -37,6 +44,11 @@ def myhist(im, bins=60, log=False, nf=0):
 
 
 def plot_im_series(im, cm=plt.cm.gray, horizontal=True, **kw):
+    """Plot a image series with a maximum of 9 elements.
+
+    ..note:: Consider deprecation. Use d_show() instead.
+
+    """
     if horizontal:
         plt.figure(figsize=(12, 5.6))
         s = 100 + len(im) * 10 + 1
@@ -52,6 +64,11 @@ def plot_im_series(im, cm=plt.cm.gray, horizontal=True, **kw):
 
 
 def plot_otsu(im, cm=plt.cm.gray):
+    """Otsu threshold and plot im_series.
+
+    .. note:: Consider deprecation.
+
+    """
     val = filters.threshold_otsu(im)
     mask = im > val
     plot_im_series(im * mask, cm=cm)
@@ -60,38 +77,75 @@ def plot_otsu(im, cm=plt.cm.gray):
 
 def im_median(im,  radius=0,
               footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])):
-    """Return the median filtered image *im*
-    Default footprint is equivalent to skimage.morphology.disk(1) (= 0.5 in
-    Fiji).
+    """Image median filter.
+
+    Return the median filtered image *im*
     plane by plane with e.g. radius=3 calculate 3D median filter.
+
+    Parameters
+    ----------
+    im : np.array
+        either 2D or 3D image
+    radius : float, optional
+        Do 3D filtering as it simply uses ndimage.filters.median_filter
+        (default 0: do not use 3D but 2D filtering with footprint).
+    footprint : np.array, optional
+        default is equivalent to skimage.morphology.disk(1) and to median
+        filter of Fiji/ImageJ with radius=0.5.
+
+    Returns
+    -------
+    np.array
+        Filtered image; preserve dtype of input im.
+
+    Examples
+    --------
+    >>> im = np.indices([3, 3]).sum(axis=0)
+    >>> im
+    array([[0, 1, 2],
+           [1, 2, 3],
+           [2, 3, 4]])
+    >>> im_median(im, footprint=np.ones((5, 5)))
+    array([[2, 2, 2],
+           [2, 2, 2],
+           [2, 2, 2]])
+
     """
+    filter = ndimage.filters.median_filter
     if radius:
-        return ndimage.filters.median_filter(im, size=radius)
+        return filter(im, size=radius)
     else:
         if im.ndim == 2:
-            return ndimage.filters.median_filter(im, footprint=footprint)
+            return filter(im, footprint=footprint)
         else:
             imf = np.zeros(im.shape).astype(im.dtype)
             for i, img in enumerate(im):
-                imf[i] = ndimage.filters.median_filter(img,
-                                                       footprint=footprint)
+                imf[i] = filter(img, footprint=footprint)
             return imf
 
 
-def zipread(fp):
-    # Read a single tif that was zipped
-    # Return the image
-    with zipfile.ZipFile(fp) as myzip:
-        with myzip.open(myzip.filelist[0]) as myfile:
-            return io.imread(myfile)
-
-
 def zproject_median(im):
+    """Perform z-projection of a 3D image.
+
+
+    Parameters
+    ----------
+    im : np.array
+        Image (pln, row, col).
+
+    Returns
+    -------
+    np.array(row, col)
+        2D (projected) image (median by default). Preserve dtype of input.
+
+    Raises
+    ------
+        If the input image is not 3D.
+
     """
-    im: is a 3D-grayscale (pln,row,col)
-    Return a single (median by default) projected image.
-    TODO: %2 only for int
-    """
+    # TODO: use median proj as an option.
+    # TODO: raise exception. do not use sys.exit.
+    # TODO: %2 only for int
     if not (im.ndim == 3 and len(im) == im.shape[0]):
         sys.exit('only 3D-grayscale (pln, row, col)')
     # maintain same dtype as input im
@@ -105,149 +159,51 @@ def zproject_median(im):
     return zproj
 
 
-def flat(im, dark, method='overall'):
-    """
-    Return a flat image:
-    dark subtracted and normalized either:
-    at each plane 'single' or
-    after median projection 'overall'
-    """
-    if not im.shape[1:] == dark.shape:
-        sys.exit('flat images serie and dark image size mismatch')
-    ims = im - dark
-    if method == 'overall':
-        flat = np.median(ims, axis=0)
-        flat = im_median(flat)
-        flat = flat / np.mean(flat)
-    if method == 'single':
-        ims = ims.astype(float)
-        for i, im in enumerate(ims):
-            ims[i] = im_median(im)
-            ims[i] = ims[i] / np.mean(ims[i])
-        flat = np.median(ims, axis=0)
-    # Pdf output
-    f = plt.figure(figsize=(6.75, 9.25))
-    f.suptitle('FLAT stack')
-    # table
-    ax = plt.subplot2grid((6, 4), (0, 0), colspan=4)
-    ax.set_axis_off()
-    # FLAT
-    ax0 = plt.subplot2grid((6, 4), (1, 0), colspan=3, rowspan=3)
-    plt.axis('off')
-    img0 = ax0.imshow(flat)
-    plt.title('exported FLAT image')
-    ax1 = plt.subplot2grid((6, 4), (1, 3), colspan=1, rowspan=3)
-    plt.axis('off')
-    plt.colorbar(img0, ax=ax1, fraction=0.9, shrink=0.78, aspect=14)
-    #
-    # hist flat
-    with plt.style.context('seaborn-ticks'):
-        plt.subplot2grid((6, 4), (4, 0), colspan=2, rowspan=2)
-        plt.hist(flat.ravel(), bins=256, histtype='step', lw=2,
-                 color='crimson')
-        plt.yscale('log')
-        plt.grid()
-        plt.title('FLAT image')
-    # hist stack
-    with plt.style.context('seaborn-ticks'):
-        plt.subplot2grid((6, 4), (4, 2), colspan=2, rowspan=2)
-        plt.hist(im.ravel(), bins=256, histtype='step', lw=2, color='grey')
-        plt.yscale('log')
-        plt.ylim(.1,)
-        plt.grid()
-        plt.title('original stack')
-    #
-    plt.tight_layout()
-    return flat, f, ax
+def read_tiff(fp, channels):
+    """ Read multichannel tif timelapse image.
 
+    Parameters
+    ----------
+    fp : path
+        File (TIF format) to be opened.
+    channels: list of string
+        List a name for each channel.
 
-def dark(fp, thr=95):
-    """
-    Read zip; median z-project; median filter(1).
-    Return imf. Plot imf and its histogram.
-    thr: float threshold for hot pixels calculation.
-    """
-    im = zipread(fp)
-    zp = zproject_median(im)
-    imf = im_median(zp)
-    f = plt.figure(figsize=(6.75, 9.25))
-    plt.suptitle('DARK stack')
-    #
-    with plt.style.context('seaborn-ticks'):
-        plt.subplot(321)
-        plt.hist(imf.ravel(), bins=256, histtype='step', lw=4)
-        plt.yscale('log')
-        plt.title('DARK image')
-    #
-    plt.subplot(322)
-    plt.imshow(imf, cmap=plt.cm.inferno_r)
-    plt.colorbar()
-    plt.axis('off')
-    plt.title('exported DARK image')
-    #
-    with plt.style.context('seaborn-ticks'):
-        plt.subplot(323)
-        plt.hist(im.ravel(), bins=256, histtype='step', lw=4)
-        plt.yscale('log')
-        plt.title('original stack')
-    #
-    plt.subplot(324)
-    # hot pixels; cast to float because uint screwed up to range max
-    d = imf.astype(float) - zp.astype(float)
-    thr = np.std(d) * thr
-    hot_pixels = np.nonzero(abs(d) > thr)
-    df_hp = pd.DataFrame({'row': hot_pixels[0],
-                          'col': hot_pixels[1],
-                          'val': zp[hot_pixels]})
-    plt.imshow(zp)
-    plt.plot(hot_pixels[1], hot_pixels[0], 'r+', mfc='none', mec='w', ms=18)
-    plt.colorbar()
-    plt.axis('off')
-    plt.title('projected stack')
-    #
-    plt.tight_layout()
-    return imf, df_hp, f
+    Returns
+    -------
+    d_im : dict
+        Dictionary of images. Each keyword represents a channel, named
+        according to channels string list.
+    n_channels : int
+        Number of channels.
+    n_times : int
+        Number of timepoints.
 
+    Examples
+    --------
+    >>> d_im, n_channels, n_times = read_tiff( \
+     '/home/dati/GBM_persson/data/15.01.26_GBM5/GBM5-AF16/Clop/1_2_01.tif', \
+     channels=['G', 'R', 'C'])
+    >>> n_channels, n_times
+    (3, 35)
 
-def common_path(path1, path2):
-    """
-    Input: 2 file paths
-
-    Output: a tupla for common abs path, path 1 and path2 (relative to common)
-    """
-    fcommon = os.path.commonprefix([os.path.abspath(path1),
-                                    os.path.abspath(path2)])
-    f1 = os.path.relpath(path1, start=fcommon)
-    f2 = os.path.relpath(path2, start=fcommon)
-    return fcommon, f1, f2
-
-
-def read_tiff(fp, channel_list):
-    """
-    Read multichannel tif timelapse image.
-    Return a tupla with n_channel
-
-    d_im, n_channels, n_times = read_tiff_ch(
-     '/home/dati/GBM_persson/data/15.02.05_cal-GBM5-pBJclop/ph725b/1_7_14.tif')
     """
     im = io.imread(fp)
-    n_channels = len(channel_list)
+    n_channels = len(channels)
     if len(im) % n_channels:
         raise Exception('n_channel mismatch total lenght of tif sequence')
     else:
         d_im = {}
-        for i, ch in enumerate(channel_list):
+        for i, ch in enumerate(channels):
             d_im[ch] = im[i::n_channels]
         return d_im, n_channels, len(im)//n_channels
 
 
 def d_show(d_im, **kws):
-    """
-    im: tupla (d_im, n_channels, n_times)
-    """
+    """imshow for dictionary of image (d_im). Support plt.imshow kws."""
     MAX_ROWS = 9
     n_channels = len(d_im.keys())
-    n_times = len(d_im[list(d_im.keys())[0]]) 
+    n_times = len(d_im[list(d_im.keys())[0]])
     if n_times <= MAX_ROWS:
         rng = range(n_times)
         n_rows = n_times
@@ -266,12 +222,13 @@ def d_show(d_im, **kws):
             plt.yticks([])
             plt.ylabel(ch + ' @ t = ' + str(r))
     plt.subplots_adjust(wspace=0.2, hspace=0.02, top=.9, bottom=.1, left=0,
-            right=1)
+                        right=1)
     return f
 
 
 # median
 def d_median(d_im):
+    """Median filter on dictionary of image (d_im). Return a new d_im copy."""
     d_out = {}
     for k, im in d_im.items():
         d_out[k] = im_median(im)
@@ -279,7 +236,30 @@ def d_median(d_im):
 
 
 def d_shading(d_im, dark, flat, clip=True):
-    '''Works either with flat or d_flat'''
+    """Shading correction on d_im.
+
+    Subtract dark; then divide by flat.
+
+    Works either with flat or d_flat
+    Need also dark for each channel because it is different when using
+    different acquisiton times.
+
+    Parameters
+    ----------
+    dark : 2D image
+        Dark image.
+    flat : 2D image or d_im
+        Flat image.
+    clip : bool
+        Boolean for clipping values >=0.
+
+    Returns
+    -------
+    d_im
+        Corrected d_im.
+
+    """
+    # TODO inplace=True tosave memory
     # TODO d_flat with checking
     d_cor = {}
     for k in d_im.keys():
@@ -300,9 +280,36 @@ def d_shading(d_im, dark, flat, clip=True):
 
 def bg(im, kind='arcsinh', perc=10, radius=10,
         adaptive_radius=None, arcsinh_perc=80):
-    '''
+    """Bg segmentation.
+
     Return median, whole vector, figures (in a [list])
-    '''
+
+    Parameters
+    ----------
+    kind : {'arcsinh', 'entropy', 'adaptive', 'li_adaptive', 'li_li'}
+        Method used for the segmentation.
+    perc : int, optional
+        Perc % of max-min (default=10) for thresholding *entropy* and *arcsinh*
+        methods.
+    radius : int, optional
+        Radius (default=10) used in *entropy* and *arcsinh* (percentile_filter)
+        methods.
+    adaptive_radius : int, optional
+        Size for the adaptive filter of skimage (default is im.shape[1]/2).
+    arcsinh_perc : int, optional
+        Perc (default=80) used in the percentile_filter (scipy) whithin
+        *arcsinh* method.
+
+    Returns
+    -------
+    median : float
+        Median of the bg masked pixels.
+    pixel_values : list ?
+        Values of all bg masked pixels.
+    figs : {[f1], [f1, f2]}
+        List of fig(s). Only entropy and arcsinh methods have 2 elements.
+
+    """
     if adaptive_radius is None:
         adaptive_radius = im.shape[1]/2
     if perc < 0 or perc > 100:
@@ -351,9 +358,8 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
         thr2 = filters.threshold_li(imm.clip(np.min(im)))
         m = im < thr2
         # ###mm = skimage.morphology.binary_closing(mm)
-    # result = np.percentile(im[m], [25, 50, 75]), im[m].mean(), masked
-    result = im[m]
-    iqr = np.percentile(result, [25, 50, 75])
+    pixel_values = im[m]
+    iqr = np.percentile(pixel_values, [25, 50, 75])
     #
     f1 = plt.figure(figsize=(9, 5))
     plt.subplot(121)
@@ -398,16 +404,39 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
         host.plot(rng, median, "o")
         par.errorbar(p, ave, sd)
         f2.tight_layout()
-        return iqr[1], result, [f1, f2]
+        return iqr[1], pixel_values, [f1, f2]
     else:
-        return iqr[1], result, [f1]
+        return iqr[1], pixel_values, [f1]
 
 
 def d_bg(d_im, downscale=None, kind='li_adaptive', clip=True, **kw):
-    '''
-    input: d_im
-    out: d_im - bg, bg_df (median), [figs], d_bg_values
-    '''
+    """Bg segmentation for d_im.
+
+    Parameters
+    ----------
+    d_im : d_im
+        desc
+    downscale : {None, tupla}
+        Tupla, x, y are downscale factors for rows, cols.
+    kind : {'li_adaptive', 'arcsinh', 'entropy', 'adaptive', 'li_li'}
+        Bg method.
+    clip : bool
+        Boolean (default=True) for clipping values >=0.
+    **kw : dict
+        Keywords passed to bg() function.
+
+    Returns
+    -------
+    d_cor : d_im
+        Dictionary of images subtracted for the estimated bg.
+    bgs : pd.DataFrame
+        Median of the estimated bg; columns for channels and index for time
+        points.
+    figs : list
+        List of (list ?) of figures.
+    d_bg_values :
+
+    """
     d_bg = {}
     d_bg_values = {}
     d_cor = {}
@@ -429,21 +458,60 @@ def d_bg(d_im, downscale=None, kind='li_adaptive', clip=True, **kw):
     if clip:
         for k in d_cor.keys():
             d_cor[k] = d_cor[k].clip(0)
-    d_bg = pd.DataFrame(d_bg)
-    return d_cor, d_bg, d_fig, d_bg_values
+    bgs = pd.DataFrame(d_bg)
+    return d_cor, bgs, d_fig, d_bg_values
 
 
 def d_mask_label(d_im, min_size=640, channels=['C', 'G', 'R'],
                  threshold_method='yen', wiener=False, watershed=False,
                  clear_border=False, randomwalk=False):
-    "add two keys, mask and label, to the d_im"
+    """Label cells in d_im. Add two keys, mask and label.
+
+    Perform plane-by-plane (2D image):
+
+    - geometric average of all channels;
+    - optional wiener filter (3,3);
+    - mask using threshold_method;
+    - remove objects smaller than **min_size**;
+    - binary closing;
+    - optionally remove any object on borders;
+    - label each ROI;
+    - optionally perform watershed on labels.
+
+    Parameters
+    ----------
+    d_im : d_im
+        desc
+    min_size : type, optional
+        Objects smaller than min_size (default=640 pixels) are discarded from
+        mask.
+    channels : list of string
+        List a name for each channel.
+    threshold_method : {'yen', 'li'}
+        Method for thresholding (skimage) the geometric average plane-by-plane.
+    wiener : bool, optional
+        Boolean (default=False) for wiener filter.
+    watershed : bool, optional
+        Boolean (default=False) for watershed on labels.
+    clear_border :  bool, optional
+        Boolean (default=False) for removing objects that are touching the
+        image (2D) border.
+    randomwalk :  bool, optional
+        Boolean (default=False) for using random_walker in place of watershed
+        (skimage) algorithm after ndimage.distance_transform_edt() calculation.
+
+    Returns
+    -------
+    None
+
+    """
     ga = d_im[channels[0]].copy()
     for ch in channels[1:]:
         ga *= d_im[ch]
     ga = np.power(ga, 1/len(channels))
     if wiener:
         ga_wiener = np.zeros_like(d_im['G'])
-        shape = (3, 3) # for 3D (1, 4, 4)
+        shape = (3, 3)  # for 3D (1, 4, 4)
         for i, im in enumerate(ga):
             ga_wiener[i] = signal.wiener(im, shape)
     else:
@@ -470,7 +538,8 @@ def d_mask_label(d_im, min_size=640, channels=['C', 'G', 'R'],
         # use props[0].label == 1
         # TODO: Voronoi? depends critically on max_diameter.
         distance = ndimage.distance_transform_edt(mask)
-        pr = skimage.measure.regionprops(labels[0], intensity_image = d_im[channels[0]][0])
+        pr = skimage.measure.regionprops(labels[0],
+                                         intensity_image=d_im[channels[0]][0])
         max_diameter = pr[0].equivalent_diameter
         size = max_diameter * 2.20
         for p in pr[1:]:
@@ -478,26 +547,49 @@ def d_mask_label(d_im, min_size=640, channels=['C', 'G', 'R'],
         print(max_diameter)
         # for time, (d, l) in enumerate(zip(ga_wiener, labels)):
         for time, (d, l) in enumerate(zip(distance, labels)):
-            local_maxi = skimage.feature.peak_local_max(d, labels=l,
-                    footprint=np.ones((size, size)), min_distance=size,
-                    indices=False, exclude_border=False)
+            local_maxi = skimage.feature.peak_local_max(
+                            d, labels=l,
+                            footprint=np.ones((size, size)), min_distance=size,
+                            indices=False, exclude_border=False)
             markers = skimage.measure.label(local_maxi)
             print(np.unique(markers))
             if randomwalk:
                 markers[~mask[time]] = -1
-                labels_ws = skimage.segmentation.random_walker(mask[time], markers)
-            else: 
+                labels_ws = skimage.segmentation.random_walker(mask[time],
+                                                               markers)
+            else:
                 labels_ws = skimage.morphology.watershed(-d, markers, mask=l)
             labels[time] = labels_ws
-
     d_im['labels'] = labels
 
 
 def d_ratio(d_im, name='r_cl', channels=['C', 'R'], radii=(7, 3)):
-    """add masked median-filtered ratio for 2 channels to d_im
-    d_im must already contain a mask along with (obviously) the 2 required channels.
-    replace -inf, nan and inf with 0 and mask False is also replaced with 0.
-    inf should be present in the bg only. r[dim3['labels']==4].min() 
+    """Ratio image between 2 channels in d_im.
+
+    Add masked (bg=0; fg=ratio) median-filtered ratio for 2 channels. So, d_im
+    must (already) contain keys for mask and the two channels.
+
+    After ratio computation any -inf, nan and inf values are replaced with 0.
+    These values should be generated (upon ratio) only in the bg. You can
+    check:
+        r_cl[d_im['labels']==4].min()
+
+    Parameters
+    ----------
+    d_im : d_im
+        desc
+    name : string
+        Name (default='r_cl') for the new key.
+    channels : list of string
+        Names (default=['C', 'R']) for the two channels [Numerator,
+        Denominator].
+    radii : tupla of int, optional
+        Each element contain a radius value for a median filter cycle.
+
+    Returns
+    -------
+    None
+
     """
     ratio = d_im[channels[0]] / d_im[channels[1]]
     for i, r in enumerate(ratio):
@@ -509,21 +601,46 @@ def d_ratio(d_im, name='r_cl', channels=['C', 'R'], radii=(7, 3)):
 
 
 def d_meas_props(d_im, channels=['C', 'G', 'R'], channels_cl=['C', 'R'],
-        channels_pH=['G', 'C'], ratios_from_image=True):
-    '''return
-    meas: dict of dict of list ('label', 'ch mean_intensity and are and equivalent-radius', time)
-        dict of dataframes seems better
-    pr: dict of list of list ('ch', time, label)
-    '''
+                 channels_pH=['G', 'C'], ratios_from_image=True, radii=None):
+    """Calculate pH and cl ratios and labelprops.
+
+    Parameters
+    ----------
+    d_im : d_im
+        desc
+    name : string
+        Name (default='r_cl') for the new key.
+    channels : list of string
+        All d_im channels (default=['C', 'G', 'R']).
+    channels_cl : list of string
+        Names (default=['C', 'R']) for the two channels [Numerator,
+        Denominator] for cl ratio.
+    channels_pH : list of string
+        Names (default=['G', 'C']) for the two channels [Numerator,
+        Denominator] for pH ratio.
+    ratios_from_image : bool, optional
+        Boolean (default=True) for executing d_ratio i.e. compute ratio images.
+
+    Returns
+    -------
+    meas : dict of pd.DataFrame
+        For each label in labels: {'label': df}.
+        DataFrame columns are: mean intensity of all channels,
+        'equivalent_diameter', 'eccentricity', 'area', ratios from the mean
+        intensities and optionally ratios from ratio-image.
+    pr : dict of list of list
+        For each channel: {'channel': [props]} i.e. {'channel': [time][label]}.
+
+    """
     pr = {}
     for ch in channels:
         pr[ch] = []
         for time, label_im in enumerate(d_im['labels']):
             im = d_im[ch][time]
-            props = skimage.measure.regionprops(label_im, intensity_image = im)
-            pr[ch].append(props)    
+            props = skimage.measure.regionprops(label_im, intensity_image=im)
+            pr[ch].append(props)
 
-    meas = {}  
+    meas = {}
     # labels are 3D and "0" is always label for background
     labels = np.unique(d_im['labels'])[1:]
     for label in labels:
@@ -550,8 +667,11 @@ def d_meas_props(d_im, channels=['C', 'G', 'R'], channels_cl=['C', 'R'],
         meas[label] = df
 
     if ratios_from_image:
-        d_ratio(d_im, 'r_cl', channels=channels_cl)
-        d_ratio(d_im, 'r_pH', channels=channels_pH)
+        kwargs = {}
+        if radii:
+            kwargs['radii'] = radii
+        d_ratio(d_im, 'r_cl', channels=channels_cl, **kwargs)
+        d_ratio(d_im, 'r_pH', channels=channels_pH, **kwargs)
         r_pH = []
         r_cl = []
         for time, (pH, cl) in enumerate(zip(d_im['r_pH'], d_im['r_cl'])):
@@ -562,16 +682,33 @@ def d_meas_props(d_im, channels=['C', 'G', 'R'], channels_cl=['C', 'R'],
         for label in meas:
             df = pd.DataFrame({'r_pH_median': ratios_pH[:, label-1],
                                'r_cl_median': ratios_cl[:, label-1]})
-            # concat only on index that are present in both 
+            # concat only on index that are present in both
             meas[label] = pd.concat([meas[label], df], axis=1, join='inner')
 
     return meas, pr
 
 
-
 def d_plot_meas(bgs, meas, channels):
-    ''' plot r_cl and r_pH for each label for bname.png export.
-    '''
+    """Plot meas object.
+
+    Plot r_pH, r_cl, mean intensity for each channel and estimated bg over
+    timepoints for each label (color coded).
+
+    Parameters
+    ----------
+    bgs : pd.DataFrame
+        Estimated bg returned from d_bg()
+    meas : dict of pd.DataFrame
+        meas object returned from d_meas_props().
+    channels : list of string
+        All bgs and meas channels (default=['C', 'G', 'R']).
+
+    Returns
+    -------
+    fig : plt.fig
+        Figure.
+
+    """
     colors = ['k', 'b', 'g', 'r', 'y', 'c', 'm']
     NCOLS = 2
     n_axes = len(channels) + 3  # 2 ratios and 1 bg axes
@@ -582,39 +719,41 @@ def d_plot_meas(bgs, meas, channels):
     for k, df in meas.items():
         legend.append(k)
         color = colors[(k-1) % len(colors)]
-        df['r_pH'].plot(marker='o', color=color, ax=axes[0,0])
-        df['r_cl'].plot(marker='o', color=color, ax=axes[0,1])
+        df['r_pH'].plot(marker='o', color=color, ax=axes[0, 0])
+        df['r_cl'].plot(marker='o', color=color, ax=axes[0, 1])
     for k, df in meas.items():
         color = colors[(k-1) % len(colors)]
         if 'r_pH_median' in df:
-            df['r_pH_median'].plot(style='--', color=color, lw=2, ax=axes[0,0])
+            df['r_pH_median'].plot(style='--', color=color, lw=2,
+                                   ax=axes[0, 0])
         if 'r_cl_median' in df:
-            df['r_cl_median'].plot(style='--', color=color, lw=2, ax=axes[0,1])
-    axes[0,0].set_ylabel('r_pH')
-    axes[0,0].grid()
-    axes[0,1].set_ylabel('r_cl')
-    axes[0,1].grid()
-    axes[0,0].set_title('pH')
-    axes[0,1].set_title('Cl')
-    axes[0,0].legend(legend)
+            df['r_cl_median'].plot(style='--', color=color, lw=2,
+                                   ax=axes[0, 1])
+    axes[0, 0].set_ylabel('r_pH')
+    axes[0, 0].grid()
+    axes[0, 1].set_ylabel('r_cl')
+    axes[0, 1].grid()
+    axes[0, 0].set_title('pH')
+    axes[0, 1].set_title('Cl')
+    axes[0, 0].legend(legend)
 
     for n, ch in enumerate(channels, 2):
         i = n // NCOLS
-        j = n % NCOLS #* 2
+        j = n % NCOLS  # * 2
         for k, df in meas.items():
             color = colors[(k-1) % len(colors)]
             df[ch].plot(marker='o', color=color, ax=axes[i, j])
         axes[i, j].set_title(ch)
-        axes[i,j].grid()
+        axes[i, j].grid()
 
     if n_axes == nrows * NCOLS:
         axes.ravel()[-2].set_xlabel('time')
         axes.ravel()[-1].set_xlabel('time')
-        bgs.plot(ax = axes[nrows-1, NCOLS-1], grid=True)
+        bgs.plot(ax=axes[nrows-1, NCOLS-1], grid=True)
     else:
         axes.ravel()[-3].set_xlabel('time')
         axes.ravel()[-2].set_xlabel('time')
-        bgs.plot(ax = axes[nrows-1, NCOLS-2], grid=True)
+        bgs.plot(ax=axes[nrows-1, NCOLS-2], grid=True)
         ax = axes.ravel()[-1]
         plt.delaxes(ax)
 

@@ -1,49 +1,41 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """
-test_nimg
-----------------------------------
-
-Tests for `nimg` module.
+Tests for nimg module.
 """
-
-import unittest
+# import pytest
+# from nimg import nimg
 import numpy as np
+from numpy.testing import assert_array_equal
+from docopt import docopt
+# from numpy.testing import assert_array_equal, assert_allclose
+import nimg.scripts
+import nimg
 
-from nimg import nimg
 
 
-class TestNimg(unittest.TestCase):
+class Test_script(object):
+    def test_nimg(self):
+        TestFile = './data/1b_c16_15.tif'
+        # args = docopt(nimg.scripts.__doc__, argv=[TestFile, 'G R C', '-m', 'li_adaptive'])
+        args = docopt(nimg.scripts.__doc__, argv=['nimg', 'flat', '--version'])
+        # assert args == '0.1.1'
+        print(args)
 
-    def setUp(self):
-        pass
+class Test_d_shading(object):
 
-    def tearDown(self):
-        pass
+    @classmethod
+    def setup_class(cls):
+        cls.d_im = {'C': np.ones((5, 5, 5)) * 2, 'C2': np.ones((5, 5, 5)) * 4}
+        cls.dark = np.ones((5, 5))
+        cls.flat = np.ones((5, 5)) * 2
+        cls.d_flat = {'C': cls.flat, 'C2': np.ones((5, 5)) * 3}
 
-    def test_000_something(self):
-        pass
+    def test_single_dark_and_single_flat(self):
+        d_cor = nimg.d_shading(self.d_im, self.dark, self.flat, clip=True)
+        # assert_allclose(d_cor, np.ones((5,5,5)) / 2)
+        assert_array_equal(d_cor['C'], np.ones((5, 5, 5)) / 2)
 
-class TestScript(unittest.TestCase):
-
-    def setUp(self):
-        im = np.random.rand(20, 50)
-        im[10, 25] = 10
-
-        a = np.random.poisson(2, 1000)
-        a = np.floor( np.random.normal(2.5,.6, 1000) + np.random.normal(1.3,.3, 1000) )
-        a.reshape(20,50).astype('uint')
-
-        pass
-
-    def tearDown(self):
-        pass
-
-    def test_000_something(self):
-        nimg.dark()
-        pass
-
-if __name__ == '__main__':
-    import sys
-    sys.exit(unittest.main())
+    def test_single_dark_and_d_flat(self):
+        d_cor = nimg.d_shading(self.d_im, self.dark, self.d_flat, clip=True)
+        # assert_allclose(d_cor, np.ones((5,5,5)) / 2)
+        assert_array_equal(d_cor['C'], np.ones((5, 5, 5)) / 2)
+        assert_array_equal(d_cor['C2'], np.ones((5, 5, 5)))
