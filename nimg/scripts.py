@@ -88,12 +88,6 @@ mpl.rcParams['figure.max_open_warning'] = 199
 methods_bg = ('entropy', 'arcsinh', 'adaptive', 'li_adaptive', 'li_li')
 methods_fg = ('yen', 'li')
 
-"""
-def main():
-    args = docopt(__doc__, version=version)
-    print(args)
-"""
-
 
 def main():
     args = docopt(__doc__, version=version)
