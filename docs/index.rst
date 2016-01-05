@@ -9,11 +9,14 @@ Welcome to nimg's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
 
    readme
    installation
    usage
+
+   nimg
+
    contributing
    authors
    history
