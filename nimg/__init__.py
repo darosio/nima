@@ -1,7 +1,7 @@
-from nimg.nimg import (
+from .nimg import (
         read_tiff,
         im_median,
-        zproject_median,
+        zproject,
         d_median,
         d_shading,
         d_mask_label,

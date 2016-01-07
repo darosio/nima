@@ -21,6 +21,7 @@ Features
 
 Git flow
 --------
+http://blogs.atlassian.com/2014/01/simple-git-workflow-simple/
 
 	git co -b dev..
 	# if already in bitbucket
@@ -40,8 +41,10 @@ when done
 
 finally
 
-	git rebase -i origin/master
+	(git rebase origin/master)
+	git rebase -i origin/master  (only before merging!!!)
 	git push --force
+		(git reset --hard origin/dev) in other repos
 	git co master
 	(git pull)
 	git merge --no-ff dev..
@@ -49,6 +52,8 @@ finally
 	
 now the history is shorter and focused in master.
 
+in all local repos:
+    git branch -d dev
 
 TODO
 ----

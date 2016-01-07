@@ -25,6 +25,10 @@ and save (in current dir):
       reference dark image)
 
 
+New: DARK and FLAT are a single file, and both must be a d_im with appropriate
+channels.
+
+
 Usage:
   nimg dark <zipfile>
   nimg flat <zipfile> <darkfile>
@@ -36,6 +40,7 @@ Options:
   -h --help     Show this screen.
   --version     Show version.
   --silent      Do not print; verbose=0.
+  -o OUT, --output OUT      Output folder path [default: nimg]
   --hotpixel, --hotpixels   Execute median filter with radius=0.5 to remove
                             hotpixel.
   -d DARK, --dark DARK      Dark for shading correction.
@@ -179,8 +184,8 @@ def main():
         if args['--hotpixels']:
             d_im = nimg.d_median(d_im)
         if args['--flat']:
-            dark = io.imread(args['--dark'][0])
-            flat = io.imread(args['--flat'][0])  # FIXME works only single flat
+            dark, _, _ = nimg.read_tiff(args['--dark'], channels)
+            flat, _, _ = nimg.read_tiff(args['--flat'], channels)
             d_im = nimg.d_shading(d_im, dark, flat, clip=True)
         d_im_bg, bgs, ff, _bgv = nimg.d_bg(d_im, **kwargs_bg)  # clip=True
         # dim I got a problem with 'li' and unique label for 19 1.10_15 af16 ds
@@ -190,7 +195,8 @@ def main():
         # output for bg
         bname = os.path.basename(args['TIFFSTK'])
         bname = os.path.splitext(bname)[0]
-        bname = os.path.join('nimg', bname)
+        # bname = os.path.join('nimg', bname)
+        bname = os.path.join(args['--output'], bname)
         if not os.path.exists(bname):
             os.makedirs(bname)
         bname_bg = os.path.join(bname, "bg")
@@ -233,7 +239,7 @@ def dark(fp, thr=95):
     thr: float threshold for hot pixels calculation.
     """
     im = zipread(fp)
-    zp = nimg.zproject_median(im)
+    zp = nimg.zproject(im)
     imf = nimg.im_median(zp)
     f = plt.figure(figsize=(6.75, 9.25))
     plt.suptitle('DARK stack')
