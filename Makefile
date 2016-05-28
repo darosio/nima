@@ -81,4 +81,8 @@ dist: clean
 	ls -l dist
 
 install: clean
-	python setup.py install
+	# python setup.py install
+	pip install . -U
+
+install-dev: clean
+	pip install -e .[dev,test,doc]

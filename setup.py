@@ -15,11 +15,19 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read().replace('.. :changelog:', '')
 
 requirements = [
-    'numpy', 'scipy', 'pandas', 'matplotlib', 'scikit-image'
+    # TODO: put package requirements here
+    'docopt',
+    'numpy',
+    'scipy',
+    'matplotlib',
+    'pandas',
+    'scikit-image',
+    'tifffile'
 ]
 
 test_requirements = [
     # TODO: put package test requirements here
+    'pytest-cov'
 ]
 
 setup(
@@ -37,6 +45,7 @@ setup(
                  'nimg'},
     include_package_data=True,
     install_requires=requirements,
+    # TODO: remove or add any other script
     entry_points={ 'console_scripts': [
                     'nimg = nimg.scripts:main',
                    ],
@@ -49,19 +58,16 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD 3-Clause (BSD New)',
         'Natural Language :: English',
-        "Programming Language :: Python :: 2",
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
     ],
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
     extras_require={
-        'dev': ['check-manifest'],
-        'test': ['coverage', 'pytest-cov'],
+        'dev': ['check-manifest', 'watchdog', 'bumpversion'],
+        'test': ['coverage', 'pytest-cov', 'tox', 'flake8'],
+        'doc': ['sphinxcontrib-plantuml', 'numpydoc']
     }
 )
