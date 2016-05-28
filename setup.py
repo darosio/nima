@@ -32,7 +32,7 @@ test_requirements = [
 
 setup(
     name='nimg',
-    version='0.1.0',
+    version='0.1.1',
     description="Image analysis scripts based on scipy.ndimage and skimage.",
     long_description=readme + '\n\n' + history,
     author="Daniele Arosio",
