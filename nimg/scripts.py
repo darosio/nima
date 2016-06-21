@@ -26,9 +26,9 @@ and save (in current dir):
 
 
 Usage:
-  nimg [options] TIFFSTK [(-d DARK... -f FLAT...)] CHANNELS...
   nimg dark <zipfile>
   nimg flat <zipfile> <darkfile>
+  nimg [options] TIFFSTK [(-d DARK -f FLAT)] CHANNELS...
   nimg -h | --help
   nimg --version
 
