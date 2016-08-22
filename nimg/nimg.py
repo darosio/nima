@@ -4,8 +4,6 @@ label cells; obtain statistics for each label; compute ratio and ratio images
 between channels.
 
 """
-import os
-import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -17,6 +15,7 @@ import skimage.feature
 import skimage.segmentation
 from skimage import io, filters
 from skimage.morphology import disk
+import tifffile
 
 
 def im_print(im):
@@ -124,8 +123,10 @@ def im_median(im,  radius=0,
             return imf
 
 
-def zproject_median(im):
+def zproject(im, func=np.median):
     """Perform z-projection of a 3D image.
+
+    func must support axis= and out= API like np.median, np.mean, np.percentile
 
 
     Parameters
@@ -140,22 +141,15 @@ def zproject_median(im):
 
     Raises
     ------
+    AssertionError
         If the input image is not 3D.
 
     """
-    # TODO: use median proj as an option.
-    # TODO: raise exception. do not use sys.exit.
-    # TODO: %2 only for int
-    if not (im.ndim == 3 and len(im) == im.shape[0]):
-        sys.exit('only 3D-grayscale (pln, row, col)')
-    # maintain same dtype as input im
+    assert (im.ndim == 3 and len(im) == im.shape[0]), \
+            "Input must be 3D-grayscale (pln, row, col)"
+    # maintain same dtype as input im; odd and even
     zproj = np.zeros(im.shape[1:]).astype(im.dtype)
-    if len(im) % 2:
-        np.median(im, axis=0, out=zproj)
-    else:
-        # to correctly maintain uint types
-        # skip first plane to project even number of pln
-        np.median(im[1:], axis=0, out=zproj)
+    func(im[1:], axis=0, out=zproj)
     return zproj
 
 
@@ -181,14 +175,13 @@ def read_tiff(fp, channels):
 
     Examples
     --------
-    >>> d_im, n_channels, n_times = read_tiff( \
-     '/home/dati/GBM_persson/data/15.01.26_GBM5/GBM5-AF16/Clop/1_2_01.tif', \
-     channels=['G', 'R', 'C'])
+    >>> d_im, n_channels, n_times = read_tiff('tests/data/1b_c16_15.tif', \
+            channels=['G', 'R', 'C'])
     >>> n_channels, n_times
-    (3, 35)
+    (3, 4)
 
     """
-    im = io.imread(fp)
+    im = tifffile.imread(fp)
     n_channels = len(channels)
     if len(im) % n_channels:
         raise Exception('n_channel mismatch total lenght of tif sequence')
@@ -203,7 +196,11 @@ def d_show(d_im, **kws):
     """imshow for dictionary of image (d_im). Support plt.imshow kws."""
     MAX_ROWS = 9
     n_channels = len(d_im.keys())
-    n_times = len(d_im[list(d_im.keys())[0]])
+    first_channel = d_im[list(d_im.keys())[0]]
+    if first_channel.ndim == 2:
+        n_times = 1
+    elif first_channel.ndim == 3:
+        n_times = len(first_channel)
     if n_times <= MAX_ROWS:
         rng = range(n_times)
         n_rows = n_times
@@ -216,7 +213,10 @@ def d_show(d_im, **kws):
     for n, ch in enumerate(sorted(d_im.keys())):
         for i, r in enumerate(rng):
             plt.subplot(n_rows, n_channels, i * n_channels + n + 1)
-            img0 = plt.imshow(d_im[ch][r], **kws)
+            if n_times == 1:
+                img0 = plt.imshow(d_im[ch], **kws)
+            else:
+                img0 = plt.imshow(d_im[ch][r], **kws)
             plt.colorbar(img0, orientation='vertical', pad=0.02, shrink=.85)
             plt.xticks([])
             plt.yticks([])
@@ -241,14 +241,14 @@ def d_shading(d_im, dark, flat, clip=True):
     Subtract dark; then divide by flat.
 
     Works either with flat or d_flat
-    Need also dark for each channel because it is different when using
+    Need also dark for each channel because it can be different when using
     different acquisiton times.
 
     Parameters
     ----------
-    dark : 2D image
+    dark : 2D image or (2D) d_im
         Dark image.
-    flat : 2D image or d_im
+    flat : 2D image or (2D) d_im
         Flat image.
     clip : bool
         Boolean for clipping values >=0.
@@ -260,18 +260,20 @@ def d_shading(d_im, dark, flat, clip=True):
 
     """
     # TODO inplace=True tosave memory
-    # TODO d_flat with checking
+    raise_msg = "Unexpected imput"
+    assert type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg 
+    assert type(flat) == np.ndarray or flat.keys() == d_im.keys(), raise_msg
     d_cor = {}
     for k in d_im.keys():
         d_cor[k] = d_im[k].astype(float)
-        d_cor[k] -= dark.astype(float)
-        # TODO dark[k]
-        try:
+        if type(dark) == dict:
+            d_cor[k] -= dark[k]
+        else:
+            d_cor[k] -= dark  # numpy.ndarray
+        if type(flat) == dict:
             d_cor[k] /= flat[k]
-            # print('k')
-        except:
-            # print('n')
-            d_cor[k] /= flat
+        else:
+            d_cor[k] /= flat  # numpy.ndarray
     if clip:
         for k in d_cor.keys():
             d_cor[k] = d_cor[k].clip(0)
