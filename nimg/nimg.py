@@ -13,15 +13,20 @@ import skimage
 import skimage.transform
 import skimage.feature
 import skimage.segmentation
-from skimage import io, filters
+from skimage import filters
 from skimage.morphology import disk
 import tifffile
 
 
-def im_print(im):
+def im_print(im, verbose=False):
     """Print useful information about im."""
     print("ndim = ", im.ndim, "| shape = ", im.shape, '| max = ', im.max(),
           '| min = ', im.min(), "| size = ", im.size, "| dtype = ", im.dtype)
+    if verbose:
+        if im.ndim == 3:
+            for i, image in enumerate(im):
+                print("i = {0:4d} | size = {1} | zeros = {2}".format(
+                    i, image.size, np.count_nonzero(image == 0)))
 
 
 def myhist(im, bins=60, log=False, nf=0):
@@ -42,7 +47,7 @@ def myhist(im, bins=60, log=False, nf=0):
         plt.yscale('log')
 
 
-def plot_im_series(im, cm=plt.cm.gray, horizontal=True, **kw):
+def plot_im_series(im, cmap=plt.cm.gray, horizontal=True, **kw):
     """Plot a image series with a maximum of 9 elements.
 
     ..note:: Consider deprecation. Use d_show() instead.
@@ -56,13 +61,13 @@ def plot_im_series(im, cm=plt.cm.gray, horizontal=True, **kw):
         s = len(im) * 100 + 10 + 1
     for i, img in enumerate(im):
         plt.subplot(s+i)
-        plt.imshow(img, cmap=cm, **kw)
+        plt.imshow(img, cmap=cmap, **kw)
         plt.axis('off')
     plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0,
                         left=0, right=1)
 
 
-def plot_otsu(im, cm=plt.cm.gray):
+def plot_otsu(im, cmap=plt.cm.gray):
     """Otsu threshold and plot im_series.
 
     .. note:: Consider deprecation.
@@ -70,7 +75,7 @@ def plot_otsu(im, cm=plt.cm.gray):
     """
     val = filters.threshold_otsu(im)
     mask = im > val
-    plot_im_series(im * mask, cm=cm)
+    plot_im_series(im * mask, cmap=cmap)
     return mask
 
 
@@ -146,7 +151,7 @@ def zproject(im, func=np.median):
 
     """
     assert (im.ndim == 3 and len(im) == im.shape[0]), \
-            "Input must be 3D-grayscale (pln, row, col)"
+        "Input must be 3D-grayscale (pln, row, col)"
     # maintain same dtype as input im; odd and even
     zproj = np.zeros(im.shape[1:]).astype(im.dtype)
     func(im[1:], axis=0, out=zproj)
@@ -261,7 +266,7 @@ def d_shading(d_im, dark, flat, clip=True):
     """
     # TODO inplace=True tosave memory
     raise_msg = "Unexpected imput"
-    assert type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg 
+    assert type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg
     assert type(flat) == np.ndarray or flat.keys() == d_im.keys(), raise_msg
     d_cor = {}
     for k in d_im.keys():

@@ -57,13 +57,6 @@ in all local repos:
 
 TODO
 ----
-* cm= -> cmap= sticking to convention
-* im_print improve:
-  print(i, np.count_nonzero(im[i]),
-	im[i].size,
-	np.count_nonzero(im[i] == 0),
-	np.count_nonzero(im[i] > 700))
-
 * d_show(color=, colormap=False, im_print=True)
 cm=plt.cm.Greens, cm=plt.cm.Reds, cm=plt.cm.Blues
 
@@ -81,7 +74,7 @@ To be used
 
 feature.match_template(G[2], G[3])
 
-feature.register_translation(G[0], G[1])
+skimage.feature.register_translation(G[0], G[1])
 
 ### remember:
     mapmem for very large data (image5d)
