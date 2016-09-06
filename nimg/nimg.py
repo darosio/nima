@@ -4,18 +4,18 @@ label cells; obtain statistics for each label; compute ratio and ratio images
 between channels.
 
 """
+import matplotlib.colors
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy import ndimage
-from scipy import signal
 import skimage
-import skimage.transform
 import skimage.feature
 import skimage.segmentation
+import skimage.transform
+import tifffile
+from scipy import ndimage, signal
 from skimage import filters
 from skimage.morphology import disk
-import tifffile
 
 
 def im_print(im, verbose=False):
@@ -39,7 +39,7 @@ def myhist(im, bins=60, log=False, nf=0):
     # sns.pointplot(imf.flatten(), kde=False,
     #               hist_kws={"histtype": "step", "linewidth": 3})
     hist, bin_edges = np.histogram(im, bins=bins)
-    bin_centers = 0.5*(bin_edges[:-1] + bin_edges[1:])
+    bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
     if nf:
         plt.figure()
     plt.plot(bin_centers, hist, lw=2)
@@ -60,11 +60,11 @@ def plot_im_series(im, cmap=plt.cm.gray, horizontal=True, **kw):
         plt.figure(figsize=(5.6, 12))
         s = len(im) * 100 + 10 + 1
     for i, img in enumerate(im):
-        plt.subplot(s+i)
+        plt.subplot(s + i)
         plt.imshow(img, cmap=cmap, **kw)
         plt.axis('off')
-    plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0,
-                        left=0, right=1)
+    plt.subplots_adjust(
+        wspace=0.02, hspace=0.02, top=1, bottom=0, left=0, right=1)
 
 
 def plot_otsu(im, cmap=plt.cm.gray):
@@ -79,7 +79,8 @@ def plot_otsu(im, cmap=plt.cm.gray):
     return mask
 
 
-def im_median(im,  radius=0,
+def im_median(im,
+              radius=0,
               footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])):
     """Image median filter.
 
@@ -194,7 +195,7 @@ def read_tiff(fp, channels):
         d_im = {}
         for i, ch in enumerate(channels):
             d_im[ch] = im[i::n_channels]
-        return d_im, n_channels, len(im)//n_channels
+        return d_im, n_channels, len(im) // n_channels
 
 
 def d_show(d_im, **kws):
@@ -226,8 +227,8 @@ def d_show(d_im, **kws):
             plt.xticks([])
             plt.yticks([])
             plt.ylabel(ch + ' @ t = ' + str(r))
-    plt.subplots_adjust(wspace=0.2, hspace=0.02, top=.9, bottom=.1, left=0,
-                        right=1)
+    plt.subplots_adjust(
+        wspace=0.2, hspace=0.02, top=.9, bottom=.1, left=0, right=1)
     return f
 
 
@@ -285,8 +286,12 @@ def d_shading(d_im, dark, flat, clip=True):
     return d_cor
 
 
-def bg(im, kind='arcsinh', perc=10, radius=10,
-        adaptive_radius=None, arcsinh_perc=80):
+def bg(im,
+       kind='arcsinh',
+       perc=10,
+       radius=10,
+       adaptive_radius=None,
+       arcsinh_perc=80):
     """Bg segmentation.
 
     Return median, whole vector, figures (in a [list])
@@ -318,7 +323,7 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
 
     """
     if adaptive_radius is None:
-        adaptive_radius = im.shape[1]/2
+        adaptive_radius = im.shape[1] / 2
         if adaptive_radius % 2 == 0:  # 0.12.0 check for even number
             adaptive_radius += 1
     if perc < 0 or perc > 100:
@@ -334,7 +339,7 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
         m = lim < thr
     elif kind == 'entropy':
         if im.dtype == float:
-            lim = filters.rank.entropy(im/im.max(), disk(radius))
+            lim = filters.rank.entropy(im / im.max(), disk(radius))
         else:
             lim = filters.rank.entropy(im, disk(radius))
         lim_ = True
@@ -354,7 +359,7 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
         # m = skimage.morphology.binary_erosion(m, disk(3))
         imm = im * m
         f = imm > filters.threshold_local(imm, adaptive_radius)
-        m = ~f*m
+        m = ~f * m
     elif kind == 'li_li':
         lim_ = False
         title = None
@@ -395,7 +400,7 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
         ave, sd, median = ([], [], [])
         delta = lim.max() - lim.min()
         delta /= 2
-        rng = np.linspace(lim.min()+delta/20, lim.min()+delta, 20)
+        rng = np.linspace(lim.min() + delta / 20, lim.min() + delta, 20)
         par = host.twiny()
         # plt.make_patch_spines_invisible(par)
         # Second, show the right spine.
@@ -403,12 +408,12 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
         par.set_xlabel('perc')
         par.set_xlim(0, 0.5)
         par.grid()
-        host.set_xlim(lim.min(), lim.min()+delta)
+        host.set_xlim(lim.min(), lim.min() + delta)
         p = np.linspace(.025, .5, 20)
         for t in rng:
             m = lim < t
             ave.append(im[m].mean())
-            sd.append(im[m].std()/10)
+            sd.append(im[m].std() / 10)
             median.append(np.median(im[m]))
         host.plot(rng, median, "o")
         par.errorbar(p, ave, sd)
@@ -471,9 +476,14 @@ def d_bg(d_im, downscale=None, kind='li_adaptive', clip=True, **kw):
     return d_cor, bgs, d_fig, d_bg_values
 
 
-def d_mask_label(d_im, min_size=640, channels=['C', 'G', 'R'],
-                 threshold_method='yen', wiener=False, watershed=False,
-                 clear_border=False, randomwalk=False):
+def d_mask_label(d_im,
+                 min_size=640,
+                 channels=['C', 'G', 'R'],
+                 threshold_method='yen',
+                 wiener=False,
+                 watershed=False,
+                 clear_border=False,
+                 randomwalk=False):
     """Label cells in d_im. Add two keys, mask and label.
 
     Perform plane-by-plane (2D image):
@@ -517,7 +527,7 @@ def d_mask_label(d_im, min_size=640, channels=['C', 'G', 'R'],
     ga = d_im[channels[0]].copy()
     for ch in channels[1:]:
         ga *= d_im[ch]
-    ga = np.power(ga, 1/len(channels))
+    ga = np.power(ga, 1 / len(channels))
     if wiener:
         ga_wiener = np.zeros_like(d_im['G'])
         shape = (3, 3)  # for 3D (1, 4, 4)
@@ -547,8 +557,8 @@ def d_mask_label(d_im, min_size=640, channels=['C', 'G', 'R'],
         # use props[0].label == 1
         # TODO: Voronoi? depends critically on max_diameter.
         distance = ndimage.distance_transform_edt(mask)
-        pr = skimage.measure.regionprops(labels[0],
-                                         intensity_image=d_im[channels[0]][0])
+        pr = skimage.measure.regionprops(
+            labels[0], intensity_image=d_im[channels[0]][0])
         max_diameter = pr[0].equivalent_diameter
         size = max_diameter * 2.20
         for p in pr[1:]:
@@ -557,15 +567,18 @@ def d_mask_label(d_im, min_size=640, channels=['C', 'G', 'R'],
         # for time, (d, l) in enumerate(zip(ga_wiener, labels)):
         for time, (d, l) in enumerate(zip(distance, labels)):
             local_maxi = skimage.feature.peak_local_max(
-                            d, labels=l,
-                            footprint=np.ones((size, size)), min_distance=size,
-                            indices=False, exclude_border=False)
+                d,
+                labels=l,
+                footprint=np.ones((size, size)),
+                min_distance=size,
+                indices=False,
+                exclude_border=False)
             markers = skimage.measure.label(local_maxi)
             print(np.unique(markers))
             if randomwalk:
                 markers[~mask[time]] = -1
-                labels_ws = skimage.segmentation.random_walker(mask[time],
-                                                               markers)
+                labels_ws = skimage.segmentation.random_walker(
+                    mask[time], markers)
             else:
                 labels_ws = skimage.morphology.watershed(-d, markers, mask=l)
             labels[time] = labels_ws
@@ -609,8 +622,12 @@ def d_ratio(d_im, name='r_cl', channels=['C', 'R'], radii=(7, 3)):
     d_im[name] = ratio
 
 
-def d_meas_props(d_im, channels=['C', 'G', 'R'], channels_cl=['C', 'R'],
-                 channels_pH=['G', 'C'], ratios_from_image=True, radii=None):
+def d_meas_props(d_im,
+                 channels=['C', 'G', 'R'],
+                 channels_cl=['C', 'R'],
+                 channels_pH=['G', 'C'],
+                 ratios_from_image=True,
+                 radii=None):
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
@@ -689,8 +706,10 @@ def d_meas_props(d_im, channels=['C', 'G', 'R'], channels_cl=['C', 'R'],
         ratios_pH = np.array(r_pH)
         ratios_cl = np.array(r_cl)
         for label in meas:
-            df = pd.DataFrame({'r_pH_median': ratios_pH[:, label-1],
-                               'r_cl_median': ratios_cl[:, label-1]})
+            df = pd.DataFrame({
+                'r_pH_median': ratios_pH[:, label - 1],
+                'r_cl_median': ratios_cl[:, label - 1]
+            })
             # concat only on index that are present in both
             meas[label] = pd.concat([meas[label], df], axis=1, join='inner')
 
@@ -727,17 +746,17 @@ def d_plot_meas(bgs, meas, channels):
     legend = []
     for k, df in meas.items():
         legend.append(k)
-        color = colors[(k-1) % len(colors)]
+        color = colors[(k - 1) % len(colors)]
         df['r_pH'].plot(marker='o', color=color, ax=axes[0, 0])
         df['r_cl'].plot(marker='o', color=color, ax=axes[0, 1])
     for k, df in meas.items():
-        color = colors[(k-1) % len(colors)]
+        color = colors[(k - 1) % len(colors)]
         if 'r_pH_median' in df:
-            df['r_pH_median'].plot(style='--', color=color, lw=2,
-                                   ax=axes[0, 0])
+            df['r_pH_median'].plot(
+                style='--', color=color, lw=2, ax=axes[0, 0])
         if 'r_cl_median' in df:
-            df['r_cl_median'].plot(style='--', color=color, lw=2,
-                                   ax=axes[0, 1])
+            df['r_cl_median'].plot(
+                style='--', color=color, lw=2, ax=axes[0, 1])
     axes[0, 0].set_ylabel('r_pH')
     axes[0, 0].grid()
     axes[0, 1].set_ylabel('r_cl')
@@ -750,19 +769,23 @@ def d_plot_meas(bgs, meas, channels):
         i = n // NCOLS
         j = n % NCOLS  # * 2
         for k, df in meas.items():
-            color = colors[(k-1) % len(colors)]
+            color = colors[(k - 1) % len(colors)]
             df[ch].plot(marker='o', color=color, ax=axes[i, j])
         axes[i, j].set_title(ch)
         axes[i, j].grid()
 
+    ch_colors = [
+        i.lower() if i.lower() in matplotlib.colors.BASE_COLORS else 'k'
+        for i in bgs.columns
+    ]
     if n_axes == nrows * NCOLS:
         axes.ravel()[-2].set_xlabel('time')
         axes.ravel()[-1].set_xlabel('time')
-        bgs.plot(ax=axes[nrows-1, NCOLS-1], grid=True, color=bgs.columns)
+        bgs.plot(ax=axes[nrows - 1, NCOLS - 1], grid=True, color=ch_colors)
     else:
         axes.ravel()[-3].set_xlabel('time')
         axes.ravel()[-2].set_xlabel('time')
-        bgs.plot(ax=axes[nrows-1, NCOLS-2], grid=True, color=bgs.columns)
+        bgs.plot(ax=axes[nrows - 1, NCOLS - 2], grid=True, color=ch_colors)
         ax = axes.ravel()[-1]
         plt.delaxes(ax)
 
