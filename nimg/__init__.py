@@ -15,4 +15,4 @@ from .nimg import (
 
 __author__ = 'Daniele Arosio'
 __email__ = 'danielepietroarosio@gmail.com'
-__version__ = '0.2.1'
+__version__ = '0.2.2'
