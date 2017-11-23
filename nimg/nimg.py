@@ -344,7 +344,7 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
     elif kind == 'adaptive':
         lim_ = False
         title = adaptive_radius
-        f = filters.threshold_adaptive(im, adaptive_radius)
+        f = im > filters.threshold_local(im, adaptive_radius)
         m = ~f
     elif kind == 'li_adaptive':
         lim_ = False
@@ -353,7 +353,7 @@ def bg(im, kind='arcsinh', perc=10, radius=10,
         m = im < li
         # m = skimage.morphology.binary_erosion(m, disk(3))
         imm = im * m
-        f = filters.threshold_adaptive(imm, adaptive_radius)
+        f = imm > filters.threshold_local(imm, adaptive_radius)
         m = ~f*m
     elif kind == 'li_li':
         lim_ = False
@@ -758,11 +758,11 @@ def d_plot_meas(bgs, meas, channels):
     if n_axes == nrows * NCOLS:
         axes.ravel()[-2].set_xlabel('time')
         axes.ravel()[-1].set_xlabel('time')
-        bgs.plot(ax=axes[nrows-1, NCOLS-1], grid=True)
+        bgs.plot(ax=axes[nrows-1, NCOLS-1], grid=True, color=bgs.columns)
     else:
         axes.ravel()[-3].set_xlabel('time')
         axes.ravel()[-2].set_xlabel('time')
-        bgs.plot(ax=axes[nrows-1, NCOLS-2], grid=True)
+        bgs.plot(ax=axes[nrows-1, NCOLS-2], grid=True, color=bgs.columns)
         ax = axes.ravel()[-1]
         plt.delaxes(ax)
 

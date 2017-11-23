@@ -99,3 +99,12 @@ Doc
 dict of 3D arrays, a 3D (time, x, y) array for each channel
 
 It can be convenient to build a class around this data structure.
+
+Tests
+-----
+
+skimage deprecate threshold_adaptive (for threshold_local) function.
+tests are all passed but
+
+> python test.py
+output deprecation warning and RuntimeWarning at nimg.py:603
