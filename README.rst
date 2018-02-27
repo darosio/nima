@@ -9,51 +9,23 @@ nimg
         :target: https://pypi.python.org/pypi/nimg
 
 
-Image analysis scripts based on scipy.ndimage and skimage.
+A library and cli for image analysis based on scipy.ndimage and scikit-image.
 
 * Free software: New BSD license
 * Documentation: https://nimg.readthedocs.org.
 
 Features
 --------
+- easy dark and flat correction
+- automatic cell segmentation
+- easy ratio analyses
 
-* TODO
 
-Git flow
---------
-http://blogs.atlassian.com/2014/01/simple-git-workflow-simple/
+Installation
+------------
 
-	git co -b dev..
-	# if already in bitbucket
-	git co -b dev.. origin/dev..
-	(to delete local branch) git branch -d name..
-	(to delete remote branch) git push origin :name..
+    $ pip install nimg
 
-from time to time (while master keep changing)
-
-	git fetch origin
-	git rebase origin/master
-	git rebase origin/dev.. (if needed)
-
-when done
-
-	git push -u origin dev.. (pull request) 
-
-finally
-
-	(git rebase origin/master)
-	git rebase -i origin/master  (only before merging!!!)
-	git push --force
-		(git reset --hard origin/dev) in other repos
-	git co master
-	(git pull)
-	git merge --no-ff dev..
-	git push
-	
-now the history is shorter and focused in master.
-
-in all local repos:
-    git branch -d dev
 
 TODO
 ----

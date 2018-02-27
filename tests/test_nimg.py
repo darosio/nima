@@ -1,16 +1,16 @@
 """
 Tests for nimg module.
 """
-import pytest
 import numpy as np
+import pytest
 from numpy.testing import assert_array_equal
+
 # from numpy.testing import assert_array_equal, assert_allclose
 import nimg
 import nimg.scripts
 
 
 class Test_zproject:
-
     def setup_class(self):
         self.im = np.ones((4, 2, 5))
         self.im[0] = np.ones((2, 5)) * 2
@@ -39,7 +39,6 @@ class Test_zproject:
 
 
 class Test_d_shading:
-
     def setup_class(self):
         self.d_im = {'C': np.ones((5, 5, 5)) * 2, 'C2': np.ones((5, 5, 5)) * 4}
         self.dark = np.ones((5, 5))
