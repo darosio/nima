@@ -26,7 +26,9 @@ def result_folder(tmpdir_factory, request):
 
 
 def test_printout(result_folder):
-    """test both warning for divide by zero and time points number."""
+    """test both warning for divide by zero and time points number.
+    when updated pandas>=0.19
+    """
     stdout, stderr = result_folder[2].communicate()
     assert 'true_divide' in str(stderr)
     assert int(str(stdout).split('Times:')[1].split('\\n')[0]

@@ -86,7 +86,7 @@ import tifffile
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import nimg
+import nimg.nimg as ni
 from nimg import __version__ as version
 
 mpl.rcParams['figure.max_open_warning'] = 199
@@ -101,7 +101,8 @@ def main():
         # parsing
         fzip = args['<zipfile>']
         # computation
-        dark_im, dark_hotpixels, f = nimg.scripts.dark(fzip)
+        # dark_im, dark_hotpixels, f = nimg.scripts.dark(fzip)
+        dark_im, dark_hotpixels, f = dark(fzip)
         # output
         bname = 'dark-' + os.path.splitext(os.path.basename(fzip))[0]
         f.savefig(bname + '.pdf')
@@ -115,7 +116,8 @@ def main():
         fdark = args['<darkfile>']
         fflat = args['<zipfile>']
         # computation
-        flat_im, f = nimg.scripts.flat(fflat, fdark)
+        # flat_im, f = nimg.scripts.flat(fflat, fdark)
+        flat_im, f = flat(fflat, fdark)
         # output
         bname = 'flat-' + os.path.splitext(os.path.basename(fflat))[0] + \
                 '-' + os.path.splitext(os.path.basename(fdark))[0]
@@ -178,19 +180,19 @@ def main():
         print(kwargs_meas_props)
 
         # computation
-        d_im, _, t = nimg.read_tiff(args['TIFFSTK'], channels)
+        d_im, _, t = ni.read_tiff(args['TIFFSTK'], channels)
         if not args['--silent']:
             print("  Times: ", t)
         if args['--hotpixels']:
-            d_im = nimg.d_median(d_im)
+            d_im = ni.d_median(d_im)
         if args['--flat']:
-            dark, _, _ = nimg.read_tiff(args['--dark'], channels)
-            flat, _, _ = nimg.read_tiff(args['--flat'], channels)
-            d_im = nimg.d_shading(d_im, dark, flat, clip=True)
-        d_im_bg, bgs, ff, _bgv = nimg.d_bg(d_im, **kwargs_bg)  # clip=True
+            dark, _, _ = ni.read_tiff(args['--dark'], channels)
+            flat, _, _ = ni.read_tiff(args['--flat'], channels)
+            d_im = ni.d_shading(d_im, dark, flat, clip=True)
+        d_im_bg, bgs, ff, _bgv = ni.d_bg(d_im, **kwargs_bg)  # clip=True
         # dim I got a problem with 'li' and unique label for 19 1.10_15 af16 ds
-        nimg.d_mask_label(d_im_bg, **kwargs_mask_label)
-        meas, pr = nimg.d_meas_props(d_im_bg, **kwargs_meas_props)
+        ni.d_mask_label(d_im_bg, **kwargs_mask_label)
+        meas, pr = ni.d_meas_props(d_im_bg, **kwargs_meas_props)
 
         # output for bg
         bname = os.path.basename(args['TIFFSTK'])
@@ -210,13 +212,13 @@ def main():
         # TODO: plt.close('all') or control mpl warning
 
         # output for fg (target)
-        f = nimg.d_plot_meas(bgs, meas, channels=channels)
+        f = ni.d_plot_meas(bgs, meas, channels=channels)
         f.savefig(bname + '_meas.png')
         ##
         # show all channels and labels only.
         d = {ch: d_im_bg[ch] for ch in channels}
         d['labels'] = d_im_bg['labels']
-        f = nimg.d_show(d, cmap=plt.cm.inferno_r)
+        f = ni.d_show(d, cmap=plt.cm.inferno_r)
         f.savefig(bname + '_dim.png')
         ##
         # meas csv
@@ -239,8 +241,8 @@ def dark(fp, thr=95):
     thr: float threshold for hot pixels calculation.
     """
     im = zipread(fp)
-    zp = nimg.zproject(im)
-    imf = nimg.im_median(zp)
+    zp = ni.zproject(im)
+    imf = ni.im_median(zp)
     f = plt.figure(figsize=(6.75, 9.25))
     plt.suptitle('DARK stack')
     #
@@ -296,12 +298,12 @@ def flat(fflat, fdark, method='overall'):
     ims = im - dark
     if method == 'overall':
         flat = np.median(ims, axis=0)
-        flat = nimg.im_median(flat)
+        flat = ni.im_median(flat)
         flat = flat / np.mean(flat)
     if method == 'single':
         ims = ims.astype(float)
         for i, im in enumerate(ims):
-            ims[i] = nimg.im_median(im)
+            ims[i] = ni.im_median(im)
             ims[i] = ims[i] / np.mean(ims[i])
         flat = np.median(ims, axis=0)
     # Pdf output

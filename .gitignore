@@ -1,47 +1,42 @@
-.ipynb_checkpoints/
-.*cache
-prof.*
-
+# Temporary and binary files
+*~
 *.py[cod]
-
-# C extensions
 *.so
+*.cfg
+!setup.cfg
+*.orig
+*.log
+*.pot
+__pycache__/*
+.*cache/*
+.*.swp
+.ipynb_checkpoints/
 
-# Packages
-*.egg
-*.egg-info
-dist
-build
-eggs
-parts
-bin
-var
-sdist
-develop-eggs
-.installed.cfg
-lib
-lib64
-
-# Installer logs
-pip-log.txt
-
-# Unit test / coverage reports
-.coverage
-.tox
-nosetests.xml
-htmlcov
-
-# Translations
-*.mo
-
-# Mr Developer
-.mr.developer.cfg
+# Project files
+.ropeproject
 .project
 .pydevproject
+.settings
+.idea
 
-# Complexity
-output/*.html
-output/*/index.html
+# Package files
+*.egg
+*.eggs/
+.installed.cfg
+*.egg-info
 
-# Sphinx
-docs/_build
+# Unittest and coverage
+htmlcov/*
+.coverage
+.tox
+junit.xml
+coverage.xml
+
+# Build and docs folder/files
+build/*
+dist/*
+sdist/*
+docs/api/*
+docs/_build/*
+cover/*
+MANIFEST

@@ -1,5 +1,4 @@
-nimg: Image analysis scripts based on scipy.ndimage and skimage.
-Copyright © 2015, Daniele Arosio
+Copyright (c) 2018, daniele arosio
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
