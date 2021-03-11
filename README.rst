@@ -1,13 +1,6 @@
-===============================
-nimg
-===============================
-
 ..
-   .. image:: https://img.shields.io/travis/darosio/nimg.svg
-           :target: https://travis-ci.org/darosio/nimg
-
-   .. image:: https://img.shields.io/pypi/v/nimg.svg
-           :target: https://pypi.python.org/pypi/nimg
+   .. image:: https://img.shields.io/pypi/v/clophfit.svg
+           :target: https://pypi.python.org/pypi/clophfit
 
 
 A library and cli for image analysis based on scipy.ndimage and scikit-image.
@@ -23,12 +16,16 @@ Features
 Installation
 ------------
 
-    $ mkvirtualenv nimg
-    $ pip install nimg
-
+    $ pyenv virtualenv 3.6.13 nimg-0.3.1-py36
+    $ poetry install
+    $ pip install .
+    
 Optionally:
+    $ python -m ipykernel install --user --name="nimg0.3.1"
 
-    $ pip install -r dev-requirements.txt
+    # Jedi not working
+    %config Completer.use_jedi = False
+    for python >= 3.7 should not be needed because ipython >= 7.20 will be used.
 
 
 Usage
@@ -50,7 +47,15 @@ A longer description of your project goes here...
 Note
 ====
 
-putup nimg/ --force --no-skeleton -p nimg -l new-bsd
+poetry rocks?
+development
+my idea is to use global flake8 and black and no need to track linting and safety in poetry. KISS.
 
-This project has been set up using PyScaffold 3.0.3. For details and usage
-information on PyScaffold see http://pyscaffold.org/.
+pyenv activate nimg-…
+poetry install
+pre-commit install
+
+todo
+====
+pre-commit
+CI and static typing

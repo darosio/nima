@@ -2,6 +2,14 @@
 Changelog
 =========
 
+
+https://keepachangelog.com/en/1.0.0/
+
+Version 0.3.1
+=============
+- Dropping Pyscaffold in favor of poetry
+- Works with python < 3.7
+
 Version 0.3
 ===========
 - Transition to Pyscaffold template for faster dev cycles.

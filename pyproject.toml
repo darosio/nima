@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "nimg"
+version = "0.3.1"
+description = ""
+authors = ["daniele arosio <daniele.arosio@cnr.it>"]
+license = "BSD-3-Clause"
+readme = "README.rst"
+homepage = "https://bitbucket.org/darosio/nimg/"
+repository = "https://bitbucket.org/darosio/nimg/"
+keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
+classifiers = [
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Unix Shell",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Development Status :: 2 - Pre-Alpha",
+]
+include = [
+    "LICENSE.txt",
+]
+
+
+[tool.poetry.dependencies]
+python = "~3.6.4"
+numpy = ">=1.13.3, <=1.15.4"
+pandas = ">=0.19"
+scikit-image = ">=0.13, <0.14.0"
+# scikit-image = [
+# {version = "0.13.1", python = "3.6.4"},
+# {version = "~0.14.0", python = "^3.7"}
+# ]
+matplotlib = ">=2.0.0"
+tifffile = ">=0.12.1, <=2019.7.2"
+scipy = ">=0.18.1"
+docopt = "^0.6.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.2"
+coverage = {extras = ["toml"], version = "^5.5"}
+pytest-cov = "^2.11.1"
+ipykernel = "^5.5.0"
+jedi = "<0.18"
+xdoctest = "^0.15.4"
+Sphinx = "^3.5.2"
+
+[tool.coverage.paths]
+source = ["src", "*/site-packages"]
+
+[tool.coverage.run]
+branch = true
+source = ["nimg"]
+omit = ["*__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+
+# [tool.coverage.report]
+# fail_under = 100
+
+[tool.poetry.scripts]
+nimg = "nimg.scripts:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
