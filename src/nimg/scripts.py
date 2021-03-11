@@ -77,16 +77,19 @@ Options:
 import os
 import sys
 import zipfile
-from docopt import docopt
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tifffile
+from docopt import docopt
+from matplotlib.backends.backend_pdf import PdfPages
 from scipy import ndimage
 from skimage import io
-import tifffile
-from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.pyplot as plt
-import matplotlib as mpl
+
 import nimg.nimg as ni
+import nimg.scripts
 from nimg import __version__ as version
 
 mpl.rcParams["figure.max_open_warning"] = 199
@@ -95,14 +98,18 @@ methods_fg = ("yen", "li")
 
 
 def main():
+    """Docopt script.
+
+    XXX: reduce complexity
+
+    """
     args = docopt(__doc__, version=version)
     print(args)
     if args["dark"]:
         # parsing
         fzip = args["<zipfile>"]
         # computation
-        # dark_im, dark_hotpixels, f = nimg.scripts.dark(fzip)
-        dark_im, dark_hotpixels, f = dark(fzip)
+        dark_im, dark_hotpixels, f = nimg.scripts.dark(fzip)
         # output
         bname = "dark-" + os.path.splitext(os.path.basename(fzip))[0]
         f.savefig(bname + ".pdf")
@@ -115,8 +122,7 @@ def main():
         fdark = args["<darkfile>"]
         fflat = args["<zipfile>"]
         # computation
-        # flat_im, f = nimg.scripts.flat(fflat, fdark)
-        flat_im, f = flat(fflat, fdark)
+        flat_im, f = nimg.scripts.flat(fflat, fdark)
         # output
         bname = (
             "flat-"
@@ -207,7 +213,7 @@ def main():
         bname_bg = os.path.join(bname, "bg")
         for ch in ff.keys():
             pp = PdfPages(bname_bg + "-" + ch + "-" + method_bg + ".pdf")
-            for t, f in enumerate(ff[ch]):
+            for _, f in enumerate(ff[ch]):
                 for f_i in f:
                     pp.savefig(f_i)  # e.g. entropy output 2 figs
             pp.close()
@@ -251,10 +257,26 @@ def main():
 
 
 def dark(fp, thr=95):
-    """
+    """Estimate image for dark correction.
+
     Read zip; median z-project; median filter(1).
-    Return imf. Plot imf and its histogram.
-    thr: float threshold for hot pixels calculation.
+
+    Parameters
+    ----------
+    fp : str
+        File name to be processed.
+    thr : float
+        Threshold for hot pixels calculation.
+
+    Returns
+    -------
+    imf : np.array
+        Filtered image; preserve dtype of input im.
+    df_hp: pd.DataFrame
+        Coordinates (x,y) and values for all hotpixels.
+    f : plt.figure
+        Plot of the dark image and its histogram.
+
     """
     im = zipread(fp)
     zp = ni.zproject(im)
@@ -299,11 +321,27 @@ def dark(fp, thr=95):
 
 
 def flat(fflat, fdark, method="overall"):
-    """
-    Return a flat image:
-    dark subtracted and normalized either:
-    at each plane 'single' or
-    after median projection 'overall'
+    """Estimate image for flat correction.
+
+    First subtract the dark, then apply normalization either at each plane 'single'
+    or a 'overall' (default) median projection of all planes.
+
+    Parameters
+    ----------
+    fflat : str
+        File name of the stack to be processed.
+    fdark : str
+        File name of the dark image.
+    method : {'overall', 'single'}, optional
+        Choices in brackets, default first.
+
+    Returns
+    -------
+    flat : np.array
+        Flat image.
+    f : plt.figure
+        Plot of the flat image and its histogram.
+
     """
     # read files
     dark = io.imread(fdark, plugin="tifffile")
@@ -375,7 +413,9 @@ def flat(fflat, fdark, method="overall"):
 
 
 def common_path(path1, path2):
-    """Utility function to find common absolute path.
+    """Find common absolute path.
+
+    Utility function to find common absolute path.
 
     Parameters
     ----------
@@ -390,8 +430,7 @@ def common_path(path1, path2):
 
     Examples
     --------
-    >>> common_path('/home/dan/docs/arte/unimi/grafEPS.tgz', \
-                    '/home/dati/GBM_persson/')
+    >>> common_path('/home/dan/docs/arte/unimi/grafEPS.tgz', '/home/dati/GBM_persson/')
     ('/home', 'dan/docs/arte/unimi/grafEPS.tgz', 'dati/GBM_persson')
 
     """
@@ -403,7 +442,21 @@ def common_path(path1, path2):
 
 
 def zipread(fp):
-    """ Unzip and read a single TIF. Return the image (np.array)."""
+    """Unzip and read a single TIF.
+
+    Return the image (np.array).
+
+    Parameters
+    ----------
+    fp : str
+        File name to be processed.
+
+    Returns
+    -------
+     : np.array
+        Flat image.
+
+    """
     with zipfile.ZipFile(fp) as myzip:
         with myzip.open(myzip.filelist[0]) as myfile:
             return io.imread(myfile)

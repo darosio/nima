@@ -14,7 +14,7 @@ The numerical image analyses nimg
 
 .. include:: ../README.rst
 
-             
+
 Indices and tables
 ==================
 
@@ -22,4 +22,3 @@ Indices and tables
 * :ref:`modindex`
 
 ..
-

@@ -19,7 +19,7 @@ Installation
     $ pyenv virtualenv 3.6.13 nimg-0.3.1-py36
     $ poetry install
     $ pip install .
-    
+
 Optionally:
     $ python -m ipykernel install --user --name="nimg0.3.1"
 
@@ -54,8 +54,10 @@ my idea is to use global flake8 and black and no need to track linting and safet
 pyenv activate nimg-…
 poetry install
 pre-commit install
+before next first commit:
+pre-commit run --all-files
 
 todo
 ====
-pre-commit
-CI and static typing
+- restore sane complexity value
+- CI and static typing
