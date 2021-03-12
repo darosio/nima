@@ -36,6 +36,9 @@ tifffile = ">=0.12.1, <=2019.7.2"
 scipy = ">=0.18.1"
 docopt = "^0.6.2"
 
+[tool.poetry.scripts]
+nimg = "nimg.scripts:main"
+
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.2"
 coverage = {extras = ["toml"], version = "^5.5"}
@@ -59,8 +62,9 @@ show_missing = true
 # [tool.coverage.report]
 # fail_under = 100
 
-[tool.poetry.scripts]
-nimg = "nimg.scripts:main"
+[tool.isort]
+profile = "black"
+multi_line_output = 3
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

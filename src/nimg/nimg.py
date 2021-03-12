@@ -1,8 +1,9 @@
-"""nimg module contains functions for the analysis of multichannel timelapse
-images. It can be used to apply dark, flat correction; segment cells from bg;
-label cells; obtain statistics for each label; compute ratio and ratio images
-between channels.
+"""Main library module.
 
+Contains functions for the analysis of multichannel timelapse images. It can
+be used to apply dark, flat correction; segment cells from bg; label cells;
+obtain statistics for each label; compute ratio and ratio images between
+channels.
 """
 import matplotlib.colors
 import matplotlib.pyplot as plt
@@ -20,13 +21,28 @@ from skimage.morphology import disk
 
 def im_print(im, verbose=False):
     """Print useful information about im."""
-    print("ndim = ", im.ndim, "| shape = ", im.shape, '| max = ', im.max(),
-          '| min = ', im.min(), "| size = ", im.size, "| dtype = ", im.dtype)
+    print(
+        "ndim = ",
+        im.ndim,
+        "| shape = ",
+        im.shape,
+        "| max = ",
+        im.max(),
+        "| min = ",
+        im.min(),
+        "| size = ",
+        im.size,
+        "| dtype = ",
+        im.dtype,
+    )
     if verbose:
         if im.ndim == 3:
             for i, image in enumerate(im):
-                print("i = {0:4d} | size = {1} | zeros = {2}".format(
-                    i, image.size, np.count_nonzero(image == 0)))
+                print(
+                    "i = {0:4d} | size = {1} | zeros = {2}".format(
+                        i, image.size, np.count_nonzero(image == 0)
+                    )
+                )
 
 
 def myhist(im, bins=60, log=False, nf=0):
@@ -44,7 +60,7 @@ def myhist(im, bins=60, log=False, nf=0):
         plt.figure()
     plt.plot(bin_centers, hist, lw=2)
     if log:
-        plt.yscale('log')
+        plt.yscale("log")
 
 
 def plot_im_series(im, cmap=plt.cm.gray, horizontal=True, **kw):
@@ -62,9 +78,8 @@ def plot_im_series(im, cmap=plt.cm.gray, horizontal=True, **kw):
     for i, img in enumerate(im):
         plt.subplot(s + i)
         plt.imshow(img, cmap=cmap, **kw)
-        plt.axis('off')
-    plt.subplots_adjust(
-        wspace=0.02, hspace=0.02, top=1, bottom=0, left=0, right=1)
+        plt.axis("off")
+    plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0, left=0, right=1)
 
 
 def plot_otsu(im, cmap=plt.cm.gray):
@@ -79,9 +94,7 @@ def plot_otsu(im, cmap=plt.cm.gray):
     return mask
 
 
-def im_median(im,
-              radius=0,
-              footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])):
+def im_median(im, radius=0, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])):
     """Image median filter.
 
     Return the median filtered image *im*
@@ -151,8 +164,9 @@ def zproject(im, func=np.median):
         If the input image is not 3D.
 
     """
-    assert (im.ndim == 3 and len(im) == im.shape[0]), \
-        "Input must be 3D-grayscale (pln, row, col)"
+    assert (
+        im.ndim == 3 and len(im) == im.shape[0]
+    ), "Input must be 3D-grayscale (pln, row, col)"
     # maintain same dtype as input im; odd and even
     zproj = np.zeros(im.shape[1:]).astype(im.dtype)
     func(im[1:], axis=0, out=zproj)
@@ -160,7 +174,7 @@ def zproject(im, func=np.median):
 
 
 def read_tiff(fp, channels):
-    """ Read multichannel tif timelapse image.
+    """Read multichannel tif timelapse image.
 
     Parameters
     ----------
@@ -190,7 +204,7 @@ def read_tiff(fp, channels):
     im = tifffile.imread(fp)
     n_channels = len(channels)
     if len(im) % n_channels:
-        raise Exception('n_channel mismatch total lenght of tif sequence')
+        raise Exception("n_channel mismatch total lenght of tif sequence")
     else:
         d_im = {}
         for i, ch in enumerate(channels):
@@ -199,7 +213,7 @@ def read_tiff(fp, channels):
 
 
 def d_show(d_im, **kws):
-    """imshow for dictionary of image (d_im). Support plt.imshow kws."""
+    """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
     MAX_ROWS = 9
     n_channels = len(d_im.keys())
     first_channel = d_im[list(d_im.keys())[0]]
@@ -223,12 +237,11 @@ def d_show(d_im, **kws):
                 img0 = plt.imshow(d_im[ch], **kws)
             else:
                 img0 = plt.imshow(d_im[ch][r], **kws)
-            plt.colorbar(img0, orientation='vertical', pad=0.02, shrink=.85)
+            plt.colorbar(img0, orientation="vertical", pad=0.02, shrink=0.85)
             plt.xticks([])
             plt.yticks([])
-            plt.ylabel(ch + ' @ t = ' + str(r))
-    plt.subplots_adjust(
-        wspace=0.2, hspace=0.02, top=.9, bottom=.1, left=0, right=1)
+            plt.ylabel(ch + " @ t = " + str(r))
+    plt.subplots_adjust(wspace=0.2, hspace=0.02, top=0.9, bottom=0.1, left=0, right=1)
     return f
 
 
@@ -286,12 +299,7 @@ def d_shading(d_im, dark, flat, clip=True):
     return d_cor
 
 
-def bg(im,
-       kind='arcsinh',
-       perc=10,
-       radius=10,
-       adaptive_radius=None,
-       arcsinh_perc=80):
+def bg(im, kind="arcsinh", perc=10, radius=10, adaptive_radius=None, arcsinh_perc=80):
     """Bg segmentation.
 
     Return median, whole vector, figures (in a [list])
@@ -330,14 +338,14 @@ def bg(im,
         raise Exception("perc must be in [0, 100] range")
     else:
         perc /= 100
-    if kind == 'arcsinh':
+    if kind == "arcsinh":
         lim = np.arcsinh(im)
         lim = ndimage.percentile_filter(lim, arcsinh_perc, size=radius)
         lim_ = True
         title = radius, perc
         thr = (1 - perc) * lim.min() + perc * lim.max()
         m = lim < thr
-    elif kind == 'entropy':
+    elif kind == "entropy":
         if im.dtype == float:
             lim = filters.rank.entropy(im / im.max(), disk(radius))
         else:
@@ -346,12 +354,12 @@ def bg(im,
         title = radius, perc
         thr = (1 - perc) * lim.min() + perc * lim.max()
         m = lim < thr
-    elif kind == 'adaptive':
+    elif kind == "adaptive":
         lim_ = False
         title = adaptive_radius
         f = im > filters.threshold_local(im, adaptive_radius)
         m = ~f
-    elif kind == 'li_adaptive':
+    elif kind == "li_adaptive":
         lim_ = False
         title = adaptive_radius
         li = filters.threshold_li(im.copy())
@@ -360,7 +368,7 @@ def bg(im,
         imm = im * m
         f = imm > filters.threshold_local(imm, adaptive_radius)
         m = ~f * m
-    elif kind == 'li_li':
+    elif kind == "li_li":
         lim_ = False
         title = None
         li = filters.threshold_li(im.copy())
@@ -379,8 +387,8 @@ def bg(im,
     plt.subplot(121)
     masked = im * m
     img0 = plt.imshow(masked, cmap=plt.cm.inferno)
-    plt.colorbar(img0, orientation='horizontal')
-    plt.title(kind + ' ' + str(title) + '\n' + str(iqr))
+    plt.colorbar(img0, orientation="horizontal")
+    plt.title(kind + " " + str(title) + "\n" + str(iqr))
     #
     plt.subplot(122)
     myhist(im[m], log=True)
@@ -390,7 +398,7 @@ def bg(im,
         f2 = plt.figure(figsize=(9, 4))
         plt.subplot(131)
         img0 = plt.imshow(lim)
-        plt.colorbar(img0, orientation='horizontal')
+        plt.colorbar(img0, orientation="horizontal")
         #
         plt.subplot(132)
         myhist(lim)
@@ -405,11 +413,11 @@ def bg(im,
         # plt.make_patch_spines_invisible(par)
         # Second, show the right spine.
         par.spines["bottom"].set_visible(True)
-        par.set_xlabel('perc')
+        par.set_xlabel("perc")
         par.set_xlim(0, 0.5)
         par.grid()
         host.set_xlim(lim.min(), lim.min() + delta)
-        p = np.linspace(.025, .5, 20)
+        p = np.linspace(0.025, 0.5, 20)
         for t in rng:
             m = lim < t
             ave.append(im[m].mean())
@@ -423,7 +431,7 @@ def bg(im,
         return iqr[1], pixel_values, [f1]
 
 
-def d_bg(d_im, downscale=None, kind='li_adaptive', clip=True, **kw):
+def d_bg(d_im, downscale=None, kind="li_adaptive", clip=True, **kw):
     """Bg segmentation for d_im.
 
     Parameters
@@ -476,14 +484,16 @@ def d_bg(d_im, downscale=None, kind='li_adaptive', clip=True, **kw):
     return d_cor, bgs, d_fig, d_bg_values
 
 
-def d_mask_label(d_im,
-                 min_size=640,
-                 channels=['C', 'G', 'R'],
-                 threshold_method='yen',
-                 wiener=False,
-                 watershed=False,
-                 clear_border=False,
-                 randomwalk=False):
+def d_mask_label(
+    d_im,
+    min_size=640,
+    channels=["C", "G", "R"],
+    threshold_method="yen",
+    wiener=False,
+    watershed=False,
+    clear_border=False,
+    randomwalk=False,
+):
     """Label cells in d_im. Add two keys, mask and label.
 
     Perform plane-by-plane (2D image):
@@ -529,18 +539,18 @@ def d_mask_label(d_im,
         ga *= d_im[ch]
     ga = np.power(ga, 1 / len(channels))
     if wiener:
-        ga_wiener = np.zeros_like(d_im['G'])
+        ga_wiener = np.zeros_like(d_im["G"])
         shape = (3, 3)  # for 3D (1, 4, 4)
         for i, im in enumerate(ga):
             ga_wiener[i] = signal.wiener(im, shape)
     else:
         ga_wiener = ga
-    if threshold_method == 'yen':
+    if threshold_method == "yen":
         threshold_function = skimage.filters.threshold_yen
-    elif threshold_method == 'li':
+    elif threshold_method == "li":
         threshold_function = skimage.filters.threshold_li
     mask = []
-    for i, im in enumerate(ga_wiener):
+    for _, im in enumerate(ga_wiener):
         m = im > threshold_function(im)
         m = skimage.morphology.remove_small_objects(m, min_size=min_size)
         m = skimage.morphology.closing(m)
@@ -548,7 +558,7 @@ def d_mask_label(d_im,
         if clear_border:
             m = skimage.segmentation.clear_border(m)
         mask.append(m)
-    d_im['mask'] = mask
+    d_im["mask"] = mask
     labels, n_labels = ndimage.label(mask)
     # TODO if any timepoint mask is empty cluster labels
 
@@ -558,7 +568,8 @@ def d_mask_label(d_im,
         # TODO: Voronoi? depends critically on max_diameter.
         distance = ndimage.distance_transform_edt(mask)
         pr = skimage.measure.regionprops(
-            labels[0], intensity_image=d_im[channels[0]][0])
+            labels[0], intensity_image=d_im[channels[0]][0]
+        )
         max_diameter = pr[0].equivalent_diameter
         size = max_diameter * 2.20
         for p in pr[1:]:
@@ -572,20 +583,20 @@ def d_mask_label(d_im,
                 footprint=np.ones((size, size)),
                 min_distance=size,
                 indices=False,
-                exclude_border=False)
+                exclude_border=False,
+            )
             markers = skimage.measure.label(local_maxi)
             print(np.unique(markers))
             if randomwalk:
                 markers[~mask[time]] = -1
-                labels_ws = skimage.segmentation.random_walker(
-                    mask[time], markers)
+                labels_ws = skimage.segmentation.random_walker(mask[time], markers)
             else:
                 labels_ws = skimage.morphology.watershed(-d, markers, mask=l)
             labels[time] = labels_ws
-    d_im['labels'] = labels
+    d_im["labels"] = labels
 
 
-def d_ratio(d_im, name='r_cl', channels=['C', 'R'], radii=(7, 3)):
+def d_ratio(d_im, name="r_cl", channels=["C", "R"], radii=(7, 3)):
     """Ratio image between 2 channels in d_im.
 
     Add masked (bg=0; fg=ratio) median-filtered ratio for 2 channels. So, d_im
@@ -618,16 +629,18 @@ def d_ratio(d_im, name='r_cl', channels=['C', 'R'], radii=(7, 3)):
         ratio[i] = pd.DataFrame(r).replace([-np.inf, np.nan, np.inf], 0)
         for radius in radii:
             ratio[i] = ndimage.median_filter(ratio[i], radius)
-        ratio[i] *= d_im['mask'][i]
+        ratio[i] *= d_im["mask"][i]
     d_im[name] = ratio
 
 
-def d_meas_props(d_im,
-                 channels=['C', 'G', 'R'],
-                 channels_cl=['C', 'R'],
-                 channels_pH=['G', 'C'],
-                 ratios_from_image=True,
-                 radii=None):
+def d_meas_props(
+    d_im,
+    channels=["C", "G", "R"],
+    channels_cl=["C", "R"],
+    channels_pH=["G", "C"],
+    ratios_from_image=True,
+    radii=None,
+):
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
@@ -661,57 +674,59 @@ def d_meas_props(d_im,
     pr = {}
     for ch in channels:
         pr[ch] = []
-        for time, label_im in enumerate(d_im['labels']):
+        for time, label_im in enumerate(d_im["labels"]):
             im = d_im[ch][time]
             props = skimage.measure.regionprops(label_im, intensity_image=im)
             pr[ch].append(props)
 
     meas = {}
     # labels are 3D and "0" is always label for background
-    labels = np.unique(d_im['labels'])[1:]
+    labels = np.unique(d_im["labels"])[1:]
     for label in labels:
         idx = []
         d = {ch: [] for ch in channels}
-        d['equivalent_diameter'] = []
-        d['eccentricity'] = []
-        d['area'] = []
+        d["equivalent_diameter"] = []
+        d["eccentricity"] = []
+        d["area"] = []
         for time, props in enumerate(pr[channels[0]]):
             try:
                 i_label = [prop.label == label for prop in props].index(True)
                 prop_ch0 = props[i_label]
                 idx.append(time)
-                d['equivalent_diameter'].append(prop_ch0.equivalent_diameter)
-                d['eccentricity'].append(prop_ch0.eccentricity)
-                d['area'].append(prop_ch0.area)
+                d["equivalent_diameter"].append(prop_ch0.equivalent_diameter)
+                d["eccentricity"].append(prop_ch0.eccentricity)
+                d["area"].append(prop_ch0.area)
                 for ch in pr:
                     d[ch].append(pr[ch][time][i_label].mean_intensity)
             except ValueError:
                 pass  # label is absent in this timepoint
         df = pd.DataFrame(d, index=idx)
-        df['r_cl'] = df[channels_cl[0]] / df[channels_cl[1]]
-        df['r_pH'] = df[channels_pH[0]] / df[channels_pH[1]]
+        df["r_cl"] = df[channels_cl[0]] / df[channels_cl[1]]
+        df["r_pH"] = df[channels_pH[0]] / df[channels_pH[1]]
         meas[label] = df
 
     if ratios_from_image:
         kwargs = {}
         if radii:
-            kwargs['radii'] = radii
-        d_ratio(d_im, 'r_cl', channels=channels_cl, **kwargs)
-        d_ratio(d_im, 'r_pH', channels=channels_pH, **kwargs)
+            kwargs["radii"] = radii
+        d_ratio(d_im, "r_cl", channels=channels_cl, **kwargs)
+        d_ratio(d_im, "r_pH", channels=channels_pH, **kwargs)
         r_pH = []
         r_cl = []
-        for time, (pH, cl) in enumerate(zip(d_im['r_pH'], d_im['r_cl'])):
-            r_pH.append(ndimage.median(pH, d_im['labels'][time], index=labels))
-            r_cl.append(ndimage.median(cl, d_im['labels'][time], index=labels))
+        for time, (pH, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"])):
+            r_pH.append(ndimage.median(pH, d_im["labels"][time], index=labels))
+            r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels))
         ratios_pH = np.array(r_pH)
         ratios_cl = np.array(r_cl)
         for label in meas:
-            df = pd.DataFrame({
-                'r_pH_median': ratios_pH[:, label - 1],
-                'r_cl_median': ratios_cl[:, label - 1]
-            })
+            df = pd.DataFrame(
+                {
+                    "r_pH_median": ratios_pH[:, label - 1],
+                    "r_cl_median": ratios_cl[:, label - 1],
+                }
+            )
             # concat only on index that are present in both
-            meas[label] = pd.concat([meas[label], df], axis=1, join='inner')
+            meas[label] = pd.concat([meas[label], df], axis=1, join="inner")
 
     return meas, pr
 
@@ -737,7 +752,7 @@ def d_plot_meas(bgs, meas, channels):
         Figure.
 
     """
-    colors = ['k', 'b', 'g', 'r', 'y', 'c', 'm']
+    colors = ["k", "b", "g", "r", "y", "c", "m"]
     NCOLS = 2
     n_axes = len(channels) + 3  # 2 ratios and 1 bg axes
     nrows = int(np.ceil(n_axes / NCOLS))
@@ -747,22 +762,20 @@ def d_plot_meas(bgs, meas, channels):
     for k, df in meas.items():
         legend.append(k)
         color = colors[(k - 1) % len(colors)]
-        df['r_pH'].plot(marker='o', color=color, ax=axes[0, 0])
-        df['r_cl'].plot(marker='o', color=color, ax=axes[0, 1])
+        df["r_pH"].plot(marker="o", color=color, ax=axes[0, 0])
+        df["r_cl"].plot(marker="o", color=color, ax=axes[0, 1])
     for k, df in meas.items():
         color = colors[(k - 1) % len(colors)]
-        if 'r_pH_median' in df:
-            df['r_pH_median'].plot(
-                style='--', color=color, lw=2, ax=axes[0, 0])
-        if 'r_cl_median' in df:
-            df['r_cl_median'].plot(
-                style='--', color=color, lw=2, ax=axes[0, 1])
-    axes[0, 0].set_ylabel('r_pH')
+        if "r_pH_median" in df:
+            df["r_pH_median"].plot(style="--", color=color, lw=2, ax=axes[0, 0])
+        if "r_cl_median" in df:
+            df["r_cl_median"].plot(style="--", color=color, lw=2, ax=axes[0, 1])
+    axes[0, 0].set_ylabel("r_pH")
     axes[0, 0].grid()
-    axes[0, 1].set_ylabel('r_cl')
+    axes[0, 1].set_ylabel("r_cl")
     axes[0, 1].grid()
-    axes[0, 0].set_title('pH')
-    axes[0, 1].set_title('Cl')
+    axes[0, 0].set_title("pH")
+    axes[0, 1].set_title("Cl")
     axes[0, 0].legend(legend)
 
     for n, ch in enumerate(channels, 2):
@@ -770,21 +783,21 @@ def d_plot_meas(bgs, meas, channels):
         j = n % NCOLS  # * 2
         for k, df in meas.items():
             color = colors[(k - 1) % len(colors)]
-            df[ch].plot(marker='o', color=color, ax=axes[i, j])
+            df[ch].plot(marker="o", color=color, ax=axes[i, j])
         axes[i, j].set_title(ch)
         axes[i, j].grid()
 
     ch_colors = [
-        i.lower() if i.lower() in matplotlib.colors.BASE_COLORS else 'k'
+        i.lower() if i.lower() in matplotlib.colors.BASE_COLORS else "k"
         for i in bgs.columns
     ]
     if n_axes == nrows * NCOLS:
-        axes.ravel()[-2].set_xlabel('time')
-        axes.ravel()[-1].set_xlabel('time')
+        axes.ravel()[-2].set_xlabel("time")
+        axes.ravel()[-1].set_xlabel("time")
         bgs.plot(ax=axes[nrows - 1, NCOLS - 1], grid=True, color=ch_colors)
     else:
-        axes.ravel()[-3].set_xlabel('time')
-        axes.ravel()[-2].set_xlabel('time')
+        axes.ravel()[-3].set_xlabel("time")
+        axes.ravel()[-2].set_xlabel("time")
         bgs.plot(ax=axes[nrows - 1, NCOLS - 2], grid=True, color=ch_colors)
         ax = axes.ravel()[-1]
         plt.delaxes(ax)
