@@ -623,8 +623,12 @@ def d_ratio(d_im, name="r_cl", channels=["C", "R"], radii=(7, 3)):
     -------
     None
 
+    Add a key named "name" and containing the calculated ratio to d_im.
+
     """
-    ratio = d_im[channels[0]] / d_im[channels[1]]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        # 0/0 and num/0 can both happen.
+        ratio = d_im[channels[0]] / d_im[channels[1]]
     for i, r in enumerate(ratio):
         ratio[i] = pd.DataFrame(r).replace([-np.inf, np.nan, np.inf], 0)
         for radius in radii:

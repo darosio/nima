@@ -19,14 +19,13 @@ def result_folder(tmpdir_factory, request):
     filename = os.path.join("tests", "data", request.param[0] + ".tif")
     cmd_line = ["nimg", filename, "G", "R", "C", "-o", tmpdir]
     p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    p.wait()
+    # p.wait()
     return tmpdir, request.param, p
 
 
 def test_printout(result_folder):
-    """Test both warnings for divide by zero and time points number (pd>=0.19)."""
+    """It outputs the correct value for 'Times'."""
     stdout, stderr = result_folder[2].communicate()
-    assert "true_divide" in str(stderr)
     assert (
         int(str(stdout).split("Times:")[1].split("\\n")[0].strip())
         == result_folder[1][1]
