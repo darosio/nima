@@ -57,6 +57,11 @@ pre-commit install
 before next first commit:
 pre-commit run --all-files
 
+pyenv activare nimg-0.2
+poetry install
+pip install .
+so it is not installed in development mode and this version will persist to updates.
+
 todo
 ====
 - restore sane complexity value

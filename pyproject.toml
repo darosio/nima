@@ -23,7 +23,7 @@ include = [
 
 
 [tool.poetry.dependencies]
-python = "~3.6.4"
+python = "^3.6.4"
 numpy = ">=1.16"
 pandas = ">=0.19"
 scikit-image = ">=0.14"
