@@ -332,7 +332,7 @@ def bg(im, kind="arcsinh", perc=10, radius=10, adaptive_radius=None, arcsinh_per
     """
     if adaptive_radius is None:
         adaptive_radius = im.shape[1] / 2
-        if adaptive_radius % 2 == 0:  # 0.12.0 check for even number
+        if adaptive_radius % 2 == 0:  # sk >0.12.0 check for even value
             adaptive_radius += 1
     if perc < 0 or perc > 100:
         raise Exception("perc must be in [0, 100] range")

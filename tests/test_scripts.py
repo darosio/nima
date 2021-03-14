@@ -19,7 +19,6 @@ def result_folder(tmpdir_factory, request):
     filename = os.path.join("tests", "data", request.param[0] + ".tif")
     cmd_line = ["nimg", filename, "G", "R", "C", "-o", tmpdir]
     p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # p.wait()
     return tmpdir, request.param, p
 
 
@@ -68,4 +67,7 @@ class TestOutputFiles:
         fp_result = result_folder[0].join(result_folder[1][0] + f)
         expected = skimage.io.imread(fp_expected)
         result = skimage.io.imread(str(fp_result))
-        assert skimage.measure.compare_ssim(expected, result, multichannel=True) > ssim
+        assert (
+            skimage.metrics.structural_similarity(expected, result, multichannel=True)
+            > ssim
+        )
