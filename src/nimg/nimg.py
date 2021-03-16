@@ -201,15 +201,27 @@ def read_tiff(fp, channels):
     (3, 4)
 
     """
-    im = tifffile.imread(fp)
     n_channels = len(channels)
-    if len(im) % n_channels:
+    with tifffile.TiffFile(fp) as tif:
+        im = tif.asarray()
+        axes = tif.series[0].axes
+    idx = axes.rfind("T")
+    if idx >= 0:
+        n_times = im.shape[idx]
+    else:
+        n_times = 1
+    if im.shape[axes.rfind("C")] % n_channels:
         raise Exception("n_channel mismatch total lenght of tif sequence")
     else:
         d_im = {}
         for i, ch in enumerate(channels):
-            d_im[ch] = im[i::n_channels]
-        return d_im, n_channels, len(im) // n_channels
+            # FIXME: must be 'TCYX' or 'ZCYX'
+            if len(axes) == 4:
+                d_im[ch] = im[:, i]  # im[i::n_channels]
+            elif len(axes) == 3:
+                d_im[ch] = im[np.newaxis, i]
+        print(d_im["G"].shape)
+        return d_im, n_channels, n_times
 
 
 def d_show(d_im, **kws):
@@ -217,10 +229,7 @@ def d_show(d_im, **kws):
     MAX_ROWS = 9
     n_channels = len(d_im.keys())
     first_channel = d_im[list(d_im.keys())[0]]
-    if first_channel.ndim == 2:
-        n_times = 1
-    elif first_channel.ndim == 3:
-        n_times = len(first_channel)
+    n_times = len(first_channel)
     if n_times <= MAX_ROWS:
         rng = range(n_times)
         n_rows = n_times
@@ -233,10 +242,7 @@ def d_show(d_im, **kws):
     for n, ch in enumerate(sorted(d_im.keys())):
         for i, r in enumerate(rng):
             plt.subplot(n_rows, n_channels, i * n_channels + n + 1)
-            if n_times == 1:
-                img0 = plt.imshow(d_im[ch], **kws)
-            else:
-                img0 = plt.imshow(d_im[ch][r], **kws)
+            img0 = plt.imshow(d_im[ch][r], **kws)
             plt.colorbar(img0, orientation="vertical", pad=0.02, shrink=0.85)
             plt.xticks([])
             plt.yticks([])

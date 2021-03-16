@@ -41,7 +41,7 @@ def safety(session):
         session.run("safety", "check", f"--file={requirements.name}", "--full-report")
 
 
-@nox.session(python=["3.6", "3.7", "3.8", "3.9"])
+@nox.session(python=["3.7", "3.8", "3.9"])
 def tests(session):
     """Run the test suite."""
     args = session.posargs or ["--cov"]
@@ -49,7 +49,7 @@ def tests(session):
     session.run("pytest", *args)
 
 
-@nox.session(python=["3.6", "3.7", "3.8", "3.9"])
+@nox.session(python=["3.7", "3.8", "3.9"])
 def xdoctest(session):
     """Run examples with xdoctest."""
     args = session.posargs or ["all"]
