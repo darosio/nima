@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nimg"
-version = "0.3.1"
+version = "0.3.2"
 description = ""
 authors = ["daniele arosio <daniele.arosio@cnr.it>"]
 license = "BSD-3-Clause"
@@ -23,7 +23,7 @@ include = [
 
 
 [tool.poetry.dependencies]
-python = "^3.6.4"
+python = "^3.7"
 numpy = ">=1.16"
 pandas = ">=0.19"
 scikit-image = ">=0.14"
@@ -32,7 +32,7 @@ scikit-image = ">=0.14"
 # {version = "~0.14.0", python = "^3.7"}
 # ]
 matplotlib = ">=2.0.0"
-tifffile = ">=0.12.1, <=2019.7.2"
+tifffile = ">2019.7.2"          #changed an OME recognition check and "IYX" -> "TCYX"
 scipy = ">=0.18.1"
 docopt = "^0.6.2"
 
