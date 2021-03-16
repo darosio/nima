@@ -1,12 +1,14 @@
 """Tests for nimg script."""
-import filecmp
 import os
 import subprocess
 
 import numpy as np
+import pandas as pd
 import pytest
 import skimage.io
 import skimage.measure
+from matplotlib.testing.compare import compare_images
+from matplotlib.testing.exceptions import ImageComparisonFailure
 
 # test data: (rootname, times)
 rootnames = [("1b_c16_15", 4)]
@@ -39,7 +41,9 @@ class TestOutputFiles:
         """It checks csv tables."""
         fp_expected = os.path.join("tests/data/output/", result_folder[1][0], f)
         fp_result = result_folder[0].join(os.path.join(result_folder[1][0], f))
-        assert filecmp.cmp(fp_result, fp_expected)
+        expected = pd.read_csv(fp_expected)
+        result = pd.read_csv(fp_result)
+        pd.testing.assert_frame_equal(expected, result, atol=1e-15)
 
     @pytest.mark.parametrize(
         "f",
@@ -58,16 +62,25 @@ class TestOutputFiles:
         fp_result = result_folder[0].join(os.path.join(result_folder[1][0], f))
         expected = skimage.io.imread(fp_expected)
         result = skimage.io.imread(str(fp_result))  # for utf8 encoding?
-        assert np.sum(result - expected) == 0
+        assert np.sum(result - expected) == pytest.approx(0, 2.3e-06)
 
-    @pytest.mark.parametrize("f, ssim", [("_dim.png", 0.93), ("_meas.png", 0.64)])
-    def test_png(self, result_folder, f, ssim):
+    @pytest.mark.parametrize("f, tol", [("_dim.png", 0.001), ("_meas.png", 0.1)])
+    def test_png(self, result_folder, f, tol):
         """It checks png files: saved segmentation and analysis."""
         fp_expected = os.path.join("tests/data/output/", result_folder[1][0] + f)
         fp_result = result_folder[0].join(result_folder[1][0] + f)
-        expected = skimage.io.imread(fp_expected)
-        result = skimage.io.imread(str(fp_result))
-        assert (
-            skimage.metrics.structural_similarity(expected, result, multichannel=True)
-            > ssim
-        )
+        msg = compare_images(fp_expected, fp_result, tol)
+        if msg:
+            raise ImageComparisonFailure(msg)
+
+    @pytest.mark.parametrize(
+        "f", ["bg-C-li_adaptive.pdf", "bg-G-li_adaptive.pdf", "bg-R-li_adaptive.pdf"]
+    )
+    def test_pdf(self, result_folder, f):
+        """It checks pdf files: saved bg estimation."""
+        fp_expected = os.path.join("tests/data/output/", result_folder[1][0], f)
+        fp_result = result_folder[0].join(os.path.join(result_folder[1][0], f))
+        msg = compare_images(fp_expected, fp_result, 0.0001)
+        os.remove(fp_expected[:-4] + "_pdf.png")
+        if msg:
+            raise ImageComparisonFailure(msg)
