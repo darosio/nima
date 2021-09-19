@@ -94,54 +94,6 @@ def plot_otsu(im, cmap=plt.cm.gray):
     return mask
 
 
-def im_median(im, radius=0, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])):
-    """Image median filter.
-
-    Return the median filtered image *im*
-    plane by plane with e.g. radius=3 calculate 3D median filter.
-
-    Parameters
-    ----------
-    im : np.array
-        either 2D or 3D image
-    radius : float, optional
-        Do 3D filtering as it simply uses ndimage.filters.median_filter
-        (default 0: do not use 3D but 2D filtering with footprint).
-    footprint : np.array, optional
-        default is equivalent to skimage.morphology.disk(1) and to median
-        filter of Fiji/ImageJ with radius=0.5.
-
-    Returns
-    -------
-    np.array
-        Filtered image; preserve dtype of input im.
-
-    Examples
-    --------
-    >>> im = np.indices([3, 3]).sum(axis=0)
-    >>> im
-    array([[0, 1, 2],
-           [1, 2, 3],
-           [2, 3, 4]])
-    >>> im_median(im, footprint=np.ones((5, 5)))
-    array([[2, 2, 2],
-           [2, 2, 2],
-           [2, 2, 2]])
-
-    """
-    filter = ndimage.filters.median_filter
-    if radius:
-        return filter(im, size=radius)
-    else:
-        if im.ndim == 2:
-            return filter(im, footprint=footprint)
-        else:
-            imf = np.zeros(im.shape).astype(im.dtype)
-            for i, img in enumerate(im):
-                imf[i] = filter(img, footprint=footprint)
-            return imf
-
-
 def zproject(im, func=np.median):
     """Perform z-projection of a 3D image.
 
@@ -251,12 +203,32 @@ def d_show(d_im, **kws):
     return f
 
 
-# median
 def d_median(d_im):
-    """Median filter on dictionary of image (d_im). Return a new d_im copy."""
+    """Median filter on dictionary of image (d_im).
+
+    Same to skimage.morphology.disk(1) and to median filter of Fiji/ImageJ
+    with radius=0.5.
+
+    Parameters
+    ----------
+    d_im : dict of images
+
+    Return
+    ------
+    d_im : dict of images
+        preserve dtype of input
+
+    """
     d_out = {}
     for k, im in d_im.items():
-        d_out[k] = im_median(im)
+        disk = skimage.morphology.disk(1)
+        if im.ndim == 3:
+            sel = np.conj((np.zeros((3, 3)), disk, np.zeros((3, 3))))
+            d_out[k] = ndimage.median_filter(im, footprint=sel)
+        elif im.ndim == 2:
+            d_out[k] = ndimage.median_filter(im, footprint=disk)
+        else:
+            raise Exception("Only for single image or stack (3D).")
     return d_out
 
 
@@ -493,7 +465,7 @@ def d_bg(d_im, downscale=None, kind="li_adaptive", clip=True, **kw):
 def d_mask_label(
     d_im,
     min_size=640,
-    channels=["C", "G", "R"],
+    channels=("C", "G", "R"),
     threshold_method="yen",
     wiener=False,
     watershed=False,
@@ -538,6 +510,9 @@ def d_mask_label(
     Returns
     -------
     None
+
+    Side effects:
+        Add a 'label' key to the d_im.
 
     """
     ga = d_im[channels[0]].copy()
@@ -602,7 +577,7 @@ def d_mask_label(
     d_im["labels"] = labels
 
 
-def d_ratio(d_im, name="r_cl", channels=["C", "R"], radii=(7, 3)):
+def d_ratio(d_im, name="r_cl", channels=("C", "R"), radii=(7, 3)):
     """Ratio image between 2 channels in d_im.
 
     Add masked (bg=0; fg=ratio) median-filtered ratio for 2 channels. So, d_im
@@ -645,9 +620,9 @@ def d_ratio(d_im, name="r_cl", channels=["C", "R"], radii=(7, 3)):
 
 def d_meas_props(
     d_im,
-    channels=["C", "G", "R"],
-    channels_cl=["C", "R"],
-    channels_pH=["G", "C"],
+    channels=("C", "G", "R"),
+    channels_cl=("C", "R"),
+    channels_pH=("G", "C"),
     ratios_from_image=True,
     radii=None,
 ):

@@ -280,7 +280,10 @@ def dark(fp, thr=95):
     """
     im = zipread(fp)
     zp = ni.zproject(im)
-    imf = ni.im_median(zp)
+    # imf = ni.im_median(zp)
+    imf = ndimage.median_filter(
+        im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    )
     f = plt.figure(figsize=(6.75, 9.25))
     plt.suptitle("DARK stack")
     #
@@ -352,12 +355,18 @@ def flat(fflat, fdark, method="overall"):
     ims = im - dark
     if method == "overall":
         flat = np.median(ims, axis=0)
-        flat = ni.im_median(flat)
+        # flat = ni.im_median(flat)
+        flat = ndimage.median_filter(
+            im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+        )
         flat = flat / np.mean(flat)
     if method == "single":
         ims = ims.astype(float)
         for i, im in enumerate(ims):
-            ims[i] = ni.im_median(im)
+            # ims[i] = ni.im_median(im)
+            ims[i] = ndimage.median_filter(
+                im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+            )
             ims[i] = ims[i] / np.mean(ims[i])
         flat = np.median(ims, axis=0)
     # Pdf output
