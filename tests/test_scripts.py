@@ -80,7 +80,7 @@ class TestOutputFiles:
         """It checks pdf files: saved bg estimation."""
         fp_expected = os.path.join("tests/data/output/", result_folder[1][0], f)
         fp_result = result_folder[0].join(os.path.join(result_folder[1][0], f))
-        msg = compare_images(fp_expected, fp_result, 0.0001)
+        msg = compare_images(fp_expected, fp_result, 0.11)
         os.remove(fp_expected[:-4] + "_pdf.png")
         if msg:
             raise ImageComparisonFailure(msg)
