@@ -1,20 +1,19 @@
 """Nox sessions."""
-
-import tempfile
-
 import nox
+import nox_poetry
+from nox_poetry.sessions import Session
 
 package = "nimg"
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
+nox.options.sessions = "lint", "tests", "xdoctest", "docs"
 
 
-@nox.session(python="3.9")
-def lint(session):
+@nox_poetry.session(python="3.10")
+def lint(session: Session) -> None:
     """Lint using flake8."""
     args = session.posargs or locations
     session.install(
         "flake8",
-        "flake8-bandit",
         "flake8-black",
         "flake8-bugbear",
         "flake8-docstrings",
@@ -22,44 +21,30 @@ def lint(session):
         "flake8-import-order",
     )
     session.run("flake8", *args)
+    # TODO: other linters session.run("rst-lint", "README.rst")  # for PyPI readme.rst
 
 
-@nox.session(python="3.9")
-def safety(session):
-    """Scan dependencies for insecure packages."""
-    with tempfile.NamedTemporaryFile() as requirements:
-        session.run(
-            "poetry",
-            "export",
-            "--dev",
-            "--format=requirements.txt",
-            "--without-hashes",
-            f"--output={requirements.name}",
-            external=True,
-        )
-        session.install("safety")
-        session.run("safety", "check", f"--file={requirements.name}", "--full-report")
-
-
-@nox.session(python=["3.7", "3.8", "3.9"])
-def tests(session):
+@nox_poetry.session(python=["3.8", "3.9", "3.10"])
+def tests(session: Session) -> None:
     """Run the test suite."""
-    args = session.posargs or ["--cov"]
-    session.run("poetry", "install", external=True)
+    args = session.posargs or ["--cov", "-v"]
+    session.install("coverage[toml]", "pytest", "pytest-cov", ".")
     session.run("pytest", *args)
 
 
-@nox.session(python=["3.7", "3.8", "3.9"])
-def xdoctest(session):
+@nox_poetry.session(python=["3.8", "3.9", "3.10"])
+def xdoctest(session: Session) -> None:
     """Run examples with xdoctest."""
     args = session.posargs or ["all"]
-    session.run("poetry", "install", external=True)
+    session.install("xdoctest", "pygments", ".")
     session.run("python", "-m", "xdoctest", package, *args)
 
 
-@nox.session(python="3.9")
-def docs(session):
+@nox_poetry.session(python="3.10")
+def docs(session: Session) -> None:
     """Build the documentation."""
-    # session.install("sphinx")
-    session.run("poetry", "install", external=True)
+    session.install(
+        "sphinx",
+        ".",
+    )
     session.run("sphinx-build", "docs", "docs/_build")
