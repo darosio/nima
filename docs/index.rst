@@ -8,8 +8,8 @@ The numerical image analyses nimg
    :maxdepth: 3
 
    License <license>
-   Authors <authors>
-   Changelog <changelog>
+   AUTHORS.md
+   CHANGELOG.md
    Module Reference <reference>
 
 .. include:: ../README.rst

@@ -64,7 +64,8 @@ class TestOutputFiles:
         result = skimage.io.imread(str(fp_result))  # for utf8 encoding?
         assert np.sum(result - expected) == pytest.approx(0, 2.3e-06)
 
-    @pytest.mark.parametrize("f, tol", [("_dim.png", 0.001), ("_meas.png", 0.1)])
+    # @pytest.mark.mpl_image_compare(remove_text=True, tolerance=13)
+    @pytest.mark.parametrize("f, tol", [("_dim.png", 8.001), ("_meas.png", 0.1)])
     def test_png(self, result_folder, f, tol):
         """It checks png files: saved segmentation and analysis."""
         fp_expected = os.path.join("tests/data/output/", result_folder[1][0] + f)

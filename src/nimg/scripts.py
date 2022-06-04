@@ -114,7 +114,7 @@ def main():
         bname = "dark-" + os.path.splitext(os.path.basename(fzip))[0]
         f.savefig(bname + ".pdf")
         # TODO suppress UserWarning low contrast is actually expected here
-        io.imsave(bname + ".tif", dark_im, plugin="tifffile")
+        io.imrite(bname + ".tif", dark_im, plugin="tifffile")
         dark_hotpixels.to_csv(bname + ".csv")
         print("median [ IQR ] = ", np.median(dark_im), np.percentile(dark_im, [25, 75]))
     elif args["flat"]:
@@ -131,7 +131,7 @@ def main():
             + os.path.splitext(os.path.basename(fdark))[0]
         )
         f.savefig(bname + ".pdf")
-        io.imsave(bname + ".tif", flat_im, plugin="tifffile")
+        io.imwrite(bname + ".tif", flat_im)
     else:
         # parsing
         channels = args["CHANNELS"]
@@ -251,9 +251,9 @@ def main():
         objs = ndimage.find_objects(d_im_bg["labels"])
         for k, o in enumerate(objs):
             name = os.path.join(bname, "label" + str(k + 1) + "_rcl.tif")
-            tifffile.imsave(name, d_im_bg["r_cl"][o], compress=9)
+            tifffile.imwrite(name, d_im_bg["r_cl"][o], compression="lzma")
             name = os.path.join(bname, "label" + str(k + 1) + "_rpH.tif")
-            tifffile.imsave(name, d_im_bg["r_pH"][o], compress=9)
+            tifffile.imwrite(name, d_im_bg["r_pH"][o], compression="lzma")
 
 
 def dark(fp, thr=95):
@@ -271,7 +271,7 @@ def dark(fp, thr=95):
     Returns
     -------
     imf : np.array
-        Filtered image; preserve dtype of input im.
+        Filtered image; pre0serve dtype of input im.
     df_hp: pd.DataFrame
         Coordinates (x,y) and values for all hotpixels.
     f : plt.figure
