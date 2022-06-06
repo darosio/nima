@@ -35,7 +35,7 @@ class Test_zproject:
 
     def test_raise_exception_2D_input(self):
         """It raises exception ..."""
-        with pytest.raises(AssertionError) as err:
+        with pytest.raises(ValueError) as err:
             ni.zproject(self.im[0])
         assert str(err.value) == "Input must be 3D-grayscale (pln, row, col)"
 

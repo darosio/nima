@@ -99,7 +99,6 @@ def zproject(im, func=np.median):
 
     func must support axis= and out= API like np.median, np.mean, np.percentile
 
-
     Parameters
     ----------
     im : np.array
@@ -112,13 +111,12 @@ def zproject(im, func=np.median):
 
     Raises
     ------
-    AssertionError
+    ValueError
         If the input image is not 3D.
 
     """
-    assert (
-        im.ndim == 3 and len(im) == im.shape[0]
-    ), "Input must be 3D-grayscale (pln, row, col)"
+    if im.ndim != 3 or len(im) != im.shape[0]:
+        raise ValueError("Input must be 3D-grayscale (pln, row, col)")
     # maintain same dtype as input im; odd and even
     zproj = np.zeros(im.shape[1:]).astype(im.dtype)
     func(im[1:], axis=0, out=zproj)
@@ -257,9 +255,10 @@ def d_shading(d_im, dark, flat, clip=True):
 
     """
     # TODO inplace=True tosave memory
-    raise_msg = "Unexpected imput"
-    assert type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg
-    assert type(flat) == np.ndarray or flat.keys() == d_im.keys(), raise_msg
+    # raise_msg = "Unexpected input"
+    # assert type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg
+    # assert type(flat) == np.ndarray or flat.keys() == d_im.keys(),
+    # raise_msg will be replaced by type checking.
     d_cor = {}
     for k in d_im.keys():
         d_cor[k] = d_im[k].astype(float)

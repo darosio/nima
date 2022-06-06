@@ -4,7 +4,7 @@ import nox_poetry
 from nox_poetry.sessions import Session
 
 package = "nimg"
-locations = "src", "tests", "noxfile.py", "docs/conf.py"
+locations = "src", "tests", "./noxfile.py", "docs/conf.py"
 nox.options.sessions = "lint", "tests", "docs"
 
 
@@ -16,6 +16,7 @@ def lint(session: Session) -> None:
         "flake8",
         "flake8-black",
         "flake8-bugbear",
+        "flake8-bandit",
         "flake8-docstrings",
         "darglint",
         "flake8-import-order",
