@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 0.3.5 - 2022-06-10
+### Added
+- [Build] mypy checking (yet imperfect).
+
+### Changed
+- Some plot graphics have improved.
+
 ## Version 0.3.4 - 2022-06-05
 ### Added
 - Markdown for sphinx.

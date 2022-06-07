@@ -77,27 +77,29 @@ Options:
 import os
 import sys
 import zipfile
+from typing import Any, Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import tifffile
-from docopt import docopt
-from matplotlib.backends.backend_pdf import PdfPages
-from scipy import ndimage
-from skimage import io
+import tifffile  # type: ignore
+from docopt import docopt  # type: ignore
+from matplotlib.backends.backend_pdf import PdfPages  # type: ignore
+from numpy.typing import NDArray
+from scipy import ndimage  # type: ignore
+from skimage import io  # type: ignore
 
-import nimg.nimg as ni
-import nimg.scripts
 from nimg import __version__ as version
+from nimg import nimg, scripts
+from nimg.nimg import ImArray
 
-mpl.rcParams["figure.max_open_warning"] = 199
+mpl.rcParams["figure.max_open_warning"] = 199  # type: ignore
 methods_bg = ("entropy", "arcsinh", "adaptive", "li_adaptive", "li_li")
 methods_fg = ("yen", "li")
 
 
-def main():
+def main() -> None:
     """Docopt script.
 
     XXX: reduce complexity
@@ -109,7 +111,7 @@ def main():
         # parsing
         fzip = args["<zipfile>"]
         # computation
-        dark_im, dark_hotpixels, f = nimg.scripts.dark(fzip)
+        dark_im, dark_hotpixels, f = scripts.dark(fzip)
         # output
         bname = "dark-" + os.path.splitext(os.path.basename(fzip))[0]
         f.savefig(bname + ".pdf")
@@ -122,7 +124,7 @@ def main():
         fdark = args["<darkfile>"]
         fflat = args["<zipfile>"]
         # computation
-        flat_im, f = nimg.scripts.flat(fflat, fdark)
+        flat_im, f = scripts.flat(fflat, fdark)
         # output
         bname = (
             "flat-"
@@ -189,19 +191,19 @@ def main():
         print(kwargs_meas_props)
 
         # computation
-        d_im, _, t = ni.read_tiff(args["TIFFSTK"], channels)
+        d_im, _, t = nimg.read_tiff(args["TIFFSTK"], channels)
         if not args["--silent"]:
             print("  Times: ", t)
         if args["--hotpixels"]:
-            d_im = ni.d_median(d_im)
+            d_im = nimg.d_median(d_im)
         if args["--flat"]:
-            dark, _, _ = ni.read_tiff(args["--dark"], channels)
-            flat, _, _ = ni.read_tiff(args["--flat"], channels)
-            d_im = ni.d_shading(d_im, dark, flat, clip=True)
-        d_im_bg, bgs, ff, _bgv = ni.d_bg(d_im, **kwargs_bg)  # clip=True
+            dark, _, _ = nimg.read_tiff(args["--dark"], channels)
+            flat, _, _ = nimg.read_tiff(args["--flat"], channels)
+            d_im = nimg.d_shading(d_im, dark, flat, clip=True)
+        d_im_bg, bgs, ff, _bgv = nimg.d_bg(d_im, **kwargs_bg)  # clip=True
         # dim I got a problem with 'li' and unique label for 19 1.10_15 af16 ds
-        ni.d_mask_label(d_im_bg, **kwargs_mask_label)
-        meas, pr = ni.d_meas_props(d_im_bg, **kwargs_meas_props)
+        nimg.d_mask_label(d_im_bg, **kwargs_mask_label)
+        meas, pr = nimg.d_meas_props(d_im_bg, **kwargs_meas_props)
 
         # output for bg
         bname = os.path.basename(args["TIFFSTK"])
@@ -211,10 +213,10 @@ def main():
         if not os.path.exists(bname):
             os.makedirs(bname)
         bname_bg = os.path.join(bname, "bg")
-        for ch in ff.keys():
+        for ch, llf in ff.items():
             pp = PdfPages(bname_bg + "-" + ch + "-" + method_bg + ".pdf")
-            for _, f in enumerate(ff[ch]):
-                for f_i in f:
+            for lf in llf:
+                for f_i in lf:
                     pp.savefig(f_i)  # e.g. entropy output 2 figs
             pp.close()
         column_order = ["C", "G", "R"]
@@ -222,13 +224,13 @@ def main():
         # TODO: plt.close('all') or control mpl warning
 
         # output for fg (target)
-        f = ni.d_plot_meas(bgs, meas, channels=channels)
+        f = nimg.d_plot_meas(bgs, meas, channels=channels)
         f.savefig(bname + "_meas.png")
         ##
         # show all channels and labels only.
         d = {ch: d_im_bg[ch] for ch in channels}
         d["labels"] = d_im_bg["labels"]
-        f = ni.d_show(d, cmap=plt.cm.inferno_r)
+        f = nimg.d_show(d, cmap=plt.cm.inferno_r)  # type: ignore
         f.savefig(bname + "_dim.png")
         ##
         # meas csv
@@ -249,14 +251,14 @@ def main():
         ##
         # labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
         objs = ndimage.find_objects(d_im_bg["labels"])
-        for k, o in enumerate(objs):
-            name = os.path.join(bname, "label" + str(k + 1) + "_rcl.tif")
+        for n, o in enumerate(objs):
+            name = os.path.join(bname, "label" + str(n + 1) + "_rcl.tif")
             tifffile.imwrite(name, d_im_bg["r_cl"][o], compression="lzma")
-            name = os.path.join(bname, "label" + str(k + 1) + "_rpH.tif")
+            name = os.path.join(bname, "label" + str(n + 1) + "_rpH.tif")
             tifffile.imwrite(name, d_im_bg["r_pH"][o], compression="lzma")
 
 
-def dark(fp, thr=95):
+def dark(fp: str, thr: int = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
     """Estimate image for dark correction.
 
     Read zip; median z-project; median filter(1).
@@ -279,33 +281,33 @@ def dark(fp, thr=95):
 
     """
     im = zipread(fp)
-    zp = ni.zproject(im)
+    zp = nimg.zproject(im)
     # imf = ni.im_median(zp)
     imf = ndimage.median_filter(
         im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     )
     f = plt.figure(figsize=(6.75, 9.25))
-    plt.suptitle("DARK stack")
+    f.suptitle("DARK stack")
     #
-    with plt.style.context("seaborn-ticks"):
-        plt.subplot(321)
-        plt.hist(imf.ravel(), bins=256, histtype="step", lw=4)
-        plt.yscale("log")
+    with plt.style.context("seaborn-ticks"):  # type: ignore
+        plt.subplot(321)  # type: ignore
+        plt.hist(imf.ravel(), bins=256, histtype="step", lw=4)  # type: ignore
+        plt.yscale("log")  # type: ignore
         plt.title("DARK image")
     #
-    plt.subplot(322)
-    plt.imshow(imf, cmap=plt.cm.inferno_r)
-    plt.colorbar()
-    plt.axis("off")
+    plt.subplot(322)  # type: ignore
+    plt.imshow(imf, cmap=plt.cm.inferno_r)  # type: ignore
+    plt.colorbar()  # type: ignore
+    plt.axis("off")  # type: ignore
     plt.title("exported DARK image")
     #
-    with plt.style.context("seaborn-ticks"):
-        plt.subplot(323)
-        plt.hist(im.ravel(), bins=256, histtype="step", lw=4)
-        plt.yscale("log")
+    with plt.style.context("seaborn-ticks"):  # type: ignore
+        plt.subplot(323)  # type: ignore
+        plt.hist(im.ravel(), bins=256, histtype="step", lw=4)  # type: ignore
+        plt.yscale("log")  # type: ignore
         plt.title("original stack")
     #
-    plt.subplot(324)
+    plt.subplot(324)  # type: ignore
     # hot pixels; cast to float because uint screwed up to range max
     d = imf.astype(float) - zp.astype(float)
     thr = np.std(d) * thr
@@ -313,17 +315,19 @@ def dark(fp, thr=95):
     df_hp = pd.DataFrame(
         {"row": hot_pixels[0], "col": hot_pixels[1], "val": zp[hot_pixels]}
     )
-    plt.imshow(zp)
+    plt.imshow(zp)  # type: ignore
     plt.plot(hot_pixels[1], hot_pixels[0], "r+", mfc="none", mec="w", ms=18)
-    plt.colorbar()
-    plt.axis("off")
+    plt.colorbar()  # type: ignore
+    plt.axis("off")  # type: ignore
     plt.title("projected stack")
     #
-    plt.tight_layout()
+    f.tight_layout()
     return imf, df_hp, f
 
 
-def flat(fflat, fdark, method="overall"):
+def flat(
+    fflat: str, fdark: str, method: str = "overall"
+) -> Tuple[NDArray[np.float_], plt.Figure]:
     """Estimate image for flat correction.
 
     First subtract the dark, then apply normalization either at each plane 'single'
@@ -373,7 +377,7 @@ def flat(fflat, fdark, method="overall"):
     f = plt.figure(figsize=(6.75, 9.25))
     f.suptitle("FLAT stack")
     # table
-    ax = plt.subplot2grid((6, 4), (0, 0), colspan=4)
+    ax = plt.subplot2grid((6, 4), (0, 0), colspan=4)  # type: ignore
     ax.set_axis_off()
     # http://nipunbatra.github.io/2014/08/latexify/
     params = {
@@ -381,47 +385,47 @@ def flat(fflat, fdark, method="overall"):
         "font.size": 9,
         "font.family": "serif",
     }
-    mpl.rcParams.update(params)
+    mpl.rcParams.update(params)  # type: ignore
     fcommon, fdark_relative, fflat_relative = common_path(fdark, fflat)
     data = pd.Series(
-        [fcommon, fdark_relative, fflat_relative],
-        name="Files",
-        index=["root", "dark", "flat"],
+        data=[fcommon, fdark_relative, fflat_relative],
+        index=pd.Index(["root", "dark", "flat"]),
+        name="Files",  # type: ignore
     )
-    pd.tools.plotting.table(ax=ax, data=data, loc=3)
-    mpl.rcdefaults()
+    pd.tools.plotting.table(ax=ax, data=data, loc=3)  # type: ignore
+    mpl.rcdefaults()  # type: ignore
     # FLAT
-    ax0 = plt.subplot2grid((6, 4), (1, 0), colspan=3, rowspan=3)
-    plt.axis("off")
+    ax0 = plt.subplot2grid((6, 4), (1, 0), colspan=3, rowspan=3)  # type: ignore
+    plt.axis("off")  # type: ignore
     img0 = ax0.imshow(flat)
-    plt.title("exported FLAT image")
-    ax1 = plt.subplot2grid((6, 4), (1, 3), colspan=1, rowspan=3)
-    plt.axis("off")
-    plt.colorbar(img0, ax=ax1, fraction=0.9, shrink=0.78, aspect=14)
+    ax0.set_title("exported FLAT image")
+    ax1 = plt.subplot2grid((6, 4), (1, 3), colspan=1, rowspan=3)  # type: ignore
+    plt.axis("off")  # type: ignore
+    plt.colorbar(img0, ax=ax1, fraction=0.9, shrink=0.78, aspect=14)  # type: ignore
     #
     # hist flat
-    with plt.style.context("seaborn-ticks"):
-        plt.subplot2grid((6, 4), (4, 0), colspan=2, rowspan=2)
-        plt.hist(flat.ravel(), bins=256, histtype="step", lw=2, color="crimson")
-        plt.yscale("log")
+    with plt.style.context("seaborn-ticks"):  # type: ignore
+        plt.subplot2grid((6, 4), (4, 0), colspan=2, rowspan=2)  # type: ignore
+        plt.hist(flat.ravel(), bins=256, histtype="step", lw=2, color="crimson")  # type: ignore
+        plt.yscale("log")  # type: ignore
         plt.grid()
         plt.title("FLAT image")
     # hist stack
-    with plt.style.context("seaborn-ticks"):
-        plt.subplot2grid((6, 4), (4, 2), colspan=2, rowspan=2)
-        plt.hist(im.ravel(), bins=256, histtype="step", lw=2, color="grey")
-        plt.yscale("log")
+    with plt.style.context("seaborn-ticks"):  # type: ignore
+        plt.subplot2grid((6, 4), (4, 2), colspan=2, rowspan=2)  # type: ignore
+        plt.hist(im.ravel(), bins=256, histtype="step", lw=2, color="grey")  # type: ignore
+        plt.yscale("log")  # type: ignore
         plt.ylim(
             0.1,
         )
         plt.grid()
         plt.title("original stack")
     #
-    plt.tight_layout()
+    f.tight_layout()
     return flat, f
 
 
-def common_path(path1, path2):
+def common_path(path1: str, path2: str) -> Tuple[str, str, str]:
     """Find common absolute path.
 
     Utility function to find common absolute path.
@@ -450,7 +454,7 @@ def common_path(path1, path2):
     return fcommon, f1, f2
 
 
-def zipread(fp):
+def zipread(fp: str) -> Any:
     """Unzip and read a single TIF.
 
     Return the image (np.array).

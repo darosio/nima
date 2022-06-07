@@ -5,21 +5,30 @@ be used to apply dark, flat correction; segment cells from bg; label cells;
 obtain statistics for each label; compute ratio and ratio images between
 channels.
 """
-import matplotlib.colors
+from collections import defaultdict
+from itertools import chain
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
+
+import matplotlib as mpl
+import matplotlib.cm
+import matplotlib.colors  # type: ignore
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import skimage
-import skimage.feature
-import skimage.segmentation
-import skimage.transform
-import tifffile
-from scipy import ndimage, signal
+import skimage  # type: ignore
+import skimage.feature  # type: ignore
+import skimage.segmentation  # type: ignore
+import skimage.transform  # type: ignore
+import tifffile  # type: ignore
+from numpy.typing import NDArray
+from scipy import ndimage, signal  # type: ignore
 from skimage import filters
-from skimage.morphology import disk
+from skimage.morphology import disk  # type: ignore
+
+ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_])
 
 
-def im_print(im, verbose=False):
+def im_print(im: ImArray, verbose: bool = False) -> None:
     """Print useful information about im."""
     print(
         "ndim = ",
@@ -45,56 +54,69 @@ def im_print(im, verbose=False):
                 )
 
 
-def myhist(im, bins=60, log=False, nf=0):
+def myhist(
+    im: ImArray,
+    bins: int = 60,
+    log: bool = False,
+    nf: bool = False,
+) -> None:
     """Plot image intensity as histogram.
 
     ..note:: Consider deprecation.
 
     """
-    # sns.set_style('ticks', {'axes.grid': True})
-    # sns.pointplot(imf.flatten(), kde=False,
-    #               hist_kws={"histtype": "step", "linewidth": 3})
     hist, bin_edges = np.histogram(im, bins=bins)
     bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
     if nf:
         plt.figure()
     plt.plot(bin_centers, hist, lw=2)
     if log:
-        plt.yscale("log")
+        plt.yscale("log")  # type: ignore
 
 
-def plot_im_series(im, cmap=plt.cm.gray, horizontal=True, **kw):
+def plot_im_series(
+    im: ImArray,
+    cmap: matplotlib.colors.Colormap = matplotlib.colors.BASE_COLORS,
+    horizontal: bool = True,
+    **kw: Any,
+) -> None:
     """Plot a image series with a maximum of 9 elements.
 
     ..note:: Consider deprecation. Use d_show() instead.
 
     """
     if horizontal:
-        plt.figure(figsize=(12, 5.6))
+        fig = plt.figure(figsize=(12, 5.6))
         s = 100 + len(im) * 10 + 1
     else:
-        plt.figure(figsize=(5.6, 12))
+        fig = plt.figure(figsize=(5.6, 12))
         s = len(im) * 100 + 10 + 1
     for i, img in enumerate(im):
-        plt.subplot(s + i)
-        plt.imshow(img, cmap=cmap, **kw)
-        plt.axis("off")
+        ax = fig.add_subplot(s + i)
+        # plt.subplot(s + i)
+        ax.imshow(img, cmap=cmap, **kw)
+        # plt.imshow(img, cmap=cmap, **kw)
+        plt.axis("off")  # type: ignore
     plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0, left=0, right=1)
 
 
-def plot_otsu(im, cmap=plt.cm.gray):
+def plot_otsu(
+    im: ImArray, cmap: Optional[mpl.colors.Colormap] = None
+) -> NDArray[np.bool_]:
     """Otsu threshold and plot im_series.
 
     .. note:: Consider deprecation.
 
     """
+    if not cmap:
+        cmap = plt.cm.gray  # type: ignore
     val = filters.threshold_otsu(im)
     mask = im > val
     plot_im_series(im * mask, cmap=cmap)
-    return mask
+    return np.array(mask)
 
 
-def zproject(im, func=np.median):
+def zproject(im: ImArray, func: Callable[[Any], Any] = np.median) -> ImArray:
     """Perform z-projection of a 3D image.
 
     func must support axis= and out= API like np.median, np.mean, np.percentile
@@ -119,11 +141,11 @@ def zproject(im, func=np.median):
         raise ValueError("Input must be 3D-grayscale (pln, row, col)")
     # maintain same dtype as input im; odd and even
     zproj = np.zeros(im.shape[1:]).astype(im.dtype)
-    func(im[1:], axis=0, out=zproj)
+    func(im[1:], axis=0, out=zproj)  # type: ignore
     return zproj
 
 
-def read_tiff(fp, channels):
+def read_tiff(fp: str, channels: List[str]) -> Tuple[Dict[str, ImArray], int, int]:
     """Read multichannel tif timelapse image.
 
     Parameters
@@ -174,7 +196,7 @@ def read_tiff(fp, channels):
         return d_im, n_channels, n_times
 
 
-def d_show(d_im, **kws):
+def d_show(d_im: Dict[str, ImArray], **kws: Any) -> plt.Figure:
     """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
     MAX_ROWS = 9
     n_channels = len(d_im.keys())
@@ -191,9 +213,11 @@ def d_show(d_im, **kws):
     f = plt.figure(figsize=(16, 16))
     for n, ch in enumerate(sorted(d_im.keys())):
         for i, r in enumerate(rng):
-            plt.subplot(n_rows, n_channels, i * n_channels + n + 1)
-            img0 = plt.imshow(d_im[ch][r], **kws)
-            plt.colorbar(img0, orientation="vertical", pad=0.02, shrink=0.85)
+            ax = f.add_subplot(n_rows, n_channels, i * n_channels + n + 1)
+            img0 = ax.imshow(d_im[ch][r], **kws)
+            plt.colorbar(  # type: ignore
+                img0, ax=ax, orientation="vertical", pad=0.02, shrink=0.85
+            )
             plt.xticks([])
             plt.yticks([])
             plt.ylabel(ch + " @ t = " + str(r))
@@ -201,7 +225,7 @@ def d_show(d_im, **kws):
     return f
 
 
-def d_median(d_im):
+def d_median(d_im: Dict[str, ImArray]) -> Dict[str, ImArray]:
     """Median filter on dictionary of image (d_im).
 
     Same to skimage.morphology.disk(1) and to median filter of Fiji/ImageJ
@@ -230,7 +254,12 @@ def d_median(d_im):
     return d_out
 
 
-def d_shading(d_im, dark, flat, clip=True):
+def d_shading(
+    d_im: Dict[str, ImArray],
+    dark: Union[Dict[str, ImArray], NDArray[np.float_]],
+    flat: Union[Dict[str, ImArray], NDArray[np.float_]],
+    clip: bool = True,
+) -> Dict[str, ImArray]:
     """Shading correction on d_im.
 
     Subtract dark; then divide by flat.
@@ -276,7 +305,14 @@ def d_shading(d_im, dark, flat, clip=True):
     return d_cor
 
 
-def bg(im, kind="arcsinh", perc=10, radius=10, adaptive_radius=None, arcsinh_perc=80):
+def bg(
+    im: NDArray[Any],
+    kind: str = "arcsinh",
+    perc: float = 10.0,
+    radius: int = 10,
+    adaptive_radius: Optional[int] = None,
+    arcsinh_perc: int = 80,
+) -> Tuple[float, pd.DataFrame, List[Any]]:
     """Bg segmentation.
 
     Return median, whole vector, figures (in a [list])
@@ -308,7 +344,7 @@ def bg(im, kind="arcsinh", perc=10, radius=10, adaptive_radius=None, arcsinh_per
 
     """
     if adaptive_radius is None:
-        adaptive_radius = im.shape[1] / 2
+        adaptive_radius = int(im.shape[1] / 2)
         if adaptive_radius % 2 == 0:  # sk >0.12.0 check for even value
             adaptive_radius += 1
     if perc < 0 or perc > 100:
@@ -319,7 +355,7 @@ def bg(im, kind="arcsinh", perc=10, radius=10, adaptive_radius=None, arcsinh_per
         lim = np.arcsinh(im)
         lim = ndimage.percentile_filter(lim, arcsinh_perc, size=radius)
         lim_ = True
-        title = radius, perc
+        title: Any = radius, perc
         thr = (1 - perc) * lim.min() + perc * lim.max()
         m = lim < thr
     elif kind == "entropy":
@@ -361,26 +397,26 @@ def bg(im, kind="arcsinh", perc=10, radius=10, adaptive_radius=None, arcsinh_per
     iqr = np.percentile(pixel_values, [25, 50, 75])
     #
     f1 = plt.figure(figsize=(9, 5))
-    plt.subplot(121)
+    ax1 = f1.add_subplot(121)
     masked = im * m
-    img0 = plt.imshow(masked, cmap=plt.cm.inferno)
-    plt.colorbar(img0, orientation="horizontal")
+    cmap = plt.cm.inferno  # type: ignore
+    img0 = ax1.imshow(masked, cmap=cmap)
+    plt.colorbar(img0, ax=ax1, orientation="horizontal")  # type:ignore
     plt.title(kind + " " + str(title) + "\n" + str(iqr))
     #
-    plt.subplot(122)
+    f1.add_subplot(122)
     myhist(im[m], log=True)
-    plt.tight_layout()
+    f1.tight_layout()
 
     if lim_:
         f2 = plt.figure(figsize=(9, 4))
-        plt.subplot(131)
-        img0 = plt.imshow(lim)
-        plt.colorbar(img0, orientation="horizontal")
-        #
-        plt.subplot(132)
+        ax1, ax2, host = f2.subplots(nrows=1, ncols=3)  # type: ignore
+        img0 = ax1.imshow(lim)
+        plt.colorbar(img0, ax=ax2, orientation="horizontal")  # type: ignore
+        # FIXME: this is horribly duplicating an axes
+        f2.add_subplot(132)
         myhist(lim)
         #
-        host = plt.subplot(133)
         # plot bg vs. perc
         ave, sd, median = ([], [], [])
         delta = lim.max() - lim.min()
@@ -408,7 +444,18 @@ def bg(im, kind="arcsinh", perc=10, radius=10, adaptive_radius=None, arcsinh_per
         return iqr[1], pixel_values, [f1]
 
 
-def d_bg(d_im, downscale=None, kind="li_adaptive", clip=True, **kw):
+def d_bg(
+    d_im: Dict[str, ImArray],
+    downscale: Optional[Tuple[int, int]] = None,
+    kind: str = "li_adaptive",
+    clip: bool = True,
+    **kw: Any,
+) -> Tuple[
+    Dict[str, ImArray],
+    pd.DataFrame,
+    Dict[str, List[List[plt.Figure]]],
+    Dict[str, List[Any]],
+]:
     """Bg segmentation for d_im.
 
     Parameters
@@ -436,15 +483,12 @@ def d_bg(d_im, downscale=None, kind="li_adaptive", clip=True, **kw):
     d_bg_values :
 
     """
-    d_bg = {}
-    d_bg_values = {}
-    d_cor = {}
-    d_fig = {}
+    d_bg = defaultdict(list)
+    d_bg_values = defaultdict(list)
+    d_cor = defaultdict(list)
+    d_fig = defaultdict(list)
+    dd_cor: Dict[str, NDArray[Any]] = {}
     for k in d_im.keys():
-        d_bg[k] = []
-        d_bg_values[k] = []
-        d_cor[k] = []
-        d_fig[k] = []
         for t, im in enumerate(d_im[k]):
             if downscale:
                 im = skimage.transform.downscale_local_mean(im, downscale)
@@ -453,24 +497,24 @@ def d_bg(d_im, downscale=None, kind="li_adaptive", clip=True, **kw):
             d_bg_values[k].append(v)
             d_cor[k].append(d_im[k][t] - med)
             d_fig[k].append(ff)
-        d_cor[k] = np.array(d_cor[k])
+        dd_cor[k] = np.array(d_cor[k])
     if clip:
         for k in d_cor.keys():
-            d_cor[k] = d_cor[k].clip(0)
-    bgs = pd.DataFrame(d_bg)
-    return d_cor, bgs, d_fig, d_bg_values
+            dd_cor[k] = dd_cor[k].clip(0)
+    bgs = pd.DataFrame({k: np.array(v) for k, v in d_bg.items()})
+    return dd_cor, bgs, d_fig, d_bg_values
 
 
 def d_mask_label(
-    d_im,
-    min_size=640,
-    channels=("C", "G", "R"),
-    threshold_method="yen",
-    wiener=False,
-    watershed=False,
-    clear_border=False,
-    randomwalk=False,
-):
+    d_im: Dict[str, ImArray],
+    min_size: int = 640,
+    channels: Sequence[str] = ("C", "G", "R"),
+    threshold_method: str = "yen",
+    wiener: bool = False,
+    watershed: bool = False,
+    clear_border: bool = False,
+    randomwalk: bool = False,
+) -> None:
     """Label cells in d_im. Add two keys, mask and label.
 
     Perform plane-by-plane (2D image):
@@ -538,7 +582,7 @@ def d_mask_label(
         if clear_border:
             m = skimage.segmentation.clear_border(m)
         mask.append(m)
-    d_im["mask"] = mask
+    d_im["mask"] = np.array(mask)
     labels, n_labels = ndimage.label(mask)
     # TODO if any timepoint mask is empty cluster labels
 
@@ -576,7 +620,12 @@ def d_mask_label(
     d_im["labels"] = labels
 
 
-def d_ratio(d_im, name="r_cl", channels=("C", "R"), radii=(7, 3)):
+def d_ratio(
+    d_im: Dict[str, NDArray[Any]],
+    name: str = "r_cl",
+    channels: Tuple[str, str] = ("C", "R"),
+    radii: Tuple[int, int] = (7, 3),
+) -> None:
     """Ratio image between 2 channels in d_im.
 
     Add masked (bg=0; fg=ratio) median-filtered ratio for 2 channels. So, d_im
@@ -610,21 +659,22 @@ def d_ratio(d_im, name="r_cl", channels=("C", "R"), radii=(7, 3)):
         # 0/0 and num/0 can both happen.
         ratio = d_im[channels[0]] / d_im[channels[1]]
     for i, r in enumerate(ratio):
-        ratio[i] = pd.DataFrame(r).replace([-np.inf, np.nan, np.inf], 0)
+        # ratio[i] = pd.DataFrame(r).replace([-np.inf, np.nan, np.inf], 0)
+        np.nan_to_num(r, copy=False, posinf=0, neginf=0)
         for radius in radii:
-            ratio[i] = ndimage.median_filter(ratio[i], radius)
-        ratio[i] *= d_im["mask"][i]
+            r = ndimage.median_filter(r, radius)
+        ratio[i] = r * d_im["mask"][i]
     d_im[name] = ratio
 
 
 def d_meas_props(
-    d_im,
-    channels=("C", "G", "R"),
-    channels_cl=("C", "R"),
-    channels_pH=("G", "C"),
-    ratios_from_image=True,
-    radii=None,
-):
+    d_im: Dict[str, ImArray],
+    channels: Sequence[str] = ("C", "G", "R"),
+    channels_cl: Tuple[str, str] = ("C", "R"),
+    channels_pH: Tuple[str, str] = ("G", "C"),
+    ratios_from_image: bool = True,
+    radii: Optional[Tuple[int, int]] = None,
+) -> Tuple[Dict[str, pd.DataFrame], Dict[str, List[Any]]]:
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
@@ -635,12 +685,10 @@ def d_meas_props(
         Name (default='r_cl') for the new key.
     channels : list of string
         All d_im channels (default=['C', 'G', 'R']).
-    channels_cl : list of string
-        Names (default=['C', 'R']) for the two channels [Numerator,
-        Denominator] for cl ratio.
-    channels_pH : list of string
-        Names (default=['G', 'C']) for the two channels [Numerator,
-        Denominator] for pH ratio.
+    channels_cl : tuple of string
+        Names (default=('C', 'R')) of the numerator and denominator channels for cl ratio.
+    channels_pH : tuple of string
+        Names (default=('G', 'C')) of the numerator and denominator channels for pH ratio.
     ratios_from_image : bool, optional
         Boolean (default=True) for executing d_ratio i.e. compute ratio images.
 
@@ -655,23 +703,19 @@ def d_meas_props(
         For each channel: {'channel': [props]} i.e. {'channel': [time][label]}.
 
     """
-    pr = {}
+    pr: Dict[str, List[Any]] = defaultdict(list)
     for ch in channels:
         pr[ch] = []
         for time, label_im in enumerate(d_im["labels"]):
             im = d_im[ch][time]
             props = skimage.measure.regionprops(label_im, intensity_image=im)
             pr[ch].append(props)
-
     meas = {}
     # labels are 3D and "0" is always label for background
     labels = np.unique(d_im["labels"])[1:]
     for label in labels:
         idx = []
-        d = {ch: [] for ch in channels}
-        d["equivalent_diameter"] = []
-        d["eccentricity"] = []
-        d["area"] = []
+        d = defaultdict(list)
         for time, props in enumerate(pr[channels[0]]):
             try:
                 i_label = [prop.label == label for prop in props].index(True)
@@ -684,11 +728,10 @@ def d_meas_props(
                     d[ch].append(pr[ch][time][i_label].mean_intensity)
             except ValueError:
                 pass  # label is absent in this timepoint
-        df = pd.DataFrame(d, index=idx)
+        df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
         df["r_cl"] = df[channels_cl[0]] / df[channels_cl[1]]
         df["r_pH"] = df[channels_pH[0]] / df[channels_pH[1]]
         meas[label] = df
-
     if ratios_from_image:
         kwargs = {}
         if radii:
@@ -710,12 +753,13 @@ def d_meas_props(
                 }
             )
             # concat only on index that are present in both
-            meas[label] = pd.concat([meas[label], df], axis=1, join="inner")
-
+            meas[label] = pd.concat([meas[label], df], axis=1, join="inner")  # type: ignore
     return meas, pr
 
 
-def d_plot_meas(bgs, meas, channels):
+def d_plot_meas(
+    bgs: pd.DataFrame, meas: Dict[str, pd.DataFrame], channels: List[str]
+) -> plt.Figure:
     """Plot meas object.
 
     Plot r_pH, r_cl, mean intensity for each channel and estimated bg over
@@ -732,59 +776,53 @@ def d_plot_meas(bgs, meas, channels):
 
     Returns
     -------
-    fig : plt.fig
+    fig : plt.Figure
         Figure.
 
     """
-    colors = ["k", "b", "g", "r", "y", "c", "m"]
     NCOLS = 2
     n_axes = len(channels) + 3  # 2 ratios and 1 bg axes
     nrows = int(np.ceil(n_axes / NCOLS))
-    fig, axes = plt.subplots(nrows, NCOLS, figsize=(NCOLS * 5, nrows * 3))
-    # r_pH with legend
-    legend = []
+    # colors by segmented r.o.i. id and channel names
+    id_colors = mpl.cm.Set2.colors  # type: ignore
+    ch_colors = {
+        k: k.lower() if k.lower() in mpl.colors.BASE_COLORS else "k" for k in channels
+    }
+    fig = plt.figure(figsize=(NCOLS * 5, nrows * 3))
+    axes = fig.subplots(nrows, NCOLS)  # type: ignore
     for k, df in meas.items():
-        legend.append(k)
-        color = colors[(k - 1) % len(colors)]
-        df["r_pH"].plot(marker="o", color=color, ax=axes[0, 0])
-        df["r_cl"].plot(marker="o", color=color, ax=axes[0, 1])
-    for k, df in meas.items():
-        color = colors[(k - 1) % len(colors)]
+        c = id_colors[(int(k) - 1) % len(id_colors)]
+        axes[0, 0].plot(df["r_pH"], marker="o", color=c, label=k)
+        axes[0, 1].plot(df["r_cl"], marker="o", color=c)
         if "r_pH_median" in df:
-            df["r_pH_median"].plot(style="--", color=color, lw=2, ax=axes[0, 0])
+            axes[0, 0].plot(df["r_pH_median"], color=c, linestyle="--", lw=2, label="")
         if "r_cl_median" in df:
-            df["r_cl_median"].plot(style="--", color=color, lw=2, ax=axes[0, 1])
+            axes[0, 1].plot(df["r_cl_median"], color=c, linestyle="--", lw=2, label="")
+    axes[0, 1].set_ylabel("r_Cl")
     axes[0, 0].set_ylabel("r_pH")
-    axes[0, 0].grid()
-    axes[0, 1].set_ylabel("r_cl")
-    axes[0, 1].grid()
     axes[0, 0].set_title("pH")
     axes[0, 1].set_title("Cl")
-    axes[0, 0].legend(legend)
+    axes[0, 0].grid()
+    axes[0, 1].grid()
+    axes[0, 0].legend()
 
     for n, ch in enumerate(channels, 2):
         i = n // NCOLS
         j = n % NCOLS  # * 2
-        for k, df in meas.items():
-            color = colors[(k - 1) % len(colors)]
-            df[ch].plot(marker="o", color=color, ax=axes[i, j])
+        for df in meas.values():
+            axes[i, j].plot(df[ch], marker="o", color=ch_colors[ch])
         axes[i, j].set_title(ch)
         axes[i, j].grid()
-
-    ch_colors = [
-        i.lower() if i.lower() in matplotlib.colors.BASE_COLORS else "k"
-        for i in bgs.columns
-    ]
     if n_axes == nrows * NCOLS:
-        axes.ravel()[-2].set_xlabel("time")
-        axes.ravel()[-1].set_xlabel("time")
-        bgs.plot(ax=axes[nrows - 1, NCOLS - 1], grid=True, color=ch_colors)
+        axes.flat[-2].set_xlabel("time")
+        axes.flat[-1].set_xlabel("time")
+        bgs.plot(ax=axes[nrows - 1, NCOLS - 1], grid=True, color=ch_colors)  # type: ignore
     else:
-        axes.ravel()[-3].set_xlabel("time")
-        axes.ravel()[-2].set_xlabel("time")
-        bgs.plot(ax=axes[nrows - 1, NCOLS - 2], grid=True, color=ch_colors)
-        ax = axes.ravel()[-1]
-        plt.delaxes(ax)
+        axes.flat[-3].set_xlabel("time")
+        axes.flat[-2].set_xlabel("time")
+        bgs.plot(ax=axes[nrows - 1, NCOLS - 2], grid=True, color=ch_colors)  # type: ignore
+        ax = list(chain(*axes))[-1]
+        ax.remove()
 
     fig.tight_layout()
     return fig
