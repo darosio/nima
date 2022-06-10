@@ -1,5 +1,21 @@
 # Changelog
 
+
+## Version 0.4.0 - 2022-06-13
+### Added
+- [doc] Sphinx_click.
+
+### Changed
+- Click for the cli.
+- Separated `nimg` from `bias dark|flat`.
+
+### Removed
+- docopt.
+- [build] flake8-import-order. Will use isort in pre-commit.
+
+### Fixed
+- [build] Remove mypy cache every run.
+
 ## Version 0.3.5 - 2022-06-10
 ### Added
 - [Build] mypy checking (yet imperfect).

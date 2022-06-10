@@ -634,7 +634,7 @@ def d_ratio(
     After ratio computation any -inf, nan and inf values are replaced with 0.
     These values should be generated (upon ratio) only in the bg. You can
     check:
-        r_cl[d_im['labels']==4].min()
+    r_cl[d_im['labels']==4].min()
 
     Parameters
     ----------

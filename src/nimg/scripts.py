@@ -1,79 +1,4 @@
-"""
-Analyze a multichannel tiff stack e.g. [G, R, C, G2] in timelapse.
-
-Create 'nimg' folder and for each TIFFSTK save:
-    - bname_dim.png   dictionary image with segmentation.
-    - bname_meas.png  plot of image bg and for each label values of channel
-                      intensities and pH and Cl ratio.
-    - bname/bg.csv    bg (value for each timepoint).
-    - for each channel CH:
-    - bname/bg-CH-MTH.pdf    Bg image and histogram for each timepoint.
-    - for each label X:
-    - bname/labelX.csv       Channels, ratios and properties values.
-    - bname/labelX_rcl.tif   Image stack of the cl ratio for label X.
-    - bname/labelX_rpH.tif   Image stack of the pH ratio for label X.
-
-`nimg dark` read a stack of dark images (tiff-zip) and save (in current dir):
-    - DARK image = median filter of median projection.
-    - plot (histograms, median, projection, hot pixels).
-    - csv file containing coordinates of hotpixels.
-
-`nimg flat` read a stack of dark images (tiff-zip) and a DARK reference image,
-and save (in current dir):
-    - FLAT image = median filter of median projection.
-    - plot (stack histograms, flat image and its histogram - name of stack and
-      reference dark image)
-
-
-New: DARK and FLAT are a single file, and both must be a d_im with appropriate
-channels.
-
-
-Usage:
-  nimg dark <zipfile>
-  nimg flat <zipfile> <darkfile>
-  nimg [options] TIFFSTK [(-d DARK -f FLAT)] CHANNELS...
-  nimg -h | --help
-  nimg --version
-
-Options:
-  -h --help     Show this screen.
-  --version     Show version.
-  --silent      Do not print; verbose=0.
-  -o OUT, --output OUT      Output folder path [default: nimg]
-  --hotpixel, --hotpixels   Execute median filter with radius=0.5 to remove
-                            hotpixel.
-  -d DARK, --dark DARK      Dark for shading correction.
-  -f FLAT, --flat FLAT      FLAT for shading correction.
-  --bg-downscale X,Y        X and Y comma separeted (no spaces) for optional
-                            downscaling.
-  --bg-method MTH           Method for bg estimation [default: li_adaptive]
-                            Available method: entropy, arcsinh, adaptive,
-                            li_adaptive, li_li.
-
-  --bg-radius R             Radius for entropy or arcsinh methods
-                            [default: 10].
-  --bg-adaptive-radius R    Radius for adaptive methods (default is calculated
-                            as im.shape[1]/2).
-  --bg-percentile P         Percentile for entropy or arcsinh methods
-                            [default: 10].
-  --bg-percentile-filter P  Percentile filter for arcsinh method [default: 80].
-
-  --fg-method MTH           Method for fg estimation [default: yen]
-                            Available method: li, yen.
-  --min-size PIXELS         Minimum size for labeled objects [default: 2000].
-  --clear-border            Remove labeled object touching image borders.
-  --wiener                  Execute Wiener filter before segmentation.
-  --watershed               Execute watershed on binary mask (to label cells).
-  --randomwalk              Execute randomwalk on binary mask (to label cells).
-
-  --channels-cl CH1/CH2     Channels for cl ratio (default is C/R).
-  --channels-pH CH1/CH2     Channels for pH ratio (default is G/C).
-  --no-image-ratios         Do not compute ratio images.
-  --ratio-median-radii Rs   Tupla of values (default is 7, 3).
-                            An integer value for each median filter pass.
-
-"""
+"""Remaining cli supporting functions."""
 import os
 import sys
 import zipfile
@@ -83,179 +8,16 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import tifffile  # type: ignore
-from docopt import docopt  # type: ignore
-from matplotlib.backends.backend_pdf import PdfPages  # type: ignore
 from numpy.typing import NDArray
 from scipy import ndimage  # type: ignore
 from skimage import io  # type: ignore
 
-from nimg import __version__ as version
-from nimg import nimg, scripts
+from nimg import nimg
 from nimg.nimg import ImArray
 
 mpl.rcParams["figure.max_open_warning"] = 199  # type: ignore
 methods_bg = ("entropy", "arcsinh", "adaptive", "li_adaptive", "li_li")
 methods_fg = ("yen", "li")
-
-
-def main() -> None:
-    """Docopt script.
-
-    XXX: reduce complexity
-
-    """
-    args = docopt(__doc__, version=version)
-    print(args)
-    if args["dark"]:
-        # parsing
-        fzip = args["<zipfile>"]
-        # computation
-        dark_im, dark_hotpixels, f = scripts.dark(fzip)
-        # output
-        bname = "dark-" + os.path.splitext(os.path.basename(fzip))[0]
-        f.savefig(bname + ".pdf")
-        # TODO suppress UserWarning low contrast is actually expected here
-        io.imrite(bname + ".tif", dark_im, plugin="tifffile")
-        dark_hotpixels.to_csv(bname + ".csv")
-        print("median [ IQR ] = ", np.median(dark_im), np.percentile(dark_im, [25, 75]))
-    elif args["flat"]:
-        # parsing
-        fdark = args["<darkfile>"]
-        fflat = args["<zipfile>"]
-        # computation
-        flat_im, f = scripts.flat(fflat, fdark)
-        # output
-        bname = (
-            "flat-"
-            + os.path.splitext(os.path.basename(fflat))[0]
-            + "-"
-            + os.path.splitext(os.path.basename(fdark))[0]
-        )
-        f.savefig(bname + ".pdf")
-        io.imwrite(bname + ".tif", flat_im)
-    else:
-        # parsing
-        channels = args["CHANNELS"]
-        # methods
-        method_fg = args["--fg-method"]
-        if method_fg not in methods_fg:
-            print(__doc__)
-            print("METHOD must be one of: ", methods_fg)
-            sys.exit()  # TODO raise instead
-        method_bg = args["--bg-method"]
-        if method_bg not in methods_bg:
-            print(__doc__)
-            print("METHOD must be one of: ", methods_bg)
-            sys.exit()  # TODO raise instead
-        # bg() kwargs:
-        kwargs_bg = {}
-        kwargs_bg["kind"] = method_bg
-        if args["--bg-downscale"]:
-            downscale = args["--bg-downscale"].split(",")
-            kwargs_bg["downscale"] = int(downscale[0]), int(downscale[1])
-        if args["--bg-radius"]:
-            kwargs_bg["radius"] = float(args["--bg-radius"])
-        if args["--bg-adaptive-radius"]:
-            kwargs_bg["adaptive_radius"] = float(args["--bg-adaptive-radius"])
-        if args["--bg-percentile"]:
-            kwargs_bg["perc"] = float(args["--bg-percentile"])
-        if args["--bg-percentile-filter"]:
-            kwargs_bg["arcsinh_perc"] = float(args["--bg-percentile-filter"])
-        # d_mask_label() kwargs:
-        kwargs_mask_label = {}
-        kwargs_mask_label["channels"] = channels
-        kwargs_mask_label["threshold_method"] = method_fg
-        if args["--min-size"]:
-            kwargs_mask_label["min_size"] = float(args["--min-size"])
-        if args["--clear-border"]:
-            kwargs_mask_label["clear_border"] = True
-        if args["--wiener"]:
-            kwargs_mask_label["wiener"] = True
-        if args["--watershed"]:
-            kwargs_mask_label["watershed"] = True
-        if args["--randomwalk"]:
-            kwargs_mask_label["randomwalk"] = True
-        # d_meas_props() kwargs:
-        kwargs_meas_props = {}
-        kwargs_meas_props["channels"] = channels
-        if args["--no-image-ratios"]:
-            kwargs_meas_props["ratios_from_image"] = False
-        if args["--ratio-median-radii"]:
-            radii = args["--ratio-median-radii"].split(",")
-            kwargs_meas_props["radii"] = tuple(int(r) for r in radii)
-        if args["--channels-cl"]:
-            kwargs_meas_props["channels_cl"] = args["--channels-cl"].split("/")
-        if args["--channels-pH"]:
-            kwargs_meas_props["channels_pH"] = args["--channels-pH"].split("/")
-        print(kwargs_meas_props)
-
-        # computation
-        d_im, _, t = nimg.read_tiff(args["TIFFSTK"], channels)
-        if not args["--silent"]:
-            print("  Times: ", t)
-        if args["--hotpixels"]:
-            d_im = nimg.d_median(d_im)
-        if args["--flat"]:
-            dark, _, _ = nimg.read_tiff(args["--dark"], channels)
-            flat, _, _ = nimg.read_tiff(args["--flat"], channels)
-            d_im = nimg.d_shading(d_im, dark, flat, clip=True)
-        d_im_bg, bgs, ff, _bgv = nimg.d_bg(d_im, **kwargs_bg)  # clip=True
-        # dim I got a problem with 'li' and unique label for 19 1.10_15 af16 ds
-        nimg.d_mask_label(d_im_bg, **kwargs_mask_label)
-        meas, pr = nimg.d_meas_props(d_im_bg, **kwargs_meas_props)
-
-        # output for bg
-        bname = os.path.basename(args["TIFFSTK"])
-        bname = os.path.splitext(bname)[0]
-        # bname = os.path.join('nimg', bname)
-        bname = os.path.join(args["--output"], bname)
-        if not os.path.exists(bname):
-            os.makedirs(bname)
-        bname_bg = os.path.join(bname, "bg")
-        for ch, llf in ff.items():
-            pp = PdfPages(bname_bg + "-" + ch + "-" + method_bg + ".pdf")
-            for lf in llf:
-                for f_i in lf:
-                    pp.savefig(f_i)  # e.g. entropy output 2 figs
-            pp.close()
-        column_order = ["C", "G", "R"]
-        bgs[column_order].to_csv(bname_bg + ".csv")
-        # TODO: plt.close('all') or control mpl warning
-
-        # output for fg (target)
-        f = nimg.d_plot_meas(bgs, meas, channels=channels)
-        f.savefig(bname + "_meas.png")
-        ##
-        # show all channels and labels only.
-        d = {ch: d_im_bg[ch] for ch in channels}
-        d["labels"] = d_im_bg["labels"]
-        f = nimg.d_show(d, cmap=plt.cm.inferno_r)  # type: ignore
-        f.savefig(bname + "_dim.png")
-        ##
-        # meas csv
-        for k, df in meas.items():
-            column_order = [
-                "C",
-                "G",
-                "R",
-                "area",
-                "eccentricity",
-                "equivalent_diameter",
-                "r_cl",
-                "r_pH",
-                "r_cl_median",
-                "r_pH_median",
-            ]
-            df[column_order].to_csv(os.path.join(bname, "label" + str(k) + ".csv"))
-        ##
-        # labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
-        objs = ndimage.find_objects(d_im_bg["labels"])
-        for n, o in enumerate(objs):
-            name = os.path.join(bname, "label" + str(n + 1) + "_rcl.tif")
-            tifffile.imwrite(name, d_im_bg["r_cl"][o], compression="lzma")
-            name = os.path.join(bname, "label" + str(n + 1) + "_rpH.tif")
-            tifffile.imwrite(name, d_im_bg["r_pH"][o], compression="lzma")
 
 
 def dark(fp: str, thr: int = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
@@ -281,6 +43,7 @@ def dark(fp: str, thr: int = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
 
     """
     im = zipread(fp)
+    print(im.shape)  # Reads only the first YX plane currently.
     zp = nimg.zproject(im)
     # imf = ni.im_median(zp)
     imf = ndimage.median_filter(
@@ -473,7 +236,3 @@ def zipread(fp: str) -> Any:
     with zipfile.ZipFile(fp) as myzip:
         with myzip.open(myzip.filelist[0]) as myfile:
             return io.imread(myfile)
-
-
-if __name__ == "__main__":
-    main()
