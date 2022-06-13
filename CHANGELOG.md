@@ -1,9 +1,25 @@
 # Changelog
 
+## Version 0.4.3 - 2022-06-14
+### Added
+- [build] New linters: flake8-rst-docstrings, pep8-naming, flake8-comprehensions,
+flake8_eradicate and  flake8-pytest-style.
+- [build] pyupgrade.
+- [build] Typeguard.
+
+### Removed
+- pytest-cov.
+
+### Changed
+- Switched lint to pre-commit.
+- Switched to pydata_sphinx_theme.
+- Setting for coverage.
+
 ## Version 0.4.2 - 2022-06-13
 ### Added
 - [build] pre-commit and pre-commit-hooks ad poetry dev dependencies.
 - [build] Switched to isort.
+- [build] Nox clean session.
 
 ### Removed
 - [build] flake8-import-order.

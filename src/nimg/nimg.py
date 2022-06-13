@@ -7,7 +7,15 @@ channels.
 """
 from collections import defaultdict
 from itertools import chain
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, TypeVar, Union
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Sequence
+from typing import Tuple
+from typing import TypeVar
+from typing import Union
 
 import matplotlib as mpl
 import matplotlib.cm
@@ -21,9 +29,11 @@ import skimage.segmentation  # type: ignore
 import skimage.transform  # type: ignore
 import tifffile  # type: ignore
 from numpy.typing import NDArray
-from scipy import ndimage, signal  # type: ignore
+from scipy import ndimage  # type: ignore
+from scipy import signal
 from skimage import filters
 from skimage.morphology import disk  # type: ignore
+
 
 ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_])
 
@@ -48,7 +58,7 @@ def im_print(im: ImArray, verbose: bool = False) -> None:
         if im.ndim == 3:
             for i, image in enumerate(im):
                 print(
-                    "i = {0:4d} | size = {1} | zeros = {2}".format(
+                    "i = {:4d} | size = {} | zeros = {}".format(
                         i, image.size, np.count_nonzero(image == 0)
                     )
                 )
@@ -93,9 +103,8 @@ def plot_im_series(
         s = len(im) * 100 + 10 + 1
     for i, img in enumerate(im):
         ax = fig.add_subplot(s + i)
-        # plt.subplot(s + i)
+        # Switched from plt.cmd to ax.cmd
         ax.imshow(img, cmap=cmap, **kw)
-        # plt.imshow(img, cmap=cmap, **kw)
         plt.axis("off")  # type: ignore
     plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0, left=0, right=1)
 
@@ -123,8 +132,11 @@ def zproject(im: ImArray, func: Callable[[Any], Any] = np.median) -> ImArray:
 
     Parameters
     ----------
-    im : np.array
+    im : ImArray
         Image (pln, row, col).
+
+    func
+        Function (default: np.median).
 
     Returns
     -------
@@ -150,7 +162,7 @@ def read_tiff(fp: str, channels: List[str]) -> Tuple[Dict[str, ImArray], int, in
 
     Parameters
     ----------
-    fp : path
+    fp : str
         File (TIF format) to be opened.
     channels: list of string
         List a name for each channel.
@@ -198,15 +210,15 @@ def read_tiff(fp: str, channels: List[str]) -> Tuple[Dict[str, ImArray], int, in
 
 def d_show(d_im: Dict[str, ImArray], **kws: Any) -> plt.Figure:
     """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
-    MAX_ROWS = 9
+    max_rows = 9
     n_channels = len(d_im.keys())
     first_channel = d_im[list(d_im.keys())[0]]
     n_times = len(first_channel)
-    if n_times <= MAX_ROWS:
+    if n_times <= max_rows:
         rng = range(n_times)
         n_rows = n_times
     else:
-        step = np.ceil(n_times / MAX_ROWS).astype(int)
+        step = np.ceil(n_times / max_rows).astype(int)
         rng = range(0, n_times, step)
         n_rows = len(rng)
 
@@ -270,6 +282,8 @@ def d_shading(
 
     Parameters
     ----------
+    d_im
+        Dictionary of images.
     dark : 2D image or (2D) d_im
         Dark image.
     flat : 2D image or (2D) d_im
@@ -284,9 +298,8 @@ def d_shading(
 
     """
     # TODO inplace=True tosave memory
-    # raise_msg = "Unexpected input"
-    # assert type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg
-    # assert type(flat) == np.ndarray or flat.keys() == d_im.keys(),
+    # assertion type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg
+    # assertion type(flat) == np.ndarray or flat.keys() == d_im.keys(),
     # raise_msg will be replaced by type checking.
     d_cor = {}
     for k in d_im.keys():
@@ -309,9 +322,9 @@ def bg(
     im: NDArray[Any],
     kind: str = "arcsinh",
     perc: float = 10.0,
-    radius: int = 10,
+    radius: Optional[int] = 10,
     adaptive_radius: Optional[int] = None,
-    arcsinh_perc: int = 80,
+    arcsinh_perc: Optional[int] = 80,
 ) -> Tuple[float, pd.DataFrame, List[Any]]:
     """Bg segmentation.
 
@@ -319,9 +332,11 @@ def bg(
 
     Parameters
     ----------
-    kind : {'arcsinh', 'entropy', 'adaptive', 'li_adaptive', 'li_li'}
-        Method used for the segmentation.
-    perc : int, optional
+    im
+        An image stack.
+    kind : str
+        Method {'arcsinh', 'entropy', 'adaptive', 'li_adaptive', 'li_li'} used for the segmentation.
+    perc : float
         Perc % of max-min (default=10) for thresholding *entropy* and *arcsinh*
         methods.
     radius : int, optional
@@ -347,7 +362,7 @@ def bg(
         adaptive_radius = int(im.shape[1] / 2)
         if adaptive_radius % 2 == 0:  # sk >0.12.0 check for even value
             adaptive_radius += 1
-    if perc < 0 or perc > 100:
+    if (perc < 0.0) or (perc > 100.0):
         raise Exception("perc must be in [0, 100] range")
     else:
         perc /= 100
@@ -377,7 +392,7 @@ def bg(
         title = adaptive_radius
         li = filters.threshold_li(im.copy())
         m = im < li
-        # m = skimage.morphology.binary_erosion(m, disk(3))
+        # # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
         imm = im * m
         f = imm > filters.threshold_local(imm, adaptive_radius)
         m = ~f * m
@@ -386,13 +401,13 @@ def bg(
         title = None
         li = filters.threshold_li(im.copy())
         m = im < li
-        # m = skimage.morphology.binary_erosion(m, disk(3))
+        # # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
         imm = im * m
         # To avoid zeros generated after first thesholding, clipping to the
         # min value of original image is needed before second thesholding.
         thr2 = filters.threshold_li(imm.clip(np.min(im)))
         m = im < thr2
-        # ###mm = skimage.morphology.binary_closing(mm)
+        # # FIXME: in case mm = skimage.morphology.binary_closing(mm)
     pixel_values = im[m]
     iqr = np.percentile(pixel_values, [25, 50, 75])
     #
@@ -423,7 +438,6 @@ def bg(
         delta /= 2
         rng = np.linspace(lim.min() + delta / 20, lim.min() + delta, 20)
         par = host.twiny()
-        # plt.make_patch_spines_invisible(par)
         # Second, show the right spine.
         par.spines["bottom"].set_visible(True)
         par.set_xlabel("perc")
@@ -449,7 +463,7 @@ def d_bg(
     downscale: Optional[Tuple[int, int]] = None,
     kind: str = "li_adaptive",
     clip: bool = True,
-    **kw: Any,
+    **kw: Dict[str, Any],
 ) -> Tuple[
     Dict[str, ImArray],
     pd.DataFrame,
@@ -464,11 +478,11 @@ def d_bg(
         desc
     downscale : {None, tupla}
         Tupla, x, y are downscale factors for rows, cols.
-    kind : {'li_adaptive', 'arcsinh', 'entropy', 'adaptive', 'li_li'}
-        Bg method.
+    kind : str
+        Bg method among {'li_adaptive', 'arcsinh', 'entropy', 'adaptive', 'li_li'}.
     clip : bool
         Boolean (default=True) for clipping values >=0.
-    **kw : dict
+    kw : dict
         Keywords passed to bg() function.
 
     Returns
@@ -480,7 +494,9 @@ def d_bg(
         points.
     figs : list
         List of (list ?) of figures.
-    d_bg_values :
+    d_bg_values : dict
+        Background values keys are channels containing a list (for each time
+        point) of list of values.
 
     """
     d_bg = defaultdict(list)
@@ -492,7 +508,7 @@ def d_bg(
         for t, im in enumerate(d_im[k]):
             if downscale:
                 im = skimage.transform.downscale_local_mean(im, downscale)
-            med, v, ff = bg(im, kind, **kw)
+            med, v, ff = bg(im, kind=kind, perc=10)
             d_bg[k].append(med)
             d_bg_values[k].append(v)
             d_cor[k].append(d_im[k][t] - med)
@@ -507,13 +523,13 @@ def d_bg(
 
 def d_mask_label(
     d_im: Dict[str, ImArray],
-    min_size: int = 640,
+    min_size: Optional[int] = 640,
     channels: Sequence[str] = ("C", "G", "R"),
-    threshold_method: str = "yen",
-    wiener: bool = False,
-    watershed: bool = False,
-    clear_border: bool = False,
-    randomwalk: bool = False,
+    threshold_method: Optional[str] = "yen",
+    wiener: Optional[bool] = False,
+    watershed: Optional[bool] = False,
+    clear_border: Optional[bool] = False,
+    randomwalk: Optional[bool] = False,
 ) -> None:
     """Label cells in d_im. Add two keys, mask and label.
 
@@ -550,10 +566,8 @@ def d_mask_label(
         Boolean (default=False) for using random_walker in place of watershed
         (skimage) algorithm after ndimage.distance_transform_edt() calculation.
 
-    Returns
-    -------
-    None
-
+    Notes
+    -----
     Side effects:
         Add a 'label' key to the d_im.
 
@@ -640,7 +654,7 @@ def d_ratio(
     ----------
     d_im : d_im
         desc
-    name : string
+    name : str
         Name (default='r_cl') for the new key.
     channels : list of string
         Names (default=['C', 'R']) for the two channels [Numerator,
@@ -648,10 +662,8 @@ def d_ratio(
     radii : tupla of int, optional
         Each element contain a radius value for a median filter cycle.
 
-    Returns
-    -------
-    None
-
+    Notes
+    -----
     Add a key named "name" and containing the calculated ratio to d_im.
 
     """
@@ -659,7 +671,6 @@ def d_ratio(
         # 0/0 and num/0 can both happen.
         ratio = d_im[channels[0]] / d_im[channels[1]]
     for i, r in enumerate(ratio):
-        # ratio[i] = pd.DataFrame(r).replace([-np.inf, np.nan, np.inf], 0)
         np.nan_to_num(r, copy=False, posinf=0, neginf=0)
         for radius in radii:
             r = ndimage.median_filter(r, radius)
@@ -671,8 +682,8 @@ def d_meas_props(
     d_im: Dict[str, ImArray],
     channels: Sequence[str] = ("C", "G", "R"),
     channels_cl: Tuple[str, str] = ("C", "R"),
-    channels_pH: Tuple[str, str] = ("G", "C"),
-    ratios_from_image: bool = True,
+    channels_ph: Tuple[str, str] = ("G", "C"),
+    ratios_from_image: Optional[bool] = True,
     radii: Optional[Tuple[int, int]] = None,
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, List[Any]]]:
     """Calculate pH and cl ratios and labelprops.
@@ -681,16 +692,16 @@ def d_meas_props(
     ----------
     d_im : d_im
         desc
-    name : string
-        Name (default='r_cl') for the new key.
     channels : list of string
         All d_im channels (default=['C', 'G', 'R']).
     channels_cl : tuple of string
         Names (default=('C', 'R')) of the numerator and denominator channels for cl ratio.
-    channels_pH : tuple of string
+    channels_ph : tuple of string
         Names (default=('G', 'C')) of the numerator and denominator channels for pH ratio.
     ratios_from_image : bool, optional
         Boolean (default=True) for executing d_ratio i.e. compute ratio images.
+    radii : (int, int), Optional
+        Radii of the optional median average performed on ratio images.
 
     Returns
     -------
@@ -730,25 +741,25 @@ def d_meas_props(
                 pass  # label is absent in this timepoint
         df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
         df["r_cl"] = df[channels_cl[0]] / df[channels_cl[1]]
-        df["r_pH"] = df[channels_pH[0]] / df[channels_pH[1]]
+        df["r_pH"] = df[channels_ph[0]] / df[channels_ph[1]]
         meas[label] = df
     if ratios_from_image:
         kwargs = {}
         if radii:
             kwargs["radii"] = radii
         d_ratio(d_im, "r_cl", channels=channels_cl, **kwargs)
-        d_ratio(d_im, "r_pH", channels=channels_pH, **kwargs)
-        r_pH = []
+        d_ratio(d_im, "r_pH", channels=channels_ph, **kwargs)
+        r_ph = []
         r_cl = []
-        for time, (pH, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"])):
-            r_pH.append(ndimage.median(pH, d_im["labels"][time], index=labels))
+        for time, (ph, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"])):
+            r_ph.append(ndimage.median(ph, d_im["labels"][time], index=labels))
             r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels))
-        ratios_pH = np.array(r_pH)
+        ratios_ph = np.array(r_ph)
         ratios_cl = np.array(r_cl)
         for label in meas:
             df = pd.DataFrame(
                 {
-                    "r_pH_median": ratios_pH[:, label - 1],
+                    "r_pH_median": ratios_ph[:, label - 1],
                     "r_cl_median": ratios_cl[:, label - 1],
                 }
             )
@@ -780,16 +791,16 @@ def d_plot_meas(
         Figure.
 
     """
-    NCOLS = 2
+    ncols = 2
     n_axes = len(channels) + 3  # 2 ratios and 1 bg axes
-    nrows = int(np.ceil(n_axes / NCOLS))
+    nrows = int(np.ceil(n_axes / ncols))
     # colors by segmented r.o.i. id and channel names
     id_colors = mpl.cm.Set2.colors  # type: ignore
     ch_colors = {
         k: k.lower() if k.lower() in mpl.colors.BASE_COLORS else "k" for k in channels
     }
-    fig = plt.figure(figsize=(NCOLS * 5, nrows * 3))
-    axes = fig.subplots(nrows, NCOLS)  # type: ignore
+    fig = plt.figure(figsize=(ncols * 5, nrows * 3))
+    axes = fig.subplots(nrows, ncols)  # type: ignore
     for k, df in meas.items():
         c = id_colors[(int(k) - 1) % len(id_colors)]
         axes[0, 0].plot(df["r_pH"], marker="o", color=c, label=k)
@@ -807,20 +818,20 @@ def d_plot_meas(
     axes[0, 0].legend()
 
     for n, ch in enumerate(channels, 2):
-        i = n // NCOLS
-        j = n % NCOLS  # * 2
+        i = n // ncols
+        j = n % ncols  # * 2
         for df in meas.values():
             axes[i, j].plot(df[ch], marker="o", color=ch_colors[ch])
         axes[i, j].set_title(ch)
         axes[i, j].grid()
-    if n_axes == nrows * NCOLS:
+    if n_axes == nrows * ncols:
         axes.flat[-2].set_xlabel("time")
         axes.flat[-1].set_xlabel("time")
-        bgs.plot(ax=axes[nrows - 1, NCOLS - 1], grid=True, color=ch_colors)  # type: ignore
+        bgs.plot(ax=axes[nrows - 1, ncols - 1], grid=True, color=ch_colors)  # type: ignore
     else:
         axes.flat[-3].set_xlabel("time")
         axes.flat[-2].set_xlabel("time")
-        bgs.plot(ax=axes[nrows - 1, NCOLS - 2], grid=True, color=ch_colors)  # type: ignore
+        bgs.plot(ax=axes[nrows - 1, ncols - 2], grid=True, color=ch_colors)  # type: ignore
         ax = list(chain(*axes))[-1]
         ax.remove()
 

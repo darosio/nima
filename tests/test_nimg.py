@@ -6,7 +6,7 @@ from numpy.testing import assert_array_equal  # assert_allclose
 from nimg import nimg
 
 
-class Test_zproject:
+class TestZproject:
     """Tests zproject."""
 
     def setup_class(self) -> None:
@@ -33,14 +33,16 @@ class Test_zproject:
         assert_array_equal(res, np.ones((2, 5)).astype(int))
         assert_array_equal(res1, np.ones((2, 5)).astype(int))
 
-    def test_raise_exception_2D_input(self) -> None:
+    def test_raise_exception_2d_input(self) -> None:
         """It raises exception ..."""
-        with pytest.raises(ValueError) as err:
+        with pytest.raises(
+            ValueError,
+            match=r"Input must be 3D-grayscale .*",
+        ):
             nimg.zproject(self.im[0])
-        assert str(err.value) == "Input must be 3D-grayscale (pln, row, col)"
 
 
-class Test_d_shading:
+class TestDShading:
     """Test d_shading."""
 
     def setup_class(self) -> None:
@@ -54,14 +56,12 @@ class Test_d_shading:
     def test_single_dark_and_single_flat(self) -> None:
         """Using single dark and single flat images."""
         d_cor = nimg.d_shading(self.d_im, self.dark, self.flat, clip=True)
-        # assert_allclose(d_cor, np.ones((5,5,5)) / 2)
         assert_array_equal(d_cor["C"], np.ones((5, 5, 5)) / 2)
         assert_array_equal(d_cor["C2"], np.ones((5, 5, 5)) * 1.5)
 
     def test_single_dark_and_d_flat(self) -> None:
         """Using single dark and a stack of flat images."""
         d_cor = nimg.d_shading(self.d_im, self.dark, self.d_flat, clip=True)
-        # assert_allclose(d_cor, np.ones((5,5,5)) / 2)
         assert_array_equal(d_cor["C"], np.ones((5, 5, 5)) / 2)
         assert_array_equal(d_cor["C2"], np.ones((5, 5, 5)))
 

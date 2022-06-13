@@ -2,7 +2,8 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Any
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ import skimage.io  # type: ignore
 import skimage.measure  # type: ignore
 from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
+
 
 # test data: (rootname, times)
 rootnames = [("1b_c16_15", 4)]
@@ -68,7 +70,7 @@ class TestOutputFiles:
         assert np.sum(result - expected) == pytest.approx(0, 2.3e-06)
 
     # @pytest.mark.mpl_image_compare(remove_text=True, tolerance=13)
-    @pytest.mark.parametrize("f, tol", [("_dim.png", 8.001), ("_meas.png", 20)])
+    @pytest.mark.parametrize(("f", "tol"), [("_dim.png", 8.001), ("_meas.png", 20)])
     def test_png(self, result_folder: Any, f: str, tol: float) -> None:
         """It checks png files: saved segmentation and analysis."""
         fp_expected = os.path.join("tests/data/output/", result_folder[1][0] + f)

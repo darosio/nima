@@ -9,7 +9,8 @@ import tifffile  # type: ignore
 from matplotlib.backends import backend_pdf  # type: ignore
 from scipy import ndimage  # type: ignore
 
-from nimg import nimg, scripts
+from nimg import nimg
+from nimg import scripts
 
 
 @click.command()
@@ -89,12 +90,12 @@ from nimg import nimg, scripts
 )
 @click.option(
     "--channels-cl",
-    type=tuple((str, str)),
+    type=(str, str),
     default=("C", "R"),
     help="Channels for Cl ratio [default:C/R].",
 )
 @click.option(
-    "--channels-pH",
+    "--channels-ph",
     type=(str, str),
     default=("G", "C"),
     help="Channels for pH ratio [default:G/C].",
@@ -191,10 +192,10 @@ def main(  # type: ignore
         kwargs_meas_props["radii"] = tuple(
             int(r) for r in ratio_median_radii.split(",")
         )
-    kwargs_meas_props["channels_cl"] = channels_cl
-    kwargs_meas_props["channels_pH"] = channels_ph
     click.secho(kwargs_meas_props)
-    meas, pr = nimg.d_meas_props(d_im_bg, **kwargs_meas_props)
+    meas, pr = nimg.d_meas_props(
+        d_im_bg, channels_cl=channels_cl, channels_ph=channels_ph, **kwargs_meas_props
+    )
     #     # output for bg
     bname = os.path.basename(tiffstk)
     bname = os.path.splitext(bname)[0]
@@ -203,7 +204,6 @@ def main(  # type: ignore
         os.makedirs(bname)
     bname_bg = os.path.join(bname, "bg")
     for ch, llf in ff.items():
-        # pp = PdfPages(bname_bg + "-" + ch + "-" + bg_method + ".pdf")
         pp = backend_pdf.PdfPages(bname_bg + "-" + ch + "-" + bg_method + ".pdf")
         for lf in llf:
             for f_i in lf:

@@ -2,7 +2,9 @@
 import os
 import sys
 import zipfile
-from typing import Any, Tuple
+from typing import Any
+from typing import Optional
+from typing import Tuple
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -15,12 +17,13 @@ from skimage import io  # type: ignore
 from nimg import nimg
 from nimg.nimg import ImArray
 
+
 mpl.rcParams["figure.max_open_warning"] = 199  # type: ignore
 methods_bg = ("entropy", "arcsinh", "adaptive", "li_adaptive", "li_li")
 methods_fg = ("yen", "li")
 
 
-def dark(fp: str, thr: int = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
+def dark(fp: str, thr: float = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
     """Estimate image for dark correction.
 
     Read zip; median z-project; median filter(1).
@@ -45,7 +48,6 @@ def dark(fp: str, thr: int = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
     im = zipread(fp)
     print(im.shape)  # Reads only the first YX plane currently.
     zp = nimg.zproject(im)
-    # imf = ni.im_median(zp)
     imf = ndimage.median_filter(
         im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     )
@@ -89,7 +91,7 @@ def dark(fp: str, thr: int = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
 
 
 def flat(
-    fflat: str, fdark: str, method: str = "overall"
+    fflat: str, fdark: str, method: Optional[str] = "overall"
 ) -> Tuple[NDArray[np.float_], plt.Figure]:
     """Estimate image for flat correction.
 
@@ -122,7 +124,6 @@ def flat(
     ims = im - dark
     if method == "overall":
         flat = np.median(ims, axis=0)
-        # flat = ni.im_median(flat)
         flat = ndimage.median_filter(
             im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
         )
@@ -130,7 +131,6 @@ def flat(
     if method == "single":
         ims = ims.astype(float)
         for i, im in enumerate(ims):
-            # ims[i] = ni.im_median(im)
             ims[i] = ndimage.median_filter(
                 im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
             )
@@ -195,7 +195,7 @@ def common_path(path1: str, path2: str) -> Tuple[str, str, str]:
 
     Parameters
     ----------
-    path1, path2 : string
+    path1, path2 : str
         Two file paths.
 
     Returns
