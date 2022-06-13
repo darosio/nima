@@ -21,7 +21,6 @@ def lint(session: Session) -> None:
         "flake8-bandit",
         "flake8-docstrings",
         "darglint",
-        "flake8-import-order",
     )
     session.run("flake8", *args)
     # TODO: other linters session.run("rst-lint", "README.rst")  # for PyPI readme.rst
@@ -31,7 +30,9 @@ def lint(session: Session) -> None:
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
     args = session.posargs or ["src", "tests", "docs/conf.py"]
-    session.run("rm", "-r", ".mypy_cache/")  # for types-jinja2 from pyparser
+    session.run(
+        "rm", "-rf", ".mypy_cache/", external=True
+    )  # for types-jinja2 from pyparser
     session.install(".")
     session.install("mypy", "pytest", "data-science-types", "types-setuptools")
     session.run("mypy", *args)
@@ -64,6 +65,7 @@ def docs(session: Session) -> None:
     """Build the documentation."""
     session.install(
         "sphinx",
+        "sphinx-click",
         "myst-parser",
         ".",
     )

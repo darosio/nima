@@ -7,15 +7,15 @@ Reference
 
 
 
-nimg.scripts
-------------
+scripts
+-------
 
 .. automodule:: nimg.scripts
    :members:
 
 
-nimg.scripts
-------------
+nimg
+------
 
 .. automodule:: nimg.nimg
    :members:

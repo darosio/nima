@@ -37,6 +37,15 @@ To use nimg in a project::
 
 
 
+.. click:: nimg.__main__:main
+    :prog: nimg
+    :nested: full
+
+.. click:: nimg.__main__:bias
+    :prog: bias
+    :nested: full
+
+
 
 Description
 ===========
