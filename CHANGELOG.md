@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 0.4.2 - 2022-06-13
+### Added
+- [build] pre-commit and pre-commit-hooks ad poetry dev dependencies.
+- [build] Switched to isort.
+
+### Removed
+- [build] flake8-import-order.
+- [build] flake8-black.
+
 ## Version 0.4.1 - 2022-06-13
 ### Changed
 - `poetry version …` and use importlib.metadata.version(__name__) when needed.
