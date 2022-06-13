@@ -70,3 +70,22 @@ def docs(session: Session) -> None:
         ".",
     )
     session.run("sphinx-build", "docs", "docs/_build")
+
+
+@nox_poetry.session(python="3.10")
+def clean(session: Session) -> None:
+    """Clean local repository."""
+    session.run(
+        "rm",
+        "-r",
+        "./README.tmp.html",
+        "./__pycache__",
+        "./.nox",
+        "./.mypy_cache",
+        "./.pytest_cache",
+        "./docs/_build",
+        "./src/" + package + "/__pycache__",
+        "./tests/__pycache__",
+        "./dist",
+        external=True,
+    )

@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.4.1 - 2022-06-13
+### Changed
+- `poetry version …` and use importlib.metadata.version(__name__) when needed.
 
 ## Version 0.4.0 - 2022-06-13
 ### Added
