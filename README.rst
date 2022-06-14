@@ -1,7 +1,8 @@
-..
-   .. image:: https://img.shields.io/pypi/v/clophfit.svg
-           :target: https://pypi.python.org/pypi/clophfit
+.. image:: https://github.com/darosio/nimg/actions/workflows/tests.yml/badge.svg
+   :target: https://github.com/darosio/nimg/actions/workflows/tests.yml
 
+.. image:: https://codecov.io/gh/darosio/nimg/branch/main/graph/badge.svg?token=OR0LUZUJUR
+   :target: https://codecov.io/gh/darosio/nimg
 
 A library and cli for image analysis based on scipy.ndimage and scikit-image.
 

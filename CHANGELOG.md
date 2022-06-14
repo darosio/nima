@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 0.5.0 - 2022-06-15
+Moved from bitbucket to GITHUB.
+
+### Added
+- [ci] Codecov from tests github action.
+
+### Fixed
+- [ci] Windows testing.
+
 ## Version 0.4.3 - 2022-06-14
 ### Added
 - [build] New linters: flake8-rst-docstrings, pep8-naming, flake8-comprehensions,

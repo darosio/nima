@@ -33,7 +33,11 @@ def test_printout(result_folder: Any) -> None:
     """It outputs the correct value for 'Times'."""
     stdout, stderr = result_folder[2].communicate()
     assert (
-        int(str(stdout).split("Times:")[1].split("\\n")[0].strip())
+        int(
+            [line for line in stdout.splitlines() if "Times:" in str(line)][0].split()[
+                1
+            ]
+        )
         == result_folder[1][1]
     )
 

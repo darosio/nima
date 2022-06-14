@@ -206,7 +206,8 @@ def common_path(path1: str, path2: str) -> Tuple[str, str, str]:
 
     Examples
     --------
-    >>> common_path('/home/dan/docs/arte/unimi/grafEPS.tgz', '/home/dati/GBM_persson/')
+    As this cannot run on windows:
+    common_path('/home/dan/docs/arte/unimi/grafEPS.tgz', '/home/dati/GBM_persson/')
     ('/home', 'dan/docs/arte/unimi/grafEPS.tgz', 'dati/GBM_persson')
 
     """
