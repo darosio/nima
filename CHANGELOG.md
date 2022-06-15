@@ -1,5 +1,12 @@
 # Changelog
 
+## Version 0.5.1 - 2022-06-15
+### Changed
+- [test] Switched to click.testing.
+
+### Fixed
+- [test] Typeguard nimg.
+
 ## Version 0.5.0 - 2022-06-15
 Moved from bitbucket to GITHUB.
 
