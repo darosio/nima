@@ -4,6 +4,9 @@
 .. image:: https://codecov.io/gh/darosio/nimg/branch/main/graph/badge.svg?token=OR0LUZUJUR
    :target: https://codecov.io/gh/darosio/nimg
 
+.. image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
+   :target: https://github.com/pre-commit/pre-commit
+   :alt: pre-commit
 A library and cli for image analysis based on scipy.ndimage and scikit-image.
 
 

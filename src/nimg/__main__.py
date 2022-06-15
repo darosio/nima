@@ -4,7 +4,7 @@ import os
 import click
 import matplotlib as mpl
 import numpy as np
-import skimage
+import skimage  # type: ignore
 import tifffile  # type: ignore
 from matplotlib.backends import backend_pdf  # type: ignore
 from scipy import ndimage  # type: ignore
@@ -249,7 +249,7 @@ def main(  # type: ignore
 
 @click.group()
 @click.version_option()
-def bias():
+def bias():  # type: ignore
     """Help preparing files for flat correction.
 
     New: DARK and FLAT are a single file, and both must be a d_im with appropriate
@@ -260,7 +260,7 @@ def bias():
 
 @bias.command()
 @click.argument("zipfile", type=str)
-def dark(zipfile):
+def dark(zipfile):  # type: ignore
     """Prepare Dark image file.
 
     It reads a stack of dark images (tiff-zip) and save (in current dir):
@@ -282,7 +282,7 @@ def dark(zipfile):
 @bias.command()
 @click.argument("darkfile", type=str)
 @click.argument("zipfile", type=str)
-def flat(darkfile, zipfile):
+def flat(darkfile, zipfile):  # type: ignore
     """Prepare Flat image file.
 
     Reads a stack of flat images (tiff-zip) and a DARK reference image, and save (in pwd):

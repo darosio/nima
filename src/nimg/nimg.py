@@ -157,7 +157,7 @@ def zproject(im: ImArray, func: Callable[[Any], Any] = np.median) -> ImArray:
     return zproj
 
 
-def read_tiff(fp: str, channels: List[str]) -> Tuple[Dict[str, ImArray], int, int]:
+def read_tiff(fp: str, channels: Sequence[str]) -> Tuple[Dict[str, ImArray], int, int]:
     """Read multichannel tif timelapse image.
 
     Parameters
@@ -325,7 +325,7 @@ def bg(
     radius: Optional[int] = 10,
     adaptive_radius: Optional[int] = None,
     arcsinh_perc: Optional[int] = 80,
-) -> Tuple[float, pd.DataFrame, List[Any]]:
+) -> Tuple[float, ImArray, List[Any]]:
     """Bg segmentation.
 
     Return median, whole vector, figures (in a [list])
@@ -685,7 +685,7 @@ def d_meas_props(
     channels_ph: Tuple[str, str] = ("G", "C"),
     ratios_from_image: Optional[bool] = True,
     radii: Optional[Tuple[int, int]] = None,
-) -> Tuple[Dict[str, pd.DataFrame], Dict[str, List[Any]]]:
+) -> Tuple[Dict[np.int32, pd.DataFrame], Dict[str, List[Any]]]:
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
@@ -769,7 +769,7 @@ def d_meas_props(
 
 
 def d_plot_meas(
-    bgs: pd.DataFrame, meas: Dict[str, pd.DataFrame], channels: List[str]
+    bgs: pd.DataFrame, meas: Dict[np.int32, pd.DataFrame], channels: Sequence[str]
 ) -> plt.Figure:
     """Plot meas object.
 

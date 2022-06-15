@@ -1,6 +1,5 @@
 """Tests for nimg script."""
 import os
-import subprocess
 from pathlib import Path
 from typing import Any
 from typing import Tuple
@@ -10,8 +9,11 @@ import pandas as pd
 import pytest
 import skimage.io  # type: ignore
 import skimage.measure  # type: ignore
+from click.testing import CliRunner
 from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
+
+from nimg import __main__
 
 
 # test data: (rootname, times)
@@ -24,20 +26,18 @@ def result_folder(tmpdir_factory: Any, request: Any) -> Tuple[Path, Any, Any]:
     """Fixture for creating results folder and opening a sub-process."""
     tmpdir = tmpdir_factory.mktemp("nniimmgg")
     filename = os.path.join("tests", "data", request.param[0] + ".tif")
-    cmd_line = ["nimg", filename, "G", "R", "C", "-o", tmpdir]
-    p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return tmpdir, request.param, p
+    runner = CliRunner()
+    result = runner.invoke(__main__.main, [filename, "G", "R", "C", "-o", tmpdir])
+    return tmpdir, request.param, result
 
 
 def test_printout(result_folder: Any) -> None:
     """It outputs the correct value for 'Times'."""
-    stdout, stderr = result_folder[2].communicate()
+    out = result_folder[2].output
+    assert result_folder[2].return_value is None
+    assert result_folder[2].exit_code == 0
     assert (
-        int(
-            [line for line in stdout.splitlines() if "Times:" in str(line)][0].split()[
-                1
-            ]
-        )
+        int([line for line in out.splitlines() if "Times:" in str(line)][0].split()[1])
         == result_folder[1][1]
     )
 
