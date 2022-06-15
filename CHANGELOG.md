@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.5.2 - 2022-06-15
+### Changed
+- [build] Updated dependencies.
+
 ## Version 0.5.1 - 2022-06-15
 ### Changed
 - [test] Switched to click.testing.
