@@ -5,7 +5,7 @@
 ignore = E203,E501,W503,DAR000
 per-file-ignores = tests/*:S101,S404,S603
 max-line-length = 88
-max-complexity = 33
+max-complexity = 21
 import-order-style = pycharm
-application-import-names = nimg,tests
+application-import-names = nima,tests
 docstring-convention = numpy

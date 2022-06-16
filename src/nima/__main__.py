@@ -9,8 +9,8 @@ import tifffile  # type: ignore
 from matplotlib.backends import backend_pdf  # type: ignore
 from scipy import ndimage  # type: ignore
 
-from nimg import nimg
-from nimg import scripts
+from nima import nima
+from nima import scripts
 
 
 @click.command()
@@ -20,8 +20,8 @@ from nimg import scripts
     "-o",
     "--output",
     type=str,
-    default="nimg",
-    help="Output folder path [default:nimg].",
+    default="nima",
+    help="Output folder path [default:nima].",
 )
 @click.option(
     "--hotpixels",
@@ -148,16 +148,16 @@ def main(  # type: ignore
     click.echo(tiffstk)
     channels = ("G", "R", "C") if len(channels) == 0 else channels
     click.echo(channels)
-    d_im, _, t = nimg.read_tiff(tiffstk, channels)
+    d_im, _, t = nima.read_tiff(tiffstk, channels)
     if not silent:
         print("  Times: ", t)
     if hotpixels:
-        d_im = nimg.d_median(d_im)
+        d_im = nima.d_median(d_im)
     if flat:
         # XXX: this is imperfect: dark must be present of flat
-        dark, _, _ = nimg.read_tiff(dark, channels)
-        flat, _, _ = nimg.read_tiff(flat, channels)
-        d_im = nimg.d_shading(d_im, dark, flat, clip=True)
+        dark, _, _ = nima.read_tiff(dark, channels)
+        flat, _, _ = nima.read_tiff(flat, channels)
+        d_im = nima.d_shading(d_im, dark, flat, clip=True)
     kwargs_bg = {"kind": bg_method}
     if bg_downscale:
         kwargs_bg["downscale"] = bg_downscale
@@ -170,7 +170,7 @@ def main(  # type: ignore
     if bg_percentile_filter:
         kwargs_bg["arcsinh_perc"] = bg_percentile_filter
     click.echo(kwargs_bg)
-    d_im_bg, bgs, ff, _bgv = nimg.d_bg(d_im, **kwargs_bg)  # clip=True
+    d_im_bg, bgs, ff, _bgv = nima.d_bg(d_im, **kwargs_bg)  # clip=True
     print(bgs)
 
     kwargs_mask_label = {"channels": channels, "threshold_method": fg_method}
@@ -185,7 +185,7 @@ def main(  # type: ignore
     if randomwalk:
         kwargs_mask_label["randomwalk"] = True
     click.secho(kwargs_mask_label)
-    nimg.d_mask_label(d_im_bg, **kwargs_mask_label)
+    nima.d_mask_label(d_im_bg, **kwargs_mask_label)
     kwargs_meas_props = {"channels": channels}
     kwargs_meas_props["ratios_from_image"] = image_ratios
     if ratio_median_radii:
@@ -193,7 +193,7 @@ def main(  # type: ignore
             int(r) for r in ratio_median_radii.split(",")
         )
     click.secho(kwargs_meas_props)
-    meas, pr = nimg.d_meas_props(
+    meas, pr = nima.d_meas_props(
         d_im_bg, channels_cl=channels_cl, channels_ph=channels_ph, **kwargs_meas_props
     )
     #     # output for bg
@@ -213,13 +213,13 @@ def main(  # type: ignore
     bgs[column_order].to_csv(bname_bg + ".csv")
     # TODO: plt.close('all') or control mpl warning
     # output for fg (target)
-    f = nimg.d_plot_meas(bgs, meas, channels=channels)
+    f = nima.d_plot_meas(bgs, meas, channels=channels)
     f.savefig(bname + "_meas.png")
     ##
     # show all channels and labels only.
     d = {ch: d_im_bg[ch] for ch in channels}
     d["labels"] = d_im_bg["labels"]
-    f = nimg.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore
+    f = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore
     f.savefig(bname + "_dim.png")
     ##
     # meas csv

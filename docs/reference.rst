@@ -5,17 +5,27 @@ Reference
 .. contents::
     :local:
 
+Usage
+-----
+
+.. click:: nima.__main__:main
+    :prog: nima
+    :nested: full
+
+.. click:: nima.__main__:bias
+    :prog: bias
+    :nested: full
 
 
 scripts
 -------
 
-.. automodule:: nimg.scripts
+.. automodule:: nima.scripts
    :members:
 
 
-nimg
-------
+nima
+----
 
-.. automodule:: nimg.nimg
+.. automodule:: nima.nima
    :members:

@@ -1,4 +1,4 @@
-"""Tests for nimg script."""
+"""Tests for nima script."""
 import os
 from pathlib import Path
 from typing import Any
@@ -13,7 +13,7 @@ from click.testing import CliRunner
 from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
 
-from nimg import __main__
+from nima import __main__
 
 
 # test data: (rootname, times)

@@ -1,1 +1,1 @@
-"""Test suite for the nimg package."""
+"""Test suite for the nima package."""

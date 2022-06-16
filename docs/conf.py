@@ -2,7 +2,7 @@
 from datetime import datetime
 
 
-project = "nimg"
+project = "nima"
 author = "Daniele Arosio"
 copyright = f"{datetime.now().year}, {author}"
 html_static_path = ["_static"]

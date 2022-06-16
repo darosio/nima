@@ -14,8 +14,8 @@ from numpy.typing import NDArray
 from scipy import ndimage  # type: ignore
 from skimage import io  # type: ignore
 
-from nimg import nimg
-from nimg.nimg import ImArray
+from nima import nima
+from nima.nima import ImArray
 
 
 mpl.rcParams["figure.max_open_warning"] = 199  # type: ignore
@@ -47,7 +47,7 @@ def dark(fp: str, thr: float = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
     """
     im = zipread(fp)
     print(im.shape)  # Reads only the first YX plane currently.
-    zp = nimg.zproject(im)
+    zp = nima.zproject(im)
     imf = ndimage.median_filter(
         im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
     )

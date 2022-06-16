@@ -1,5 +1,17 @@
 # Changelog
 
+## Version 0.5.4 - 2022-06-16
+### Added
+- [ci] Testpypi and pypi.
+- [ci] Adding release workflow.
+
+### Changed
+- [docs] Switched to `README.md`.
+
+## Version 0.5.3 - 2022-06-16
+### Changed
+- [refactor] Renamed to nima (rg, embark export, wgrep, replace-regex).
+
 ## Version 0.5.2 - 2022-06-15
 ### Changed
 - [build] Updated dependencies.
@@ -9,7 +21,7 @@
 - [test] Switched to click.testing.
 
 ### Fixed
-- [test] Typeguard nimg.
+- [test] Typeguard nima.
 
 ## Version 0.5.0 - 2022-06-15
 Moved from bitbucket to GITHUB.
@@ -55,7 +67,7 @@ flake8_eradicate and  flake8-pytest-style.
 
 ### Changed
 - Click for the cli.
-- Separated `nimg` from `bias dark|flat`.
+- Separated `nima` from `bias dark|flat`.
 
 ### Removed
 - docopt.

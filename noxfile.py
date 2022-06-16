@@ -7,7 +7,7 @@ import nox_poetry
 from nox_poetry.sessions import Session
 
 
-package = "nimg"
+package = "nima"
 locations = "src", "tests", "./noxfile.py", "docs/conf.py"
 python_versions = ["3.8", "3.9", "3.10"]
 nox.options.sessions = "pre-commit", "safety", "mypy", "tests", "typeguard", "docs"
@@ -116,8 +116,8 @@ def clean(session: Session) -> None:
     """Clean local repository."""
     session.run(
         "rm",
-        "-r",
-        "./README.tmp.html",
+        "-rf",
+        ".coverage" "./README.tmp.html",
         "./__pycache__",
         "./.nox",
         "./.mypy_cache",
