@@ -2,6 +2,9 @@
 Numerical IMage Analyses
 ========================
 
+.. toctree::
+
+   README.md
 
 .. toctree::
    :hidden:
@@ -12,7 +15,6 @@ Numerical IMage Analyses
    CHANGELOG.md
    Module Reference <reference>
 
-.. include:: ../README.rst
 
 
 Indices and tables
