@@ -5,7 +5,7 @@
 
 [pypi status]: https://pypi.org/project/pcc/
 
-A library and a cli to help image analysis based on scipy.ndimage and
+A library and a cli to help image analyses based on scipy.ndimage and
 scikit-image.
 
 # Features
