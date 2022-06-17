@@ -2,8 +2,7 @@
 
 ## Version 0.5.4 - 2022-06-16
 ### Added
-- [ci] Testpypi and pypi.
-- [ci] Adding release workflow.
+- [ci] Testpypi and pypi, release drafter and labeler.
 
 ### Changed
 - [docs] Switched to `README.md`.

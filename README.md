@@ -3,7 +3,7 @@
 [![image](https://github.com/darosio/nima/actions/workflows/tests.yml/badge.svg)](https://github.com/darosio/nima/actions/workflows/tests.yml)
 [![image](https://codecov.io/gh/darosio/nima/branch/main/graph/badge.svg?token=OR0LUZUJUR)](https://codecov.io/gh/darosio/nima)
 
-[pypi status]: https://pypi.org/project/pcc/
+[pypi status]: https://pypi.org/project/nima/
 
 A library and a cli to help image analyses based on scipy.ndimage and
 scikit-image.
