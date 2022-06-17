@@ -18,13 +18,14 @@ scikit-image.
 
 :
 
-	pyenv virtualenv 3.6.13 nima-0.3.1-py36
+	pyenv virtualenv 3.10.4 nima-0.5.4
+	pyenv activate
 	poetry install
 	pip install .
 
 Optionally:
 
-	python -m ipykernel install \--user \--name=\"nima0.3.1\"
+	python -m ipykernel install --user --name="nima0.3.1"
 
 
 # Usage
@@ -41,14 +42,15 @@ A longer description of your project goes here\...
 
 ## Note
 
-poetry rocks? development my idea is to use global flake8 and black and
-no need to track linting and safety in poetry. KISS.
+pyenv activate nima-...
+poetry install pre-commit
+install before next first commit: pre-commit run --all-files
 
-pyenv activate nima-... poetry install pre-commit install before next
-first commit: pre-commit run \--all-files
+pyenv activate nima-0.2
+poetry install
+pip install .
 
-pyenv activare nima-0.2 poetry install pip install . so it is not
-installed in development mode and this version will persist to updates.
+so it is not installed in development mode and this version will persist to updates.
 
 ## todo
 
