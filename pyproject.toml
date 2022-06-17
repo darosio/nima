@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nima"
-version = "0.5.4"
+version = "0.5.5"
 description = "Numerical IMage Analyses."
 authors = ["daniele arosio <daniele.arosio@cnr.it>"]
 license = "BSD-3-Clause"

@@ -1,5 +1,8 @@
 # Changelog
 
+## Version 0.5.5 - 2022-06-17
+Change log is moved into github pr.
+
 ## Version 0.5.4 - 2022-06-16
 ### Added
 - [ci] Testpypi and pypi, release drafter and labeler.
