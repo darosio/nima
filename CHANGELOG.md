@@ -1,7 +1,30 @@
 # Changelog
 
+## Version 0.5.6 - 2022-06-18
+### What's Changed
+- Bump nox-poetry from 0.9.0 to 1.0.0 in /.github/workflows by @dependabot in #7
+- fixtestpypi by @darosio in #20
+
+For some reason the automatic triggering of actions stopped working.
+
 ## Version 0.5.5 - 2022-06-17
-Change log is moved into github pr.
+### Changes
+- bump v0.5.5 (#18) @darosio
+
+### construction_worker Continuous Integration
+- fix: pre-commit in noxfile (#17) @darosio
+
+### books Documentation
+- update sphinx (#16) @darosio
+
+### Dependencies
+- Bump sphinx to 5.0.2 (#15) @darosio
+- Bump myst-parser 0.18.0 (#15) @darosio
+- Bump babel from 2.10.2 to 2.10.3 (#12) @dependabot
+- Bump ipykernel from 6.14.0 to 6.15.0 (#11) @dependabot
+- Bump certifi from 2022.5.18.1 to 2022.6.15 (#10) @dependabot
+- Bump traitlets from 5.2.2.post1 to 5.3.0 (#13) @dependabot
+- Bump actions/setup-python from 3 to 4 (#6) @dependabot
 
 ## Version 0.5.4 - 2022-06-16
 ### Added
