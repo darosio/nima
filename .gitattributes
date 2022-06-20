@@ -1,1 +1,7 @@
+/tests/data/1b_c16_15.tif filter=lfs diff=lfs merge=lfs -text
+/examples/MN_10x.ipynb filter=lfs diff=lfs merge=lfs -text
+/examples/holoview.ipynb filter=lfs diff=lfs merge=lfs -text
+/examples/image-Copy1.ipynb filter=lfs diff=lfs merge=lfs -text
+/examples/image0.ipynb filter=lfs diff=lfs merge=lfs -text
+*.ipynb filter=lfs diff=lfs merge=lfs -text
 * !text !filter !merge !diff
