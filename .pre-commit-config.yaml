@@ -62,3 +62,10 @@ repos:
         language: system
         types: [python]
         args: [--py37-plus]
+      - id: commitizen
+        name: My commitizen check
+        entry: cz
+        args: ['check', '--commit-msg-file', '.git/COMMIT_EDITMSG']
+        pass_filenames: false
+        language: system
+        stages: [commit-msg]

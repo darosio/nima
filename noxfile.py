@@ -118,6 +118,7 @@ def precommit(session: Session) -> None:
         "pre-commit",
         "pre-commit-hooks",
         "pyupgrade",
+        "commitizen",
     )
     # TODO: other linters session.run("rst-lint", "README.rst")  # for PyPI readme.rst
     session.run("pre-commit", *args)

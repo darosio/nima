@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.7 (2022-06-20)
+
+### Feat
+
+- **ci**: add cz
+
 ## Version 0.5.6 - 2022-06-18
 ### What's Changed
 - Bump nox-poetry from 0.9.0 to 1.0.0 in /.github/workflows by @dependabot in #7
