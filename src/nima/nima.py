@@ -37,31 +37,7 @@ from skimage.morphology import disk  # type: ignore
 
 ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_])
 
-
-def im_print(im: ImArray, verbose: bool = False) -> None:
-    """Print useful information about im."""
-    print(
-        "ndim = ",
-        im.ndim,
-        "| shape = ",
-        im.shape,
-        "| max = ",
-        im.max(),
-        "| min = ",
-        im.min(),
-        "| size = ",
-        im.size,
-        "| dtype = ",
-        im.dtype,
-    )
-    if verbose:
-        if im.ndim == 3:
-            for i, image in enumerate(im):
-                print(
-                    "i = {:4d} | size = {} | zeros = {}".format(
-                        i, image.size, np.count_nonzero(image == 0)
-                    )
-                )
+# TODO: https://towardsdatascience.com/creating-custom-plotting-functions-with-matplotlib-1f4b8eba6aa1
 
 
 def myhist(
@@ -410,49 +386,56 @@ def bg(
         # # FIXME: in case mm = skimage.morphology.binary_closing(mm)
     pixel_values = im[m]
     iqr = np.percentile(pixel_values, [25, 50, 75])
-    #
-    f1 = plt.figure(figsize=(9, 5))
-    ax1 = f1.add_subplot(121)
-    masked = im * m
-    cmap = plt.cm.inferno  # type: ignore
-    img0 = ax1.imshow(masked, cmap=cmap)
-    plt.colorbar(img0, ax=ax1, orientation="horizontal")  # type:ignore
-    plt.title(kind + " " + str(title) + "\n" + str(iqr))
-    #
-    f1.add_subplot(122)
-    myhist(im[m], log=True)
-    f1.tight_layout()
 
+    def plot() -> plt.Figure:
+        f = plt.figure(figsize=(9, 5))
+        ax1 = f.add_subplot(121)
+        masked = im * m
+        cmap = plt.cm.inferno  # type: ignore
+        img0 = ax1.imshow(masked, cmap=cmap)
+        plt.colorbar(img0, ax=ax1, orientation="horizontal")  # type:ignore
+        plt.title(kind + " " + str(title) + "\n" + str(iqr))
+        f.add_subplot(122)
+        myhist(im[m], log=True)
+        f.tight_layout()
+        return f
+
+    f1 = plot()
     if lim_:
-        f2 = plt.figure(figsize=(9, 4))
-        ax1, ax2, host = f2.subplots(nrows=1, ncols=3)  # type: ignore
-        img0 = ax1.imshow(lim)
-        plt.colorbar(img0, ax=ax2, orientation="horizontal")  # type: ignore
-        # FIXME: this is horribly duplicating an axes
-        f2.add_subplot(132)
-        myhist(lim)
-        #
-        # plot bg vs. perc
-        ave, sd, median = ([], [], [])
-        delta = lim.max() - lim.min()
-        delta /= 2
-        rng = np.linspace(lim.min() + delta / 20, lim.min() + delta, 20)
-        par = host.twiny()
-        # Second, show the right spine.
-        par.spines["bottom"].set_visible(True)
-        par.set_xlabel("perc")
-        par.set_xlim(0, 0.5)
-        par.grid()
-        host.set_xlim(lim.min(), lim.min() + delta)
-        p = np.linspace(0.025, 0.5, 20)
-        for t in rng:
-            m = lim < t
-            ave.append(im[m].mean())
-            sd.append(im[m].std() / 10)
-            median.append(np.median(im[m]))
-        host.plot(rng, median, "o")
-        par.errorbar(p, ave, sd)
-        f2.tight_layout()
+
+        def plot_lim() -> plt.Figure:
+            f = plt.figure(figsize=(9, 4))
+            ax1, ax2, host = f.subplots(nrows=1, ncols=3)  # type: ignore
+            img0 = ax1.imshow(lim)
+            plt.colorbar(img0, ax=ax2, orientation="horizontal")  # type: ignore
+            # FIXME: this is horribly duplicating an axes
+            f.add_subplot(132)
+            myhist(lim)
+            #
+            # plot bg vs. perc
+            ave, sd, median = ([], [], [])
+            delta = lim.max() - lim.min()
+            delta /= 2
+            rng = np.linspace(lim.min() + delta / 20, lim.min() + delta, 20)
+            par = host.twiny()
+            # Second, show the right spine.
+            par.spines["bottom"].set_visible(True)
+            par.set_xlabel("perc")
+            par.set_xlim(0, 0.5)
+            par.grid()
+            host.set_xlim(lim.min(), lim.min() + delta)
+            p = np.linspace(0.025, 0.5, 20)
+            for t in rng:
+                m = lim < t
+                ave.append(im[m].mean())
+                sd.append(im[m].std() / 10)
+                median.append(np.median(im[m]))
+            host.plot(rng, median, "o")
+            par.errorbar(p, ave, sd)
+            f.tight_layout()
+            return f
+
+        f2 = plot_lim()
         return iqr[1], pixel_values, [f1, f2]
     else:
         return iqr[1], pixel_values, [f1]
