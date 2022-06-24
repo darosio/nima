@@ -3,10 +3,14 @@ import os
 from pathlib import Path
 
 import click
+import dask.array as da
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 import skimage  # type: ignore
 import tifffile  # type: ignore
+from dask.distributed import Client
+from dask.distributed import progress
 from matplotlib.backends import backend_pdf  # type: ignore
 from scipy import ndimage  # type: ignore
 
@@ -279,6 +283,26 @@ def dark(zipfile):  # type: ignore
     skimage.io.imrite(bname + ".tif", dark_im, plugin="tifffile")
     dark_hotpixels.to_csv(bname + ".csv")
     print("median [ IQR ] = ", np.median(dark_im), np.percentile(dark_im, [25, 75]))
+
+
+@bias.command()
+@click.argument("globpath", type=str)
+def dflat(globpath):  # type: ignore
+    """Dask average files from a pattern."""
+    image_sequence = tifffile.TiffSequence(globpath)
+    # "images/Vero-Hek/2022-06-14/13080/TimePoint_1/*w2*.tif"
+    axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
+    click.secho(axes_n_shape, fg="green")
+    store = image_sequence.aszarr()
+    Client()
+    f = da.mean(da.from_zarr(store).rechunk(), axis=0)
+    fp = f.persist()
+    progress(fp)
+    flat = ndimage.gaussian_filter(fp.compute(), sigma=100)
+    flat /= flat.mean()
+    tifffile.imwrite("flat_w2.tif", flat)
+    tifffile.imshow(flat)
+    plt.show()
 
 
 @bias.command()
