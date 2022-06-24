@@ -114,7 +114,7 @@ changelog_incremental = true
 version_files = [
   "pyproject.toml:version",
   # "docs/conf.py:release",
-  # "README.md:Version",
+  "README.md:Version",
 ]
 
 [build-system]
