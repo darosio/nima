@@ -295,7 +295,7 @@ def dflat(globpath):  # type: ignore
     click.secho(axes_n_shape, fg="green")
     store = image_sequence.aszarr()
     Client()
-    f = da.mean(da.from_zarr(store).rechunk(), axis=0)
+    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
     fp = f.persist()
     progress(fp)
     flat = ndimage.gaussian_filter(fp.compute(), sigma=100)
