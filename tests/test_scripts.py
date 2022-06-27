@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 import skimage.io  # type: ignore
 import skimage.measure  # type: ignore
+import tifffile as tff  # type: ignore
 from click.testing import CliRunner
 from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
@@ -41,6 +42,21 @@ def test_stdout(result_folder: Any) -> None:
         int([line for line in out.splitlines() if "Times:" in str(line)][0].split()[1])
         == result_folder[1][1]
     )
+
+
+def test_bias_dflat(tmp_path: Path) -> None:
+    """Check `bias dflat` cli."""
+    d = tmp_path / "tmp"
+    d.mkdir()
+    of = d / "ff.tif"
+    filename = os.path.join("tests", "data", "test_flat*.tif")
+    runner = CliRunner()
+    result = runner.invoke(__main__.bias, ["dflat", filename, "-o", of])
+    test = tff.imread(of)
+    filenameout = os.path.join("tests", "data", "output", "test_flat.tif")
+    expect = tff.imread(filenameout)
+    assert np.array_equal(test, expect)
+    assert str(3) in result.output
 
 
 class TestOutputFiles:

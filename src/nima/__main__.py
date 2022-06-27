@@ -1,6 +1,7 @@
 """Command-line interface."""
 import os
 from pathlib import Path
+from pathlib import PurePath
 
 import click
 import dask.array as da
@@ -286,11 +287,17 @@ def dark(zipfile):  # type: ignore
 
 
 @bias.command()
+@click.option(
+    "-o",
+    "--output",
+    type=Path,
+    default="dflat.tif",
+    help="Flat file [default:dflat.tif].",
+)
 @click.argument("globpath", type=str)
-def dflat(globpath):  # type: ignore
+def dflat(output, globpath):  # type: ignore
     """Dask average files from a pattern."""
     image_sequence = tifffile.TiffSequence(globpath)
-    # "images/Vero-Hek/2022-06-14/13080/TimePoint_1/*w2*.tif"
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
     click.secho(axes_n_shape, fg="green")
     store = image_sequence.aszarr()
@@ -298,10 +305,14 @@ def dflat(globpath):  # type: ignore
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
     fp = f.persist()
     progress(fp)
-    flat = ndimage.gaussian_filter(fp.compute(), sigma=100)
+    tprojection = fp.compute()
+    ppo = PurePath(output)
+    rawoutput = ppo.with_name("-".join((ppo.stem, "raw.tif")))
+    tifffile.imwrite(rawoutput, tprojection)
+    flat = ndimage.gaussian_filter(tprojection, sigma=100)
     flat /= flat.mean()
-    tifffile.imwrite("flat_w2.tif", flat)
-    tifffile.imshow(flat)
+    tifffile.imwrite(output, flat)
+    # Output summary graphics.
     plt.show()
 
 
