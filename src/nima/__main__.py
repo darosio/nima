@@ -300,6 +300,7 @@ def dflat(output, globpath):  # type: ignore
     image_sequence = tifffile.TiffSequence(globpath)
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
     click.secho(axes_n_shape, fg="green")
+
     store = image_sequence.aszarr()
     Client()
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
@@ -313,7 +314,9 @@ def dflat(output, globpath):  # type: ignore
     flat /= flat.mean()
     tifffile.imwrite(output, flat)
     # Output summary graphics.
-    plt.show()
+    f = nima.plot_img_profile(flat)
+    png_fp = ppo.with_name(".".join((ppo.stem, "png")))
+    plt.savefig(png_fp, f)
 
 
 @bias.command()
