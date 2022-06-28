@@ -1,6 +1,5 @@
 """Tests for nima script."""
 import os
-import pathlib
 from pathlib import Path
 from typing import Any
 from typing import Tuple
@@ -44,33 +43,6 @@ def test_stdout(result_folder: Any) -> None:
         int([line for line in out.splitlines() if "Times:" in str(line)][0].split()[1])
         == result_folder[1][1]
     )
-
-
-def test_bias_dflat(tmp_path: Path) -> None:
-    """Check `bias dflat` cli."""
-    d = tmp_path / "tmp"
-    d.mkdir()
-    of = d / "ff.tif"
-    ofraw = d / "ff-raw.tif"
-    filename = os.path.join("tests", "data", "test_flat*.tif")
-    runner = CliRunner()
-    result = runner.invoke(__main__.bias, ["dflat", filename, "-o", f"{of.resolve()}"])
-    assert str(3) in result.output
-
-    test = tff.imread(ofraw)
-    filenameout = os.path.join("tests", "data", "output", "test_flat.tif")
-    expect = tff.imread(filenameout)
-    assert np.array_equal(test, expect)
-
-    test = tff.imread(of)
-    filenameout = os.path.join("tests", "data", "output", "test_flat_gaussnorm.tif")
-    expect = tff.imread(filenameout)
-    assert np.array_equal(test, expect)
-
-    ppof = pathlib.PurePath(of)
-    png_path = ppof.with_name(".".join((ppof.stem, "png")))
-    print(png_path)
-    assert of.exists()
 
 
 class TestOutputFiles:
@@ -130,3 +102,24 @@ class TestOutputFiles:
         fp_expected.with_name(rename).unlink()
         if msg:
             raise ImageComparisonFailure(msg)
+
+
+def test_bias_dflat(tmp_path: Path) -> None:
+    """Check `bias dflat` cli."""
+    d = tmp_path
+    tmpflt = d / "ff.tif"
+    tmpraw = d / "ff-raw.tif"
+    filename = os.path.join("tests", "data", "test_flat*.tif")
+    runner = CliRunner()
+    result = runner.invoke(
+        __main__.bias,
+        ["dflat", filename, "-o", f"{tmpflt.resolve()}"],  # incompatible type Path
+    )
+    assert str(3) in result.output
+    test = tff.imread(tmpraw)
+    expect = tff.imread(Path("tests") / "data" / "output" / "test_flat.tif")
+    assert np.array_equal(test, expect)
+    test = tff.imread(tmpflt)
+    expect = tff.imread(Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif")
+    assert np.array_equal(test, expect)
+    assert tmpflt.with_suffix(".png").exists()

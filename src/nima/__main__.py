@@ -1,12 +1,13 @@
 """Command-line interface."""
+from __future__ import annotations
+
 import os
+import sys
 from pathlib import Path
-from pathlib import PurePath
 
 import click
 import dask.array as da
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import numpy as np
 import skimage  # type: ignore
 import tifffile  # type: ignore
@@ -290,12 +291,12 @@ def dark(zipfile):  # type: ignore
 @click.option(
     "-o",
     "--output",
-    type=Path,
+    type=click.Path(writable=True, path_type=Path),
     default="dflat.tif",
     help="Flat file [default:dflat.tif].",
 )
 @click.argument("globpath", type=str)
-def dflat(output, globpath):  # type: ignore
+def dflat(output: Path, globpath: str) -> None:
     """Dask average files from a pattern."""
     image_sequence = tifffile.TiffSequence(globpath)
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
@@ -307,16 +308,17 @@ def dflat(output, globpath):  # type: ignore
     fp = f.persist()
     progress(fp)
     tprojection = fp.compute()
-    ppo = PurePath(output)
-    rawoutput = ppo.with_name("-".join((ppo.stem, "raw.tif")))
-    tifffile.imwrite(rawoutput, tprojection)
+    if sys.version_info >= (3, 9):
+        tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
+    else:
+        rename = "-".join([output.stem, "raw"]) + output.suffix
+        tifffile.imwrite(output.with_name(rename), tprojection)
     flat = ndimage.gaussian_filter(tprojection, sigma=100)
     flat /= flat.mean()
     tifffile.imwrite(output, flat)
     # Output summary graphics.
     f = nima.plot_img_profile(flat)
-    png_fp = ppo.with_name(".".join((ppo.stem, "png")))
-    plt.savefig(png_fp, f)
+    f.savefig(output.with_suffix(".png"))
 
 
 @bias.command()
