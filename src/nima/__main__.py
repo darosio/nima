@@ -11,6 +11,7 @@ import matplotlib as mpl
 import numpy as np
 import skimage  # type: ignore
 import tifffile  # type: ignore
+from dask.diagnostics import ProgressBar
 from dask.distributed import Client
 from dask.distributed import progress
 from matplotlib.backends import backend_pdf  # type: ignore
@@ -309,6 +310,38 @@ def dflat(output: Path, globpath: str) -> None:
     fp = f.persist()
     progress(fp)
     tprojection = fp.compute()
+    if sys.version_info >= (3, 9):
+        tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
+    else:
+        rename = "-".join([output.stem, "raw"]) + output.suffix
+        tifffile.imwrite(output.with_name(rename), tprojection)
+    flat = ndimage.gaussian_filter(tprojection, sigma=100)
+    flat /= flat.mean()
+    tifffile.imwrite(output, flat)
+    # Output summary graphics.
+    title = os.fspath(output.with_suffix("").name)
+    if flat.ndim == 1:
+        plt_img_profiles(flat, title, output)
+    else:
+        for i in range(flat.shape[0]):
+            plt_img_profiles(flat[i], title, output.with_suffix(f".{i}.png"))
+
+
+@bias.command()
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(writable=True, path_type=Path),
+    default="eflat.tif",
+    help="Flat file [default:eflat.tif].",
+)
+@click.argument("fpath", type=click.Path(path_type=Path))
+def eflat(output: Path, fpath: Path) -> None:
+    """Dask average files from a pattern."""
+    store = tifffile.imread(fpath, aszarr=True)
+    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
+    with ProgressBar():
+        tprojection = f.compute()
     if sys.version_info >= (3, 9):
         tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
     else:
