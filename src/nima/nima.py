@@ -845,27 +845,30 @@ def plt_img_profile(
     """
     # definitions for the axes
     ratio = img.shape[0] / img.shape[1]
-    left, width = 0.055, 0.6
-    bottom, height = 0.045, 0.6 * ratio
-    spacing = 0.045
-
-    rect_img = [left, bottom, width, height]
-    rect_histx = [left, bottom + height, width, 0.25]
-    rect_histy = [left + width, bottom, 0.25, height]
-    rect_h = [left + width + spacing, bottom + height + spacing, 0.25, 0.25]
-    # start with a square Figure
-    fig = plt.figure(figsize=(8, 8 * (0.4 + 0.6 * ratio)))
+    left, width = 0.05, 0.6
+    bottom, height = 0.05, 0.6 * ratio
+    spacing, marginal = 0.05, 0.25
+    rect_im = [left, bottom, width, height]
+    rect_px = [left, bottom + height, width, marginal]
+    rect_py = [left + width, bottom, marginal, height]
+    rect_ht = [
+        left + width + spacing,
+        bottom + height + spacing,
+        marginal,
+        marginal / ratio,
+    ]
+    fig = plt.figure(figsize=(8.0, 8.0))  # * (0.4 + 0.6 * ratio)))
 
     if title:
         kw = {"weight": "bold", "ha": "left"}
-        fig.suptitle(title, fontsize=16, x=0.08, y=0.98, **kw)  # type: ignore
+        fig.suptitle(title, fontsize=16, x=spacing * 2, **kw)  # type: ignore
 
-    ax = fig.add_axes(rect_img)  # type: ignore
+    ax = fig.add_axes(rect_im)  # type: ignore
     with plt.style.context("_mpl-gallery"):  # type: ignore
-        ax_histx = fig.add_axes(rect_histx, sharex=ax)  # type: ignore
-        ax_histy = fig.add_axes(rect_histy, sharey=ax)  # type: ignore
+        ax_px = fig.add_axes(rect_px, sharex=ax)  # type: ignore
+        ax_py = fig.add_axes(rect_py, sharey=ax)  # type: ignore
     with plt.style.context("seaborn"):  # type: ignore
-        ax_hist = fig.add_axes(rect_h)  # type: ignore
+        ax_hist = fig.add_axes(rect_ht)  # type: ignore
     ax_cm = fig.add_axes([0.45, 0.955, 0.3, 0.034])  # type: ignore
     # sigfig: ax_hist.set_title("err: " + str(sigfig.
     # sigfig: round(da.std(da.from_zarr(zim)).compute(), sigfigs=3)))
@@ -873,15 +876,15 @@ def plt_img_profile(
     def img_hist(
         im: ImArray,
         ax: plt.Axes,
-        ax_histx: plt.Axes,
-        ax_histy: plt.Axes,
+        ax_px: plt.Axes,
+        ax_py: plt.Axes,
         axh: plt.Axes,
         axc: plt.Axes,
         vmin: float | None = None,
         vmax: float | None = None,
     ) -> mpl.image.AxesImage:
-        ax_histx.tick_params(axis="x", labelbottom=False, labeltop=True, top=True)  # type: ignore
-        ax_histy.tick_params(  # type: ignore
+        ax_px.tick_params(axis="x", labelbottom=False, labeltop=True, top=True)  # type: ignore
+        ax_py.tick_params(  # type: ignore
             axis="y", right=True, labelright=True, left=False, labelleft=False
         )
         ax.tick_params(axis="y", labelleft=False, right=True)  # type: ignore
@@ -891,13 +894,13 @@ def plt_img_profile(
         else:
             vmi, vma = vmin, vmax
         img = ax.imshow(im, vmin=vmi, vmax=vma, cmap="turbo")
-        ax_histx.plot(im.mean(axis=0), lw=4, alpha=0.5)  # type: ignore
+        ax_px.plot(im.mean(axis=0), lw=4, alpha=0.5)  # type: ignore
         ymin = round(im.shape[0] / 2 * 0.67)
         ymax = round(im.shape[0] / 2 * 1.33)
         xmin = round(im.shape[1] / 2 * 0.67)
         xmax = round(im.shape[1] / 2 * 1.33)
-        ax_histx.plot(im[ymin:ymax, :].mean(axis=0), lw=2, c="k")  # type: ignore
-        ax_histx.xaxis.set_label_position("top")  # type: ignore
+        ax_px.plot(im[ymin:ymax, :].mean(axis=0), lw=2, c="k")  # type: ignore
+        ax_px.xaxis.set_label_position("top")  # type: ignore
         ax.set_xlabel("X")
         ax.axvline(xmin, c="k")  # type: ignore
         ax.axvline(xmax, c="k")  # type: ignore
@@ -905,12 +908,12 @@ def plt_img_profile(
         ax.axhline(ymax, c="k")  # type: ignore
         ax.yaxis.set_label_position("left")  # type: ignore
         ax.set_ylabel("Y")
-        ax_histy.plot(im.mean(axis=1), range(im.shape[0]), lw=4, alpha=0.5)  # type: ignore
-        ax_histy.plot(im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), c="k", lw=2)  # type: ignore
-        axh.hist(im.ravel(), bins=max(int(im.max() - im.min()), 25), log=True)  # type: ignore
+        ax_py.plot(im.mean(axis=1), range(im.shape[0]), lw=4, alpha=0.5)  # type: ignore
+        ax_py.plot(im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), c="k", lw=2)  # type: ignore
+        axh.hist(im.ravel(), bins=max(int(im.max() - im.min()), 25), log=True, alpha=0.6, lw=4, histtype="bar")  # type: ignore
         return img
 
-    im2c = img_hist(img, ax, ax_histx, ax_histy, ax_hist, ax_cm, **kwargs)  # type: ignore
+    im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, ax_cm, **kwargs)  # type: ignore
     ax_cm.axis("off")
     fig.colorbar(  # type: ignore
         im2c, ax=ax_cm, fraction=0.99, shrink=0.99, aspect=4, orientation="horizontal"
