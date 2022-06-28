@@ -11,7 +11,7 @@ import matplotlib as mpl
 import numpy as np
 import skimage  # type: ignore
 import tifffile  # type: ignore
-from dask.diagnostics import ProgressBar
+from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client
 from dask.distributed import progress
 from matplotlib.backends import backend_pdf  # type: ignore
@@ -294,6 +294,39 @@ def dark(zipfile):  # type: ignore
     "-o",
     "--output",
     type=click.Path(writable=True, path_type=Path),
+    default="bias.tif",
+    help="Flat file [default:bias.tif].",
+)
+@click.argument("fpath", type=click.Path(path_type=Path))
+def edark(output: Path, fpath: Path) -> None:
+    """Bias and read error estimation."""
+    if fpath.suffix == ".zip":
+        store = tifffile.imread(scripts.zipread(os.fspath(fpath)), aszarr=True)
+    else:
+        store = tifffile.imread(fpath, aszarr=True)
+    darr = da.from_zarr(store)  # type: ignore
+    click.secho("Bias image-stack shape: " + str(darr.shape), fg="green")
+    med_c = da.median(darr.rechunk(), axis=0)  # type: ignore
+    std_c = da.std(darr.rechunk(), axis=0)  # type: ignore
+    with ProgressBar():  # type: ignore
+        bias = med_c.compute()
+        err = std_c.compute()
+    tifffile.imwrite(output, bias)
+    # Output summary graphics.
+    title = os.fspath(output.with_suffix("").name)
+    if bias.ndim == 2:
+        plt_img_profiles(bias, title, output)
+        plt_img_profiles(err, title, output.with_suffix(".err.png"))
+    else:
+        for i in range(bias.shape[0]):
+            plt_img_profiles(bias[i], title, output.with_suffix(f".{i}.png"))
+
+
+@bias.command()
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(writable=True, path_type=Path),
     default="dflat.tif",
     help="Flat file [default:dflat.tif].",
 )
@@ -303,7 +336,6 @@ def dflat(output: Path, globpath: str) -> None:
     image_sequence = tifffile.TiffSequence(globpath)
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
     click.secho(axes_n_shape, fg="green")
-
     store = image_sequence.aszarr()
     Client()
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
@@ -320,7 +352,7 @@ def dflat(output: Path, globpath: str) -> None:
     tifffile.imwrite(output, flat)
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
-    if flat.ndim == 1:
+    if flat.ndim == 2:
         plt_img_profiles(flat, title, output)
     else:
         for i in range(flat.shape[0]):
@@ -340,7 +372,7 @@ def eflat(output: Path, fpath: Path) -> None:
     """Dask average files from a pattern."""
     store = tifffile.imread(fpath, aszarr=True)
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
-    with ProgressBar():
+    with ProgressBar():  # type: ignore
         tprojection = f.compute()
     if sys.version_info >= (3, 9):
         tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
