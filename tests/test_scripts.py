@@ -118,8 +118,8 @@ def test_bias_dflat(tmp_path: Path) -> None:
     assert str(3) in result.output
     test = tff.imread(tmpraw)
     expect = tff.imread(Path("tests") / "data" / "output" / "test_flat.tif")
-    assert np.array_equal(test, expect)
+    np.testing.assert_allclose(test, expect)
     test = tff.imread(tmpflt)
     expect = tff.imread(Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif")
-    assert np.array_equal(test, expect)
+    np.testing.assert_allclose(test, expect)
     assert tmpflt.with_suffix(".png").exists()
