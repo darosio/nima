@@ -131,7 +131,7 @@ def test_plot_img_profile() -> None:
         "tests", "data", "output", "test_flat_gaussnorm.tif"
     )
     img = tff.imread(sample_flat_image)
-    f = nima.plot_img_profile(img)
+    f = nima.plt_img_profile(img)
     _, y_plot = f.get_axes()[1].lines[0].get_xydata().T  # type: ignore
     ydata = np.array([1.00000001, 0.99999999, 1.00000002, 1.0, 0.99999999])
     np.testing.assert_allclose(y_plot, ydata)

@@ -333,7 +333,7 @@ def dflat(output: Path, globpath: str) -> None:
 def plot(output: Path, image: Path) -> None:
     """Plot Bias-Flat image."""
     img = tifffile.imread(image)
-    if output is None:
+    if not output:
         output = image.with_suffix(".png")
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
