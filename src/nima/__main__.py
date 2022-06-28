@@ -18,6 +18,7 @@ from scipy import ndimage  # type: ignore
 
 from nima import nima
 from nima import scripts
+from nima.nima import ImArray
 
 
 @click.command()
@@ -317,9 +318,33 @@ def dflat(output: Path, globpath: str) -> None:
     flat /= flat.mean()
     tifffile.imwrite(output, flat)
     # Output summary graphics.
-    f = nima.plot_img_profile(flat)
+    title = os.fspath(output.with_suffix("").name)
+    plt_img_profiles(flat, title, output)
+
+
+@bias.command()
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(writable=True, path_type=Path),
+    help="Output file [default:image_stem.png].",
+)
+@click.argument("image", type=click.Path(exists=True, path_type=Path))
+def plot(output: Path, image: Path) -> None:
+    """Plot Bias-Flat image."""
+    img = tifffile.imread(image)
+    if output is None:
+        output = image.with_suffix(".png")
+    # Output summary graphics.
+    title = os.fspath(output.with_suffix("").name)
+    plt_img_profiles(img, title, output)
+
+
+def plt_img_profiles(img: ImArray, title: str, output: Path) -> None:
+    """Compute and save image profiles graphics."""
+    f = nima.plt_img_profile(img, title=title)
     f.savefig(output.with_suffix(".png"))
-    f = nima.plot_img_profile_2(flat)
+    f = nima.plt_img_profile_2(img, title=title)
     f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
 
 

@@ -824,7 +824,7 @@ def d_plot_meas(
     return fig
 
 
-def plot_img_profile(
+def plt_img_profile(
     img: ImArray, title: str | None = None, **kwargs: dict[str, Any]
 ) -> plt.Figure:
     """Summary graphics for Flat-Bias images.
@@ -933,9 +933,9 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> plt.Figure:
     plt.Figure
 
     """
-    f = plt.figure(constrained_layout=True)  # type: ignore
-    gs = f.add_gridspec(3, 3)  # type: ignore
-    ax = f.add_subplot(gs[0:2, 0:2])
+    fig = plt.figure(constrained_layout=True)  # type: ignore
+    gs = fig.add_gridspec(3, 3)  # type: ignore
+    ax = fig.add_subplot(gs[0:2, 0:2])
     vmi, vma = np.percentile(img, [18.4, 81.6])  # 1/e (66.6 %)
     ax.imshow(img, vmin=vmi, vmax=vma, cmap="turbo")
     ymin = round(img.shape[0] / 2 * 0.67)
@@ -946,14 +946,17 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> plt.Figure:
     ax.axvline(xmax, c="k")  # type: ignore
     ax.axhline(ymin, c="k")  # type: ignore
     ax.axhline(ymax, c="k")  # type: ignore
-    ax1 = f.add_subplot(gs[2, 0:2])
+    ax1 = fig.add_subplot(gs[2, 0:2])
     ax1.plot(img.mean(axis=0))  # type: ignore
     ax1.plot(img[ymin:ymax, :].mean(axis=0), alpha=0.2, lw=2, c="k")  # type: ignore
-    ax2 = f.add_subplot(gs[0:2, 2])
+    ax2 = fig.add_subplot(gs[0:2, 2])
     ax2.plot(  # type: ignore
         img[:, xmin:xmax].mean(axis=1), range(img.shape[0]), alpha=0.2, lw=2, c="k"
     )
     ax2.plot(img.mean(axis=1), range(img.shape[0]))
-    axh = f.add_subplot(gs[2, 2])
+    axh = fig.add_subplot(gs[2, 2])
     axh.hist(img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True)  # type: ignore
-    return f
+    if title:
+        kw = {"weight": "bold", "ha": "left"}
+        fig.suptitle(title, fontsize=16, **kw)  # type: ignore
+    return fig
