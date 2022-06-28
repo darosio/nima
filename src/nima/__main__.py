@@ -319,6 +319,8 @@ def dflat(output: Path, globpath: str) -> None:
     # Output summary graphics.
     f = nima.plot_img_profile(flat)
     f.savefig(output.with_suffix(".png"))
+    f = nima.plot_img_profile_2(flat)
+    f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
 
 
 @bias.command()
