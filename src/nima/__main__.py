@@ -355,11 +355,7 @@ def dflat(output: Path, globpath: str) -> None:
     tifffile.imwrite(output, flat)
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
-    if flat.ndim == 2:
-        plt_img_profiles(flat, title, output)
-    else:
-        for i in range(flat.shape[0]):
-            plt_img_profiles(flat[i], title, output.with_suffix(f".{i}.png"))
+    plt_img_profiles(flat, title, output)
 
 
 @bias.command()
@@ -367,7 +363,6 @@ def dflat(output: Path, globpath: str) -> None:
     "-o",
     "--output",
     type=click.Path(writable=True, path_type=Path),
-    default="eflat.tif",
     help="Flat file [default:eflat.tif].",
 )
 @click.argument("fpath", type=click.Path(path_type=Path))
@@ -377,6 +372,8 @@ def eflat(output: Path, fpath: Path) -> None:
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
     with ProgressBar():  # type: ignore
         tprojection = f.compute()
+    if not output:
+        output = fpath.with_suffix(".png")
     if sys.version_info >= (3, 9):
         tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
     else:
@@ -410,10 +407,18 @@ def plot(output: Path, image: Path) -> None:
 
 def plt_img_profiles(img: ImArray, title: str, output: Path) -> None:
     """Compute and save image profiles graphics."""
-    f = nima.plt_img_profile(img, title=title)
-    f.savefig(output.with_suffix(".png"))
-    f = nima.plt_img_profile_2(img, title=title)
-    f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
+    if img.ndim == 2:
+        f = nima.plt_img_profile(img, title=title)
+        f.savefig(output.with_suffix(".png"), dpi=250, facecolor="w")
+        f = nima.plt_img_profile_2(img, title=title)
+        f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
+    else:
+        for i in range(img.shape[0]):
+            title += f" C:{i}"
+            f = nima.plt_img_profile(img[i], title=title)
+            f.savefig(output.with_suffix(f".C{i}.png"), dpi=250, facecolor="w")
+            f = nima.plt_img_profile_2(img[i], title=title)
+            f.savefig(output.with_suffix(f".C{i}.2.png"), dpi=250, facecolor="w")
 
 
 @bias.command()
