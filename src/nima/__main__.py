@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import sys
+import zipfile
 from pathlib import Path
 
 import click
@@ -301,7 +302,9 @@ def dark(zipfile):  # type: ignore
 def edark(output: Path, fpath: Path) -> None:
     """Bias and read error estimation."""
     if fpath.suffix == ".zip":
-        store = tifffile.imread(scripts.zipread(os.fspath(fpath)), aszarr=True)
+        zf = zipfile.ZipFile(fpath)
+        fo = zf.open(zf.namelist()[0])
+        store = tifffile.imread(fo, aszarr=True)
     else:
         store = tifffile.imread(fpath, aszarr=True)
     darr = da.from_zarr(store)  # type: ignore
