@@ -1,5 +1,4 @@
 """Tests for nima script."""
-import os
 from pathlib import Path
 from typing import Any
 from typing import Tuple
@@ -17,21 +16,23 @@ from nima import __main__
 
 
 # test data: (rootname, times)
-rootnames = [("1b_c16_15", 4)]
+rootnames = [(Path("1b_c16_15"), 4)]
 
 
 @pytest.fixture(scope="module", params=rootnames)
-def result_folder(tmpdir_factory: Any, request: Any) -> Tuple[Path, Any, Any]:
+def result_folder(tmp_path_factory: Any, request: Any) -> Tuple[Path, Any, Any]:
     # ) -> Tuple[Path, Any, subprocess.Popen[bytes]]: # requires python>=3.9
     """Fixture for creating results folder and opening a sub-process."""
-    tmpdir = tmpdir_factory.mktemp("nniimmgg")
-    filename = os.path.join("tests", "data", request.param[0] + ".tif")
+    tmpdir = tmp_path_factory.getbasetemp()
+    filename = Path("tests/data") / request.param[0].with_suffix(".tif")
     runner = CliRunner()
-    result = runner.invoke(__main__.main, [filename, "G", "R", "C", "-o", tmpdir])
+    result = runner.invoke(
+        __main__.main, [f"{filename.resolve()}", "G", "R", "C", "-o", tmpdir]
+    )
     return tmpdir, request.param, result
 
 
-def test_printout(result_folder: Any) -> None:
+def test_stdout(result_folder: Any) -> None:
     """It outputs the correct value for 'Times'."""
     out = result_folder[2].output
     assert result_folder[2].return_value is None
@@ -48,8 +49,9 @@ class TestOutputFiles:
     @pytest.mark.parametrize("f", ["bg.csv", "label1.csv", "label2.csv", "label3.csv"])
     def test_csv(self, result_folder: str, f: str) -> None:
         """It checks csv tables."""
-        fp_expected = os.path.join("tests/data/output/", result_folder[1][0], f)
-        fp_result = result_folder[0].join(os.path.join(result_folder[1][0], f))
+        fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
+        # # TODO: why Path is needed?
+        fp_result = result_folder[0] / Path(result_folder[1][0]) / f
         expected = pd.read_csv(fp_expected)
         result = pd.read_csv(fp_result)
         pd.testing.assert_frame_equal(expected, result, atol=1e-15)  # type: ignore
@@ -67,8 +69,8 @@ class TestOutputFiles:
     )
     def test_tif(self, result_folder: Any, f: str) -> None:
         """It checks tif files: r_Cl, r_pH of segmented cells."""
-        fp_expected = os.path.join("tests/data/output/", result_folder[1][0], f)
-        fp_result = result_folder[0].join(os.path.join(result_folder[1][0], f))
+        fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
+        fp_result = result_folder[0] / result_folder[1][0] / f
         expected = skimage.io.imread(fp_expected)
         result = skimage.io.imread(str(fp_result))  # for utf8 encoding?
         assert np.sum(result - expected) == pytest.approx(0, 2.3e-06)
@@ -77,8 +79,10 @@ class TestOutputFiles:
     @pytest.mark.parametrize(("f", "tol"), [("_dim.png", 8.001), ("_meas.png", 20)])
     def test_png(self, result_folder: Any, f: str, tol: float) -> None:
         """It checks png files: saved segmentation and analysis."""
-        fp_expected = os.path.join("tests/data/output/", result_folder[1][0] + f)
-        fp_result = result_folder[0].join(result_folder[1][0] + f)
+        fp_expected = Path("tests/data/output/") / "".join(
+            (result_folder[1][0].name, f)
+        )
+        fp_result = result_folder[0] / "".join((result_folder[1][0].name, f))
         msg = compare_images(fp_expected, fp_result, tol)
         if msg:
             raise ImageComparisonFailure(msg)
@@ -88,9 +92,11 @@ class TestOutputFiles:
     )
     def test_pdf(self, result_folder: Any, f: str) -> None:
         """It checks pdf files: saved bg estimation."""
-        fp_expected = os.path.join("tests/data/output/", result_folder[1][0], f)
-        fp_result = result_folder[0].join(os.path.join(result_folder[1][0], f))
+        fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
+        fp_result = result_folder[0] / result_folder[1][0] / f
         msg = compare_images(fp_expected, fp_result, 13)
-        os.remove(fp_expected[:-4] + "_pdf.png")
+        # Created by compare_images into tests/data folder
+        rename = "_".join((fp_expected.name[:-4], "pdf.png"))
+        fp_expected.with_name(rename).unlink()
         if msg:
             raise ImageComparisonFailure(msg)
