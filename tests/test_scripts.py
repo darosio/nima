@@ -16,7 +16,7 @@ from nima import __main__
 
 
 # test data: (rootname, times)
-rootnames = [("1b_c16_15", 4)]
+rootnames = [(Path("1b_c16_15"), 4)]
 
 
 @pytest.fixture(scope="module", params=rootnames)
@@ -24,7 +24,7 @@ def result_folder(tmp_path_factory: Any, request: Any) -> Tuple[Path, Any, Any]:
     # ) -> Tuple[Path, Any, subprocess.Popen[bytes]]: # requires python>=3.9
     """Fixture for creating results folder and opening a sub-process."""
     tmpdir = tmp_path_factory.getbasetemp()
-    filename = Path("tests/data") / "".join((request.param[0], ".tif"))
+    filename = Path("tests/data") / request.param[0].with_suffix(".tif")
     runner = CliRunner()
     result = runner.invoke(
         __main__.main, [f"{filename.resolve()}", "G", "R", "C", "-o", tmpdir]
@@ -50,7 +50,8 @@ class TestOutputFiles:
     def test_csv(self, result_folder: str, f: str) -> None:
         """It checks csv tables."""
         fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
-        fp_result = result_folder[0] / result_folder[1][0] / f
+        # # TODO: why Path is needed?
+        fp_result = result_folder[0] / Path(result_folder[1][0]) / f
         expected = pd.read_csv(fp_expected)
         result = pd.read_csv(fp_result)
         pd.testing.assert_frame_equal(expected, result, atol=1e-15)  # type: ignore
@@ -78,8 +79,10 @@ class TestOutputFiles:
     @pytest.mark.parametrize(("f", "tol"), [("_dim.png", 8.001), ("_meas.png", 20)])
     def test_png(self, result_folder: Any, f: str, tol: float) -> None:
         """It checks png files: saved segmentation and analysis."""
-        fp_expected = Path("tests/data/output/") / "".join((result_folder[1][0], f))
-        fp_result = result_folder[0] / "".join((result_folder[1][0], f))
+        fp_expected = Path("tests/data/output/") / "".join(
+            (result_folder[1][0].name, f)
+        )
+        fp_result = result_folder[0] / "".join((result_folder[1][0].name, f))
         msg = compare_images(fp_expected, fp_result, tol)
         if msg:
             raise ImageComparisonFailure(msg)
@@ -93,7 +96,7 @@ class TestOutputFiles:
         fp_result = result_folder[0] / result_folder[1][0] / f
         msg = compare_images(fp_expected, fp_result, 13)
         # Created by compare_images into tests/data folder
-        stem = "_".join((fp_expected.stem, "pdf"))
-        fp_expected.with_stem(stem).with_suffix(".png").unlink()
+        rename = "_".join((fp_expected.name[:-4], "pdf.png"))
+        fp_expected.with_name(rename).unlink()
         if msg:
             raise ImageComparisonFailure(msg)

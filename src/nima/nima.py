@@ -7,6 +7,7 @@ channels.
 """
 from collections import defaultdict
 from itertools import chain
+from pathlib import Path
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -133,7 +134,7 @@ def zproject(im: ImArray, func: Callable[[Any], Any] = np.median) -> ImArray:
     return zproj
 
 
-def read_tiff(fp: str, channels: Sequence[str]) -> Tuple[Dict[str, ImArray], int, int]:
+def read_tiff(fp: Path, channels: Sequence[str]) -> Tuple[Dict[str, ImArray], int, int]:
     """Read multichannel tif timelapse image.
 
     Parameters

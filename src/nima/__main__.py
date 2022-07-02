@@ -1,5 +1,6 @@
 """Command-line interface."""
 import os
+from pathlib import Path
 
 import click
 import matplotlib as mpl
@@ -101,7 +102,7 @@ from nima import scripts
     help="Channels for pH ratio [default:G/C].",
 )
 # # TODO: @click.argument("tiffstk", type=click.File("r"))
-@click.argument("tiffstk", type=str)
+@click.argument("tiffstk", type=click.Path(path_type=Path))
 # @click.argument("channels", type=list[str], default=["G", "R", "C"])
 @click.argument("channels", type=str, nargs=-1)
 def main(  # type: ignore
