@@ -139,7 +139,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> Tuple[Dict[str, ImArray], in
 
     Parameters
     ----------
-    fp : str
+    fp : Path
         File (TIF format) to be opened.
     channels: list of string
         List a name for each channel.

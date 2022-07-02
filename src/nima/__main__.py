@@ -20,7 +20,7 @@ from nima import scripts
 @click.option(
     "-o",
     "--output",
-    type=str,
+    type=click.Path(path_type=Path),
     default="nima",
     help="Output folder path [default:nima].",
 )
@@ -198,30 +198,31 @@ def main(  # type: ignore
         d_im_bg, channels_cl=channels_cl, channels_ph=channels_ph, **kwargs_meas_props
     )
     #     # output for bg
-    bname = os.path.basename(tiffstk)
-    bname = os.path.splitext(bname)[0]
-    bname = os.path.join(output, bname)
-    if not os.path.exists(bname):
-        os.makedirs(bname)
-    bname_bg = os.path.join(bname, "bg")
+    bname = tiffstk.with_suffix("").name
+    output.mkdir(exist_ok=True)
+    bname = output / bname
+    if not bname.exists():
+        bname.mkdir()
     for ch, llf in ff.items():
-        pp = backend_pdf.PdfPages(bname_bg + "-" + ch + "-" + bg_method + ".pdf")
+        pp = backend_pdf.PdfPages(
+            bname / Path("bg-" + ch + "-" + bg_method).with_suffix(".pdf")
+        )
         for lf in llf:
             for f_i in lf:
                 pp.savefig(f_i)  # e.g. entropy output 2 figs
         pp.close()
     column_order = ["C", "G", "R"]  # FIXME must be equal anyway in testing
-    bgs[column_order].to_csv(bname_bg + ".csv")
+    bgs[column_order].to_csv(bname / "bg.csv")
     # TODO: plt.close('all') or control mpl warning
     # output for fg (target)
     f = nima.d_plot_meas(bgs, meas, channels=channels)
-    f.savefig(bname + "_meas.png")
+    f.savefig(bname.with_name(bname.name + "_meas.png"))
     ##
     # show all channels and labels only.
     d = {ch: d_im_bg[ch] for ch in channels}
     d["labels"] = d_im_bg["labels"]
     f = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore
-    f.savefig(bname + "_dim.png")
+    f.savefig(bname.with_name(bname.name + "_dim.png"))
     ##
     # meas csv
     for k, df in meas.items():
@@ -237,14 +238,14 @@ def main(  # type: ignore
             "r_cl_median",
             "r_pH_median",
         ]
-        df[column_order].to_csv(os.path.join(bname, "label" + str(k) + ".csv"))
+        df[column_order].to_csv(bname / Path("label" + str(k)).with_suffix(".csv"))
     # ##
     # labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
     objs = ndimage.find_objects(d_im_bg["labels"])
     for n, o in enumerate(objs):
-        name = os.path.join(bname, "label" + str(n + 1) + "_rcl.tif")
+        name = bname / Path("label" + str(n + 1) + "_rcl").with_suffix(".tif")
         tifffile.imwrite(name, d_im_bg["r_cl"][o], compression="lzma")
-        name = os.path.join(bname, "label" + str(n + 1) + "_rpH.tif")
+        name = bname / Path("label" + str(n + 1) + "_rpH").with_suffix(".tif")
         tifffile.imwrite(name, d_im_bg["r_pH"][o], compression="lzma")
 
 
