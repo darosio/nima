@@ -11,7 +11,6 @@ from collections import defaultdict
 from itertools import chain
 from pathlib import Path
 from typing import Any
-from typing import Callable
 from typing import Sequence
 from typing import TypeVar
 
@@ -97,38 +96,6 @@ def plot_otsu(
     mask = im > val
     plot_im_series(im * mask, cmap=cmap)
     return np.array(mask)
-
-
-def zproject(im: ImArray, func: Callable[[Any], Any] = np.median) -> ImArray:
-    """Perform z-projection of a 3D image.
-
-    func must support axis= and out= API like np.median, np.mean, np.percentile
-
-    Parameters
-    ----------
-    im : ImArray
-        Image (pln, row, col).
-
-    func
-        Function (default: np.median).
-
-    Returns
-    -------
-    np.array(row, col)
-        2D (projected) image (median by default). Preserve dtype of input.
-
-    Raises
-    ------
-    ValueError
-        If the input image is not 3D.
-
-    """
-    if im.ndim != 3 or len(im) != im.shape[0]:
-        raise ValueError("Input must be 3D-grayscale (pln, row, col)")
-    # maintain same dtype as input im; odd and even
-    zproj = np.zeros(im.shape[1:]).astype(im.dtype)
-    func(im[1:], axis=0, out=zproj)  # type: ignore
-    return zproj
 
 
 def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], int, int]:
@@ -825,7 +792,10 @@ def d_plot_meas(
 
 
 def plt_img_profile(
-    img: ImArray, title: str | None = None, **kwargs: dict[str, Any]
+    img: ImArray,
+    title: str | None = None,
+    hpix: pd.DataFrame | None = None,
+    **kwargs: dict[str, Any],
 ) -> plt.Figure:
     """Summary graphics for Flat-Bias images.
 
@@ -835,6 +805,8 @@ def plt_img_profile(
         Image of Flat or Bias.
     title : Optional[str]
         Title of the figure.
+    hpix : pd.DataFrame, optional
+        Identified hot pixels (as empty or not empty df).
     kwargs : dict
         Keywords passed to bg() function.
 
@@ -861,7 +833,7 @@ def plt_img_profile(
 
     if title:
         kw = {"weight": "bold", "ha": "left"}
-        fig.suptitle(title, fontsize=16, x=spacing * 2, **kw)  # type: ignore
+        fig.suptitle(title, fontsize=12, x=spacing * 2, **kw)  # type: ignore
 
     ax = fig.add_axes(rect_im)  # type: ignore
     with plt.style.context("_mpl-gallery"):  # type: ignore
@@ -899,7 +871,7 @@ def plt_img_profile(
         ymax = round(im.shape[0] / 2 * 1.33)
         xmin = round(im.shape[1] / 2 * 0.67)
         xmax = round(im.shape[1] / 2 * 1.33)
-        ax_px.plot(im[ymin:ymax, :].mean(axis=0), lw=2, c="k")  # type: ignore
+        ax_px.plot(im[ymin:ymax, :].mean(axis=0), alpha=0.7, c="k")  # type: ignore
         ax_px.xaxis.set_label_position("top")  # type: ignore
         ax.set_xlabel("X")
         ax.axvline(xmin, c="k")  # type: ignore
@@ -909,9 +881,13 @@ def plt_img_profile(
         ax.yaxis.set_label_position("left")  # type: ignore
         ax.set_ylabel("Y")
         ax_py.plot(im.mean(axis=1), range(im.shape[0]), lw=4, alpha=0.5)  # type: ignore
-        ax_py.plot(im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), c="k", lw=2)  # type: ignore
+        ax_py.plot(im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), alpha=0.7, c="k")  # type: ignore
         axh.hist(im.ravel(), bins=max(int(im.max() - im.min()), 25), log=True, alpha=0.6, lw=4, histtype="bar")  # type: ignore
         return img
+
+    if hpix is not None:
+        if not hpix.empty:
+            ax.plot(hpix["x"], hpix["y"], "+", mfc="gray", mew=2, ms=14)
 
     im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, ax_cm, **kwargs)  # type: ignore
     ax_cm.axis("off")
@@ -961,5 +937,68 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> plt.Figure:
     axh.hist(img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True)  # type: ignore
     if title:
         kw = {"weight": "bold", "ha": "left"}
-        fig.suptitle(title, fontsize=16, **kw)  # type: ignore
+        fig.suptitle(title, fontsize=12, **kw)  # type: ignore
     return fig
+
+
+def hotpixels(bias: ImArray, n_sd: int = 20) -> pd.DataFrame:
+    """Identify hot pixels in a bias-dark frame.
+
+    After identification of first outliers recompute masked average and std
+    until convergence.
+
+    Parameters
+    ----------
+    bias : ImArray
+        Usually the median over a stack of 100 frames.
+    n_sd : int
+        Number of SD above mean (masked out of hot pixels) value.
+
+    Returns
+    -------
+    pd.DataFrame
+        y, x positions and values of hot pixels.
+
+    """
+    ave = bias.mean()
+    std = bias.std()
+    m = bias > (ave + n_sd * std)
+    n_hpix = m.sum()
+    while True:
+        m_ave = np.ma.masked_array(bias, m).mean()
+        m_std = np.ma.masked_array(bias, m).std()
+        m = bias > m_ave + n_sd * m_std
+        if n_hpix == m.sum():
+            break
+        n_hpix = m.sum()
+    w = np.where(m)
+    df = pd.DataFrame({"y": w[0], "x": w[1]})
+    df = df.assign(val=lambda row: bias[row.y, row.x])
+    return df
+
+
+def correct_hotpixel(
+    img: ImArray, y: int | NDArray[np.int_], x: int | NDArray[np.int_]
+) -> None:
+    """Correct hot pixels in a frame.
+
+    Substitute indicated position y, x with the median value of the 4 neighbor
+    pixels.
+
+    Parameters
+    ----------
+    img : ImArray
+        Frame (2D) image.
+    y : int | list(int)
+        y-coordinate(s).
+    x : int | list(int)
+        x-coordinate(s).
+
+    """
+    if img.ndim == 2:
+        v1 = img[y - 1, x]
+        v2 = img[y + 1, x]
+        v3 = img[y, x - 1]
+        v4 = img[y, x + 1]
+        correct = np.median([v1, v2, v3, v4])
+        img[y, x] = correct

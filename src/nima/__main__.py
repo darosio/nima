@@ -10,6 +10,7 @@ import click
 import dask.array as da
 import matplotlib as mpl
 import numpy as np
+import pandas as pd
 import skimage  # type: ignore
 import tifffile  # type: ignore
 from dask.diagnostics.progress import ProgressBar
@@ -17,6 +18,7 @@ from dask.distributed import Client
 from dask.distributed import progress
 from matplotlib.backends import backend_pdf  # type: ignore
 from scipy import ndimage  # type: ignore
+from scipy import stats
 
 from nima import nima
 from nima import scripts
@@ -270,59 +272,56 @@ def bias():  # type: ignore
 
 
 @bias.command()
-@click.argument("zipfile", type=str)
-def dark(zipfile):  # type: ignore
-    """Prepare Dark image file.
+@click.option(
+    "-o",
+    "--output",
+    type=click.Path(writable=True, path_type=Path),
+    help="Flat file [default: *.tif].",
+)
+@click.argument("fpath", type=click.Path(path_type=Path))
+def dark(output: Path, fpath: Path) -> None:
+    """Bias and read error estimation.
+
+    Prepare Dark image file.
 
     It reads a stack of dark images (tiff-zip) and save (in current dir):
     - DARK image = median filter of median projection.
     - plot (histograms, median, projection, hot pixels).
     - csv file containing coordinates of hotpixels.
+
     """
-    dark_im, dark_hotpixels, f = scripts.dark(zipfile)
-    click.secho("DARK", bold=True, fg="red")
-    # output
-    bname = "dark-" + os.path.splitext(os.path.basename(zipfile))[0]
-    f.savefig(bname + ".pdf")
-    # TODO suppress UserWarning low contrast is actually expected here
-    skimage.io.imrite(bname + ".tif", dark_im, plugin="tifffile")
-    dark_hotpixels.to_csv(bname + ".csv")
-    print("median [ IQR ] = ", np.median(dark_im), np.percentile(dark_im, [25, 75]))
-
-
-@bias.command()
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(writable=True, path_type=Path),
-    default="bias.tif",
-    help="Flat file [default:bias.tif].",
-)
-@click.argument("fpath", type=click.Path(path_type=Path))
-def edark(output: Path, fpath: Path) -> None:
-    """Bias and read error estimation."""
     if fpath.suffix == ".zip":
         zf = zipfile.ZipFile(fpath)
         fo = zf.open(zf.namelist()[0])
-        store = tifffile.imread(fo, aszarr=True)
+        store = tifffile.imread(fo)
     else:
-        store = tifffile.imread(fpath, aszarr=True)
-    darr = da.from_zarr(store)  # type: ignore
-    click.secho("Bias image-stack shape: " + str(darr.shape), fg="green")
-    med_c = da.median(darr.rechunk(), axis=0)  # type: ignore
-    std_c = da.std(darr.rechunk(), axis=0)  # type: ignore
-    with ProgressBar():  # type: ignore
-        bias = med_c.compute()
-        err = std_c.compute()
+        store = tifffile.imread(fpath)
+    click.secho("Bias image-stack shape: " + str(store.shape), fg="green")
+    bias = np.median(store, axis=0)
+    err = np.std(store, axis=0)
+    # hotpixels
+    hpix = nima.hotpixels(bias)
+    if not output:
+        output = fpath.with_suffix(".png")
+    if not hpix.empty:
+        hpix.to_csv(output.with_suffix(".csv"), index=False)
+        # FIXME hpix.y is a pd.Series[int]; it could be cast into NDArray[int]
+        nima.correct_hotpixel(err, hpix.y, hpix.x)  # type: ignore
+    shapiro = stats.shapiro(err)
+    click.secho("Shapiro-Wilk normality test p-value: " + f"{shapiro[1]:7.3g}")
     tifffile.imwrite(output, bias)
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     if bias.ndim == 2:
-        plt_img_profiles(bias, title, output)
-        plt_img_profiles(err, title, output.with_suffix(".err.png"))
+        plt_img_profiles(bias, title, output, hpix)
+        plt_img_profiles(
+            err,
+            title[:7] + f"{shapiro[1]:7.3g}",
+            output.with_suffix(".err.png"),
+        )
     else:
         for i in range(bias.shape[0]):
-            plt_img_profiles(bias[i], title, output.with_suffix(f".{i}.png"))
+            plt_img_profiles(bias[i], title, output.with_suffix(f".{i}.png"), hpix)
 
 
 @bias.command()
@@ -363,7 +362,7 @@ def dflat(output: Path, globpath: str) -> None:
     "-o",
     "--output",
     type=click.Path(writable=True, path_type=Path),
-    help="Flat file [default:eflat.tif].",
+    help="Flat file [default: *.tif].",
 )
 @click.argument("fpath", type=click.Path(path_type=Path))
 def eflat(output: Path, fpath: Path) -> None:
@@ -405,13 +404,15 @@ def plot(output: Path, image: Path) -> None:
     plt_img_profiles(img, title, output)
 
 
-def plt_img_profiles(img: ImArray, title: str, output: Path) -> None:
+def plt_img_profiles(
+    img: ImArray, title: str, output: Path, hpix: pd.DataFrame | None = None
+) -> None:
     """Compute and save image profiles graphics."""
     if img.ndim == 2:
-        f = nima.plt_img_profile(img, title=title)
+        f = nima.plt_img_profile(img, title=title, hpix=hpix)
         f.savefig(output.with_suffix(".png"), dpi=250, facecolor="w")
-        f = nima.plt_img_profile_2(img, title=title)
-        f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
+        # mark f = nima.plt_img_profile_2(img, title=title)
+        # mark f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
     else:
         for i in range(img.shape[0]):
             title += f" C:{i}"

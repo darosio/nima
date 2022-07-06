@@ -10,84 +10,15 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tifffile  # type: ignore
 from numpy.typing import NDArray
 from scipy import ndimage  # type: ignore
 from skimage import io  # type: ignore
-
-from nima import nima
-from nima.nima import ImArray
 
 
 mpl.rcParams["figure.max_open_warning"] = 199  # type: ignore
 methods_bg = ("entropy", "arcsinh", "adaptive", "li_adaptive", "li_li")
 methods_fg = ("yen", "li")
-
-
-def dark(fp: str, thr: float = 95) -> Tuple[ImArray, pd.DataFrame, plt.Figure]:
-    """Estimate image for dark correction.
-
-    Read zip; median z-project; median filter(1).
-
-    Parameters
-    ----------
-    fp : str
-        File name to be processed.
-    thr : float
-        Threshold for hot pixels calculation.
-
-    Returns
-    -------
-    imf : np.array
-        Filtered image; pre0serve dtype of input im.
-    df_hp: pd.DataFrame
-        Coordinates (x,y) and values for all hotpixels.
-    f : plt.figure
-        Plot of the dark image and its histogram.
-
-    """
-    im = zipread(fp)
-    print(im.shape)  # Reads only the first YX plane currently.
-    zp = nima.zproject(im)
-    imf = ndimage.median_filter(
-        im, footprint=np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
-    )
-    f = plt.figure(figsize=(6.75, 9.25))
-    f.suptitle("DARK stack")
-    #
-    with plt.style.context("seaborn-ticks"):  # type: ignore
-        plt.subplot(321)  # type: ignore
-        plt.hist(imf.ravel(), bins=256, histtype="step", lw=4)  # type: ignore
-        plt.yscale("log")  # type: ignore
-        plt.title("DARK image")
-    #
-    plt.subplot(322)  # type: ignore
-    plt.imshow(imf, cmap=plt.cm.inferno_r)  # type: ignore
-    plt.colorbar()  # type: ignore
-    plt.axis("off")  # type: ignore
-    plt.title("exported DARK image")
-    #
-    with plt.style.context("seaborn-ticks"):  # type: ignore
-        plt.subplot(323)  # type: ignore
-        plt.hist(im.ravel(), bins=256, histtype="step", lw=4)  # type: ignore
-        plt.yscale("log")  # type: ignore
-        plt.title("original stack")
-    #
-    plt.subplot(324)  # type: ignore
-    # hot pixels; cast to float because uint screwed up to range max
-    d = imf.astype(float) - zp.astype(float)
-    thr = np.std(d) * thr
-    hot_pixels = np.nonzero(abs(d) > thr)
-    df_hp = pd.DataFrame(
-        {"row": hot_pixels[0], "col": hot_pixels[1], "val": zp[hot_pixels]}
-    )
-    plt.imshow(zp)  # type: ignore
-    plt.plot(hot_pixels[1], hot_pixels[0], "r+", mfc="none", mec="w", ms=18)
-    plt.colorbar()  # type: ignore
-    plt.axis("off")  # type: ignore
-    plt.title("projected stack")
-    #
-    f.tight_layout()
-    return imf, df_hp, f
 
 
 def flat(
@@ -234,6 +165,6 @@ def zipread(fp: str) -> Any:
         Flat image.
 
     """
-    with zipfile.ZipFile(fp) as myzip:
-        with myzip.open(myzip.filelist[0]) as myfile:
-            return io.imread(myfile)
+    zf = zipfile.ZipFile(fp)
+    darkstk = tifffile.imread(zf.open(zf.namelist()[0]))
+    return darkstk

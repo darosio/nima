@@ -2,7 +2,6 @@
 import os
 
 import numpy as np
-import pytest
 import tifffile as tff  # type: ignore
 from numpy.testing import assert_array_equal
 
@@ -10,42 +9,6 @@ from nima import nima
 
 
 data_fp = "./tests/data/1b_c16_15.tif"
-
-
-class TestZproject:
-    """Tests zproject."""
-
-    def setup_class(self) -> None:
-        """Set up stack arrays."""
-        self.im = np.ones((4, 2, 5))
-        self.im[0] = np.ones((2, 5)) * 2
-        self.im_int = np.ones((4, 2, 5)).astype(int)
-        self.im_int[0] = np.ones((2, 5)) * 2
-        self.im_int1 = np.ones((5, 2, 5)).astype(int)
-        self.im_int1[0] = np.ones((2, 5)) * 2
-
-    def test_median(self) -> None:
-        """It calculates median==1 for an array of 1, 1, 1, 1, 1."""
-        res = nima.zproject(self.im)
-        print(res.dtype)  # FIXME: test do not print!
-        assert_array_equal(res, np.ones((2, 5)))
-
-    def test_median_integer(self) -> None:
-        """It works with integers."""
-        res = nima.zproject(self.im_int)
-        res1 = nima.zproject(self.im_int1)
-        assert res.dtype == np.dtype(int)
-        assert res1.dtype == np.dtype(int)
-        assert_array_equal(res, np.ones((2, 5)).astype(int))
-        assert_array_equal(res1, np.ones((2, 5)).astype(int))
-
-    def test_raise_exception_2d_input(self) -> None:
-        """It raises exception ..."""
-        with pytest.raises(
-            ValueError,
-            match=r"Input must be 3D-grayscale .*",
-        ):
-            nima.zproject(self.im[0])
 
 
 class TestDShading:
