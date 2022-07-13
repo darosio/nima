@@ -104,7 +104,7 @@ class TestOutputFiles:
             raise ImageComparisonFailure(msg)
 
 
-def test_bias_dflat(tmp_path: Path) -> None:
+def test_bias_mflat(tmp_path: Path) -> None:
     """Check `bias dflat` cli."""
     d = tmp_path
     tmpflt = d / "ff.tif"
@@ -112,8 +112,8 @@ def test_bias_dflat(tmp_path: Path) -> None:
     filename = os.path.join("tests", "data", "test_flat*.tif")
     runner = CliRunner()
     result = runner.invoke(
-        __main__.bias,
-        ["dflat", filename, "-o", f"{tmpflt.resolve()}"],  # incompatible type Path
+        __main__.bima,
+        ["-o", f"{tmpflt.resolve()}", "mflat", filename],
     )
     assert str(3) in result.output
     test = tff.imread(tmpraw)

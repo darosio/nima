@@ -42,7 +42,7 @@ bokeh = "^2.4.3"
 [tool.poetry.scripts]
 # nima = "nima.scripts:main"
 nima = "nima.__main__:main"
-bias = "nima.__main__:bias"
+bima = "nima.__main__:bima"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.1"

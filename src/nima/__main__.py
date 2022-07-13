@@ -11,7 +11,6 @@ import dask.array as da
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
-import skimage  # type: ignore
 import tifffile  # type: ignore
 from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client
@@ -21,7 +20,6 @@ from scipy import ndimage  # type: ignore
 from scipy import stats
 
 from nima import nima
-from nima import scripts
 from nima.nima import ImArray
 
 
@@ -31,9 +29,9 @@ from nima.nima import ImArray
 @click.option(
     "-o",
     "--output",
-    type=click.Path(path_type=Path),
     default="nima",
-    help="Output folder path [default:nima].",
+    type=click.Path(writable=True, path_type=Path),
+    help="Output path [default: ./nima/].",
 )
 @click.option(
     "--hotpixels",
@@ -260,34 +258,37 @@ def main(  # type: ignore
         tifffile.imwrite(name, d_im_bg["r_pH"][o], compression="lzma")
 
 
+#######################################################################################
 @click.group()
+@click.pass_context
 @click.version_option()
-def bias():  # type: ignore
-    """Help preparing files for flat correction.
-
-    New: DARK and FLAT are a single file, and both must be a d_im with appropriate
-    channels.
-    """
-    pass
-
-
-@bias.command()
 @click.option(
     "-o",
     "--output",
     type=click.Path(writable=True, path_type=Path),
-    help="Flat file [default: *.tif].",
+    help="Output path [default: *.tif, *.png].",
 )
+def bima(ctx: click.Context, output: Path) -> None:
+    """Compute bias, dark and flat."""
+    ctx.ensure_object(dict)
+    ctx.obj["output"] = output
+
+
+@bima.command()
+@click.pass_context
 @click.argument("fpath", type=click.Path(path_type=Path))
-def dark(output: Path, fpath: Path) -> None:
-    """Bias and read error estimation.
+def bias(ctx: click.Context, fpath: Path) -> None:
+    """Compute BIAS frame and estimate read noise.
 
-    Prepare Dark image file.
+    FPATH: the bias stack (Light Off - 0 acquisition time).
 
-    It reads a stack of dark images (tiff-zip) and save (in current dir):
-    - DARK image = median filter of median projection.
-    - plot (histograms, median, projection, hot pixels).
-    - csv file containing coordinates of hotpixels.
+    Output:
+
+    * .tif BIAS image = median projection
+
+    * .png plot (histograms, median, projection, hot pixels)
+
+    * [.csv coordinates and values of hot pixels] if detected
 
     """
     if fpath.suffix == ".zip":
@@ -301,15 +302,18 @@ def dark(output: Path, fpath: Path) -> None:
     err = np.std(store, axis=0)
     # hotpixels
     hpix = nima.hotpixels(bias)
-    if not output:
+    if ctx.obj["output"]:
+        output = ctx.obj["output"]
+    else:
         output = fpath.with_suffix(".png")
     if not hpix.empty:
         hpix.to_csv(output.with_suffix(".csv"), index=False)
         # FIXME hpix.y is a pd.Series[int]; it could be cast into NDArray[int]
+        # TODO: if any of x y is out of the border ignore them
         nima.correct_hotpixel(err, hpix.y, hpix.x)  # type: ignore
     shapiro = stats.shapiro(err)
     click.secho("Shapiro-Wilk normality test p-value: " + f"{shapiro[1]:7.3g}")
-    tifffile.imwrite(output, bias)
+    tifffile.imwrite(output.with_suffix(".tiff"), bias)
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     if bias.ndim == 2:
@@ -324,17 +328,12 @@ def dark(output: Path, fpath: Path) -> None:
             plt_img_profiles(bias[i], title, output.with_suffix(f".{i}.png"), hpix)
 
 
-@bias.command()
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(writable=True, path_type=Path),
-    default="dflat.tif",
-    help="Flat file [default:dflat.tif].",
-)
+@bima.command()
+@click.pass_context
+@click.option("--bias", type=click.Path(path_type=Path))
 @click.argument("globpath", type=str)
-def dflat(output: Path, globpath: str) -> None:
-    """Dask average files from a pattern."""
+def mflat(ctx: click.Context, globpath: str, bias: Path) -> None:
+    """Flat from a collection of (.tif) files."""
     image_sequence = tifffile.TiffSequence(globpath)
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
     click.secho(axes_n_shape, fg="green")
@@ -344,62 +343,79 @@ def dflat(output: Path, globpath: str) -> None:
     fp = f.persist()
     progress(fp)
     tprojection = fp.compute()
-    if sys.version_info >= (3, 9):
-        tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
+    if ctx.obj["output"]:
+        output = ctx.obj["output"]
     else:
-        rename = "-".join([output.stem, "raw"]) + output.suffix
-        tifffile.imwrite(output.with_name(rename), tprojection)
-    flat = ndimage.gaussian_filter(tprojection, sigma=100)
-    flat /= flat.mean()
-    tifffile.imwrite(output, flat)
-    # Output summary graphics.
-    title = os.fspath(output.with_suffix("").name)
-    plt_img_profiles(flat, title, output)
+        output = Path(globpath).name.replace("*", "").replace("?", "")
+        output = Path(output).with_suffix(".tiff")
+    if bias is not None:
+        bias = tifffile.imread(bias)
+    _output_flat(output, tprojection, bias)
 
 
-@bias.command()
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(writable=True, path_type=Path),
-    help="Flat file [default: *.tif].",
-)
+@bima.command()
+@click.pass_context
+@click.option("--bias", type=click.Path(path_type=Path))
 @click.argument("fpath", type=click.Path(path_type=Path))
-def eflat(output: Path, fpath: Path) -> None:
-    """Dask average files from a pattern."""
+def flat(ctx: click.Context, fpath: Path, bias: Path) -> None:
+    """Flat from (.tf8) file."""
     store = tifffile.imread(fpath, aszarr=True)
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
     with ProgressBar():  # type: ignore
         tprojection = f.compute()
-    if not output:
-        output = fpath.with_suffix(".png")
+    if ctx.obj["output"]:
+        output = ctx.obj["output"]
+    else:
+        output = fpath.with_suffix(".tiff")
+    if bias is not None:
+        bias = tifffile.imread(bias)
+    _output_flat(output, tprojection, bias)
+
+
+def _output_flat(
+    output: Path, tprojection: ImArray, bias: ImArray | None = None
+) -> None:
+    """Help output from flat calculations.
+
+    - raw mean (_raw.tif)
+    - bias subtracted, smoothed and normalized mean (.tif)
+    - a summary graphics (.png)
+
+    Parameters
+    ----------
+    output : Path
+        Base for output file paths.
+    tprojection : ImArray
+        Raw flat array (mean of frames).
+    bias : ImArray
+        Bias frame.
+
+    """
     if sys.version_info >= (3, 9):
         tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
     else:
         rename = "-".join([output.stem, "raw"]) + output.suffix
         tifffile.imwrite(output.with_name(rename), tprojection)
-    flat = ndimage.gaussian_filter(tprojection, sigma=100)
+    if bias is None:
+        flat = ndimage.gaussian_filter(tprojection, sigma=100)
+    else:
+        flat = ndimage.gaussian_filter(tprojection + 20 - bias, sigma=100)  # FIXME
     flat /= flat.mean()
     tifffile.imwrite(output, flat)
-    # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     plt_img_profiles(flat, title, output)
 
 
-@bias.command()
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(writable=True, path_type=Path),
-    help="Output file [default:image_stem.png].",
-)
-@click.argument("image", type=click.Path(exists=True, path_type=Path))
-def plot(output: Path, image: Path) -> None:
-    """Plot Bias-Flat image."""
-    img = tifffile.imread(image)
-    if not output:
-        output = image.with_suffix(".png")
-    # Output summary graphics.
+@bima.command()
+@click.pass_context
+@click.argument("fpath", type=click.Path(exists=True, path_type=Path))
+def plot(ctx: click.Context, fpath: Path) -> None:
+    """Plot profiles of 2D (Bias-Flat) image."""
+    img = tifffile.imread(fpath)
+    if ctx.obj["output"]:
+        output = ctx.obj["output"]
+    else:
+        output = fpath.with_suffix(".png")
     title = os.fspath(output.with_suffix("").name)
     plt_img_profiles(img, title, output)
 
@@ -422,29 +438,5 @@ def plt_img_profiles(
             f.savefig(output.with_suffix(f".C{i}.2.png"), dpi=250, facecolor="w")
 
 
-@bias.command()
-@click.argument("darkfile", type=str)
-@click.argument("zipfile", type=str)
-def flat(darkfile, zipfile):  # type: ignore
-    """Prepare Flat image file.
-
-    Reads a stack of flat images (tiff-zip) and a DARK reference image, and save (in pwd):
-    - FLAT image = median filter of median projection.
-    - plot (stack histograms, flat image and its histogram - name of stack and
-    reference dark image)
-    """
-    click.secho("FLAT", bold=True, fg="yellow")
-    flat_im, f = scripts.flat(zipfile, darkfile)
-    # output
-    bname = (
-        "flat-"
-        + os.path.splitext(os.path.basename(zipfile))[0]
-        + "-"
-        + os.path.splitext(os.path.basename(darkfile))[0]
-    )
-    f.savefig(bname + ".pdf")
-    skimage.io.imwrite(bname + ".tif", flat_im)
-
-
 if __name__ == "__main__":
-    main(prog_name="dimg")  # pragma: no cover
+    main(prog_name="nima")  # pragma: no cover
