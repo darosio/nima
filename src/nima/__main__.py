@@ -331,6 +331,36 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 @bima.command()
 @click.pass_context
 @click.option("--bias", type=click.Path(path_type=Path))
+@click.option("--time", type=float)
+@click.argument("fpath", type=click.Path(path_type=Path))
+def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
+    """Compute DARK.
+
+    FPATH: the bias stack (Light Off - Long acquisition time).
+
+
+    """
+    store = tifffile.imread(fpath)
+    click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
+    dark = np.median(store, axis=0)
+    if ctx.obj["output"]:
+        output = ctx.obj["output"]
+    else:
+        output = fpath.with_suffix(".png")
+    # Output summary graphics.
+    title = os.fspath(output.with_suffix("").name)
+    if bias is not None:
+        bias = tifffile.imread(bias)
+        dark = dark - bias
+    if time:
+        dark /= time
+    plt_img_profiles(dark, title, output)
+    print(np.where(dark > 4.5))
+
+
+@bima.command()
+@click.pass_context
+@click.option("--bias", type=click.Path(path_type=Path))
 @click.argument("globpath", type=str)
 def mflat(ctx: click.Context, globpath: str, bias: Path) -> None:
     """Flat from a collection of (.tif) files."""
