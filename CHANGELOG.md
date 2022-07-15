@@ -10,9 +10,10 @@
 
 ### Refactor
 
-- switch to pathlib
-- replace README.rst with docs/README.md containing Version for cz bump
-- import annotation from __future__
+- switch to pathlib.
+- replace README.rst with docs/README.md containing Version for cz bump.
+- import annotation from __future__.
+- dropped lfs for .ipynb and large test .tif.
 
 ## v0.5.7 (2022-06-20)
 

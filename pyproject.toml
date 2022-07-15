@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nima"
-version = "0.5.7"
+version = "0.6.0"
 description = "Numerical IMage Analyses."
 authors = ["daniele arosio <daniele.arosio@cnr.it>"]
 license = "BSD-3-Clause"
@@ -108,13 +108,13 @@ exclude = "src/nima/__main__.py"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.5.7"
+version = "0.6.0"
 tag_format = "v$version"
 changelog_incremental = true
 version_files = [
   "pyproject.toml:version",
   # "docs/conf.py:release",
-  "README.md:Version",
+  "docs/README.md:Version",
 ]
 # bump_pattern = "^(break|docs|new|fix|hotfix)"
 # change_type_order = ["BREAKING CHANGE","docs", "fix", "refactor", "perf"]
