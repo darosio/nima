@@ -1,4 +1,5 @@
 """Tests for nima script."""
+import os
 from pathlib import Path
 from typing import Any
 from typing import Tuple
@@ -8,6 +9,7 @@ import pandas as pd
 import pytest
 import skimage.io  # type: ignore
 import skimage.measure  # type: ignore
+import tifffile as tff  # type: ignore
 from click.testing import CliRunner
 from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
@@ -100,3 +102,24 @@ class TestOutputFiles:
         fp_expected.with_name(rename).unlink()
         if msg:
             raise ImageComparisonFailure(msg)
+
+
+def test_bias_mflat(tmp_path: Path) -> None:
+    """Check `bias dflat` cli."""
+    d = tmp_path
+    tmpflt = d / "ff.tif"
+    tmpraw = d / "ff-raw.tif"
+    filename = os.path.join("tests", "data", "test_flat*.tif")
+    runner = CliRunner()
+    result = runner.invoke(
+        __main__.bima,
+        ["-o", f"{tmpflt.resolve()}", "mflat", filename],
+    )
+    assert str(3) in result.output
+    test = tff.imread(tmpraw)
+    expect = tff.imread(Path("tests") / "data" / "output" / "test_flat.tif")
+    np.testing.assert_allclose(test, expect)
+    test = tff.imread(tmpflt)
+    expect = tff.imread(Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif")
+    np.testing.assert_allclose(test, expect)
+    assert tmpflt.with_suffix(".png").exists()

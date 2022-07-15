@@ -1,49 +1,14 @@
 """Tests for nima module."""
+import os
+
 import numpy as np
-import pytest
 import tifffile as tff  # type: ignore
-from numpy.testing import assert_array_equal  # assert_allclose
+from numpy.testing import assert_array_equal
 
 from nima import nima
 
 
 data_fp = "./tests/data/1b_c16_15.tif"
-
-
-class TestZproject:
-    """Tests zproject."""
-
-    def setup_class(self) -> None:
-        """Set up stack arrays."""
-        self.im = np.ones((4, 2, 5))
-        self.im[0] = np.ones((2, 5)) * 2
-        self.im_int = np.ones((4, 2, 5)).astype(int)
-        self.im_int[0] = np.ones((2, 5)) * 2
-        self.im_int1 = np.ones((5, 2, 5)).astype(int)
-        self.im_int1[0] = np.ones((2, 5)) * 2
-
-    def test_median(self) -> None:
-        """It calculates median==1 for an array of 1, 1, 1, 1, 1."""
-        res = nima.zproject(self.im)
-        print(res.dtype)  # FIXME: test do not print!
-        assert_array_equal(res, np.ones((2, 5)))
-
-    def test_median_integer(self) -> None:
-        """It works with integers."""
-        res = nima.zproject(self.im_int)
-        res1 = nima.zproject(self.im_int1)
-        assert res.dtype == np.dtype(int)
-        assert res1.dtype == np.dtype(int)
-        assert_array_equal(res, np.ones((2, 5)).astype(int))
-        assert_array_equal(res1, np.ones((2, 5)).astype(int))
-
-    def test_raise_exception_2d_input(self) -> None:
-        """It raises exception ..."""
-        with pytest.raises(
-            ValueError,
-            match=r"Input must be 3D-grayscale .*",
-        ):
-            nima.zproject(self.im[0])
 
 
 class TestDShading:
@@ -117,3 +82,22 @@ class TestBg:
     def test_li_li(self) -> None:
         """Test li_li method."""
         assert nima.bg(self.im[3, 2], kind="li_li")[0] == 288
+
+
+def test_plot_img_profile() -> None:
+    """Plot summary graphics for Bias-Flat images.
+
+    Test both lines (whole frame and central region) along x (axis=0).
+
+    """
+    sample_flat_image = os.path.join(
+        "tests", "data", "output", "test_flat_gaussnorm.tif"
+    )
+    img = tff.imread(sample_flat_image)
+    f = nima.plt_img_profile(img)
+    _, y_plot = f.get_axes()[1].lines[0].get_xydata().T  # type: ignore
+    ydata = np.array([1.00000001, 0.99999999, 1.00000002, 1.0, 0.99999999])
+    np.testing.assert_allclose(y_plot, ydata)
+    _, y_plot = f.get_axes()[1].lines[1].get_xydata().T  # type: ignore
+    ydata = np.array([1.0, 0.99999997, 1.0, 0.99999998, 0.99999997])
+    np.testing.assert_allclose(y_plot, ydata)

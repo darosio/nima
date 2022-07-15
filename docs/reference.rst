@@ -12,16 +12,9 @@ Usage
     :prog: nima
     :nested: full
 
-.. click:: nima.__main__:bias
+.. click:: nima.__main__:bima
     :prog: bias
     :nested: full
-
-
-scripts
--------
-
-.. automodule:: nima.scripts
-   :members:
 
 
 nima

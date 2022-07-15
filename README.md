@@ -8,6 +8,8 @@
 A library and a cli to help image analyses based on scipy.ndimage and
 scikit-image.
 
+- Version: “0.5.7”
+
 # Features
 
 -   easy dark and flat correction

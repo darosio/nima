@@ -5,18 +5,14 @@ be used to apply dark, flat correction; segment cells from bg; label cells;
 obtain statistics for each label; compute ratio and ratio images between
 channels.
 """
+from __future__ import annotations
+
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
 from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import List
-from typing import Optional
 from typing import Sequence
-from typing import Tuple
 from typing import TypeVar
-from typing import Union
 
 import matplotlib as mpl
 import matplotlib.cm
@@ -87,7 +83,7 @@ def plot_im_series(
 
 
 def plot_otsu(
-    im: ImArray, cmap: Optional[mpl.colors.Colormap] = None
+    im: ImArray, cmap: mpl.colors.Colormap | None = None
 ) -> NDArray[np.bool_]:
     """Otsu threshold and plot im_series.
 
@@ -102,39 +98,7 @@ def plot_otsu(
     return np.array(mask)
 
 
-def zproject(im: ImArray, func: Callable[[Any], Any] = np.median) -> ImArray:
-    """Perform z-projection of a 3D image.
-
-    func must support axis= and out= API like np.median, np.mean, np.percentile
-
-    Parameters
-    ----------
-    im : ImArray
-        Image (pln, row, col).
-
-    func
-        Function (default: np.median).
-
-    Returns
-    -------
-    np.array(row, col)
-        2D (projected) image (median by default). Preserve dtype of input.
-
-    Raises
-    ------
-    ValueError
-        If the input image is not 3D.
-
-    """
-    if im.ndim != 3 or len(im) != im.shape[0]:
-        raise ValueError("Input must be 3D-grayscale (pln, row, col)")
-    # maintain same dtype as input im; odd and even
-    zproj = np.zeros(im.shape[1:]).astype(im.dtype)
-    func(im[1:], axis=0, out=zproj)  # type: ignore
-    return zproj
-
-
-def read_tiff(fp: Path, channels: Sequence[str]) -> Tuple[Dict[str, ImArray], int, int]:
+def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], int, int]:
     """Read multichannel tif timelapse image.
 
     Parameters
@@ -185,7 +149,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> Tuple[Dict[str, ImArray], in
         return d_im, n_channels, n_times
 
 
-def d_show(d_im: Dict[str, ImArray], **kws: Any) -> plt.Figure:
+def d_show(d_im: dict[str, ImArray], **kws: Any) -> plt.Figure:
     """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
     max_rows = 9
     n_channels = len(d_im.keys())
@@ -214,7 +178,7 @@ def d_show(d_im: Dict[str, ImArray], **kws: Any) -> plt.Figure:
     return f
 
 
-def d_median(d_im: Dict[str, ImArray]) -> Dict[str, ImArray]:
+def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
     """Median filter on dictionary of image (d_im).
 
     Same to skimage.morphology.disk(1) and to median filter of Fiji/ImageJ
@@ -244,11 +208,11 @@ def d_median(d_im: Dict[str, ImArray]) -> Dict[str, ImArray]:
 
 
 def d_shading(
-    d_im: Dict[str, ImArray],
-    dark: Union[Dict[str, ImArray], NDArray[np.float_]],
-    flat: Union[Dict[str, ImArray], NDArray[np.float_]],
+    d_im: dict[str, ImArray],
+    dark: dict[str, ImArray] | NDArray[np.float_],
+    flat: dict[str, ImArray] | NDArray[np.float_],
     clip: bool = True,
-) -> Dict[str, ImArray]:
+) -> dict[str, ImArray]:
     """Shading correction on d_im.
 
     Subtract dark; then divide by flat.
@@ -299,10 +263,10 @@ def bg(
     im: NDArray[Any],
     kind: str = "arcsinh",
     perc: float = 10.0,
-    radius: Optional[int] = 10,
-    adaptive_radius: Optional[int] = None,
-    arcsinh_perc: Optional[int] = 80,
-) -> Tuple[float, ImArray, List[Any]]:
+    radius: int | None = 10,
+    adaptive_radius: int | None = None,
+    arcsinh_perc: int | None = 80,
+) -> tuple[float, ImArray, list[Any]]:
     """Bg segmentation.
 
     Return median, whole vector, figures (in a [list])
@@ -447,16 +411,16 @@ def bg(
 
 
 def d_bg(
-    d_im: Dict[str, ImArray],
-    downscale: Optional[Tuple[int, int]] = None,
+    d_im: dict[str, ImArray],
+    downscale: tuple[int, int] | None = None,
     kind: str = "li_adaptive",
     clip: bool = True,
-    **kw: Dict[str, Any],
-) -> Tuple[
-    Dict[str, ImArray],
+    **kw: dict[str, Any],
+) -> tuple[
+    dict[str, ImArray],
     pd.DataFrame,
-    Dict[str, List[List[plt.Figure]]],
-    Dict[str, List[Any]],
+    dict[str, list[list[plt.Figure]]],
+    dict[str, list[Any]],
 ]:
     """Bg segmentation for d_im.
 
@@ -491,7 +455,7 @@ def d_bg(
     d_bg_values = defaultdict(list)
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
-    dd_cor: Dict[str, NDArray[Any]] = {}
+    dd_cor: dict[str, NDArray[Any]] = {}
     for k in d_im.keys():
         for t, im in enumerate(d_im[k]):
             if downscale:
@@ -510,14 +474,14 @@ def d_bg(
 
 
 def d_mask_label(
-    d_im: Dict[str, ImArray],
-    min_size: Optional[int] = 640,
+    d_im: dict[str, ImArray],
+    min_size: int | None = 640,
     channels: Sequence[str] = ("C", "G", "R"),
-    threshold_method: Optional[str] = "yen",
-    wiener: Optional[bool] = False,
-    watershed: Optional[bool] = False,
-    clear_border: Optional[bool] = False,
-    randomwalk: Optional[bool] = False,
+    threshold_method: str | None = "yen",
+    wiener: bool | None = False,
+    watershed: bool | None = False,
+    clear_border: bool | None = False,
+    randomwalk: bool | None = False,
 ) -> None:
     """Label cells in d_im. Add two keys, mask and label.
 
@@ -623,10 +587,10 @@ def d_mask_label(
 
 
 def d_ratio(
-    d_im: Dict[str, NDArray[Any]],
+    d_im: dict[str, NDArray[Any]],
     name: str = "r_cl",
-    channels: Tuple[str, str] = ("C", "R"),
-    radii: Tuple[int, int] = (7, 3),
+    channels: tuple[str, str] = ("C", "R"),
+    radii: tuple[int, int] = (7, 3),
 ) -> None:
     """Ratio image between 2 channels in d_im.
 
@@ -667,13 +631,13 @@ def d_ratio(
 
 
 def d_meas_props(
-    d_im: Dict[str, ImArray],
+    d_im: dict[str, ImArray],
     channels: Sequence[str] = ("C", "G", "R"),
-    channels_cl: Tuple[str, str] = ("C", "R"),
-    channels_ph: Tuple[str, str] = ("G", "C"),
-    ratios_from_image: Optional[bool] = True,
-    radii: Optional[Tuple[int, int]] = None,
-) -> Tuple[Dict[np.int32, pd.DataFrame], Dict[str, List[Any]]]:
+    channels_cl: tuple[str, str] = ("C", "R"),
+    channels_ph: tuple[str, str] = ("G", "C"),
+    ratios_from_image: bool | None = True,
+    radii: tuple[int, int] | None = None,
+) -> tuple[dict[np.int32, pd.DataFrame], dict[str, list[Any]]]:
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
@@ -702,7 +666,7 @@ def d_meas_props(
         For each channel: {'channel': [props]} i.e. {'channel': [time][label]}.
 
     """
-    pr: Dict[str, List[Any]] = defaultdict(list)
+    pr: dict[str, list[Any]] = defaultdict(list)
     for ch in channels:
         pr[ch] = []
         for time, label_im in enumerate(d_im["labels"]):
@@ -757,7 +721,7 @@ def d_meas_props(
 
 
 def d_plot_meas(
-    bgs: pd.DataFrame, meas: Dict[np.int32, pd.DataFrame], channels: Sequence[str]
+    bgs: pd.DataFrame, meas: dict[np.int32, pd.DataFrame], channels: Sequence[str]
 ) -> plt.Figure:
     """Plot meas object.
 
@@ -825,3 +789,216 @@ def d_plot_meas(
 
     fig.tight_layout()
     return fig
+
+
+def plt_img_profile(
+    img: ImArray,
+    title: str | None = None,
+    hpix: pd.DataFrame | None = None,
+    **kwargs: dict[str, Any],
+) -> plt.Figure:
+    """Summary graphics for Flat-Bias images.
+
+    Parameters
+    ----------
+    img : ImArray
+        Image of Flat or Bias.
+    title : Optional[str]
+        Title of the figure.
+    hpix : pd.DataFrame, optional
+        Identified hot pixels (as empty or not empty df).
+    kwargs : dict
+        Keywords passed to bg() function.
+
+    Returns
+    -------
+    plt.Figure
+
+    """
+    # definitions for the axes
+    ratio = img.shape[0] / img.shape[1]
+    left, width = 0.05, 0.6
+    bottom, height = 0.05, 0.6 * ratio
+    spacing, marginal = 0.05, 0.25
+    rect_im = [left, bottom, width, height]
+    rect_px = [left, bottom + height, width, marginal]
+    rect_py = [left + width, bottom, marginal, height]
+    rect_ht = [
+        left + width + spacing,
+        bottom + height + spacing,
+        marginal,
+        marginal / ratio,
+    ]
+    fig = plt.figure(figsize=(8.0, 8.0))  # * (0.4 + 0.6 * ratio)))
+
+    if title:
+        kw = {"weight": "bold", "ha": "left"}
+        fig.suptitle(title, fontsize=12, x=spacing * 2, **kw)  # type: ignore
+
+    ax = fig.add_axes(rect_im)  # type: ignore
+    with plt.style.context("_mpl-gallery"):  # type: ignore
+        ax_px = fig.add_axes(rect_px, sharex=ax)  # type: ignore
+        ax_py = fig.add_axes(rect_py, sharey=ax)  # type: ignore
+    with plt.style.context("seaborn"):  # type: ignore
+        ax_hist = fig.add_axes(rect_ht)  # type: ignore
+    ax_cm = fig.add_axes([0.45, 0.955, 0.3, 0.034])  # type: ignore
+    # sigfig: ax_hist.set_title("err: " + str(sigfig.
+    # sigfig: round(da.std(da.from_zarr(zim)).compute(), sigfigs=3)))
+
+    def img_hist(
+        im: ImArray,
+        ax: plt.Axes,
+        ax_px: plt.Axes,
+        ax_py: plt.Axes,
+        axh: plt.Axes,
+        axc: plt.Axes,
+        vmin: float | None = None,
+        vmax: float | None = None,
+    ) -> mpl.image.AxesImage:
+        ax_px.tick_params(axis="x", labelbottom=False, labeltop=True, top=True)  # type: ignore
+        ax_py.tick_params(  # type: ignore
+            axis="y", right=True, labelright=True, left=False, labelleft=False
+        )
+        ax.tick_params(axis="y", labelleft=False, right=True)  # type: ignore
+        ax.tick_params(axis="x", top=True, labelbottom=False)  # type: ignore
+        if vmin is None or vmax is None:  # both must be provided
+            vmi, vma = np.percentile(im, [18.4, 81.6])  # 1/e (66.6 %)
+        else:
+            vmi, vma = vmin, vmax
+        img = ax.imshow(im, vmin=vmi, vmax=vma, cmap="turbo")
+        ax_px.plot(im.mean(axis=0), lw=4, alpha=0.5)  # type: ignore
+        ymin = round(im.shape[0] / 2 * 0.67)
+        ymax = round(im.shape[0] / 2 * 1.33)
+        xmin = round(im.shape[1] / 2 * 0.67)
+        xmax = round(im.shape[1] / 2 * 1.33)
+        ax_px.plot(im[ymin:ymax, :].mean(axis=0), alpha=0.7, c="k")  # type: ignore
+        ax_px.xaxis.set_label_position("top")  # type: ignore
+        ax.set_xlabel("X")
+        ax.axvline(xmin, c="k")  # type: ignore
+        ax.axvline(xmax, c="k")  # type: ignore
+        ax.axhline(ymin, c="k")  # type: ignore
+        ax.axhline(ymax, c="k")  # type: ignore
+        ax.yaxis.set_label_position("left")  # type: ignore
+        ax.set_ylabel("Y")
+        ax_py.plot(im.mean(axis=1), range(im.shape[0]), lw=4, alpha=0.5)  # type: ignore
+        ax_py.plot(im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), alpha=0.7, c="k")  # type: ignore
+        axh.hist(im.ravel(), bins=max(int(im.max() - im.min()), 25), log=True, alpha=0.6, lw=4, histtype="bar")  # type: ignore
+        return img
+
+    if hpix is not None:
+        if not hpix.empty:
+            ax.plot(hpix["x"], hpix["y"], "+", mfc="gray", mew=2, ms=14)
+
+    im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, ax_cm, **kwargs)  # type: ignore
+    ax_cm.axis("off")
+    fig.colorbar(  # type: ignore
+        im2c, ax=ax_cm, fraction=0.99, shrink=0.99, aspect=4, orientation="horizontal"
+    )
+    return fig
+
+
+def plt_img_profile_2(img: ImArray, title: str | None = None) -> plt.Figure:
+    """Summary graphics for Flat-Bias images.
+
+    Parameters
+    ----------
+    img : ImArray
+        Image of Flat or Bias.
+    title : Optional[str]
+        Title of the figure.
+
+    Returns
+    -------
+    plt.Figure
+
+    """
+    fig = plt.figure(constrained_layout=True)  # type: ignore
+    gs = fig.add_gridspec(3, 3)  # type: ignore
+    ax = fig.add_subplot(gs[0:2, 0:2])
+    vmi, vma = np.percentile(img, [18.4, 81.6])  # 1/e (66.6 %)
+    ax.imshow(img, vmin=vmi, vmax=vma, cmap="turbo")
+    ymin = round(img.shape[0] / 2 * 0.67)
+    ymax = round(img.shape[0] / 2 * 1.33)
+    xmin = round(img.shape[1] / 2 * 0.67)
+    xmax = round(img.shape[1] / 2 * 1.33)
+    ax.axvline(xmin, c="k")  # type: ignore
+    ax.axvline(xmax, c="k")  # type: ignore
+    ax.axhline(ymin, c="k")  # type: ignore
+    ax.axhline(ymax, c="k")  # type: ignore
+    ax1 = fig.add_subplot(gs[2, 0:2])
+    ax1.plot(img.mean(axis=0))  # type: ignore
+    ax1.plot(img[ymin:ymax, :].mean(axis=0), alpha=0.2, lw=2, c="k")  # type: ignore
+    ax2 = fig.add_subplot(gs[0:2, 2])
+    ax2.plot(  # type: ignore
+        img[:, xmin:xmax].mean(axis=1), range(img.shape[0]), alpha=0.2, lw=2, c="k"
+    )
+    ax2.plot(img.mean(axis=1), range(img.shape[0]))
+    axh = fig.add_subplot(gs[2, 2])
+    axh.hist(img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True)  # type: ignore
+    if title:
+        kw = {"weight": "bold", "ha": "left"}
+        fig.suptitle(title, fontsize=12, **kw)  # type: ignore
+    return fig
+
+
+def hotpixels(bias: ImArray, n_sd: int = 20) -> pd.DataFrame:
+    """Identify hot pixels in a bias-dark frame.
+
+    After identification of first outliers recompute masked average and std
+    until convergence.
+
+    Parameters
+    ----------
+    bias : ImArray
+        Usually the median over a stack of 100 frames.
+    n_sd : int
+        Number of SD above mean (masked out of hot pixels) value.
+
+    Returns
+    -------
+    pd.DataFrame
+        y, x positions and values of hot pixels.
+
+    """
+    ave = bias.mean()
+    std = bias.std()
+    m = bias > (ave + n_sd * std)
+    n_hpix = m.sum()
+    while True:
+        m_ave = np.ma.masked_array(bias, m).mean()
+        m_std = np.ma.masked_array(bias, m).std()
+        m = bias > m_ave + n_sd * m_std
+        if n_hpix == m.sum():
+            break
+        n_hpix = m.sum()
+    w = np.where(m)
+    df = pd.DataFrame({"y": w[0], "x": w[1]})
+    df = df.assign(val=lambda row: bias[row.y, row.x])
+    return df
+
+
+def correct_hotpixel(
+    img: ImArray, y: int | NDArray[np.int_], x: int | NDArray[np.int_]
+) -> None:
+    """Correct hot pixels in a frame.
+
+    Substitute indicated position y, x with the median value of the 4 neighbor
+    pixels.
+
+    Parameters
+    ----------
+    img : ImArray
+        Frame (2D) image.
+    y : int | list(int)
+        y-coordinate(s).
+    x : int | list(int)
+        x-coordinate(s).
+
+    """
+    if img.ndim == 2:
+        v1 = img[y - 1, x]
+        v2 = img[y + 1, x]
+        v3 = img[y, x - 1]
+        v4 = img[y, x + 1]
+        correct = np.median([v1, v2, v3, v4])
+        img[y, x] = correct

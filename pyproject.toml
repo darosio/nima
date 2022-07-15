@@ -4,7 +4,7 @@ version = "0.5.7"
 description = "Numerical IMage Analyses."
 authors = ["daniele arosio <daniele.arosio@cnr.it>"]
 license = "BSD-3-Clause"
-readme = "README.md"
+readme = "docs/README.md"
 homepage = "https://github.com/darosio/nima/"
 repository = "https://github.com/darosio/nima/"
 keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
@@ -35,11 +35,14 @@ matplotlib = ">=2.0.0"
 tifffile = ">2019.7.2"          #changed an OME recognition check and "IYX" -> "TCYX"
 scipy = ">=0.18.1"
 click = ">=8.1.3"
+dask = {extras = ["distributed"], version = "^2022.6.0"}
+zarr = "^2.12.0"
+bokeh = "^2.4.3"
 
 [tool.poetry.scripts]
 # nima = "nima.scripts:main"
 nima = "nima.__main__:main"
-bias = "nima.__main__:bias"
+bima = "nima.__main__:bima"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.1"
@@ -105,9 +108,18 @@ exclude = "src/nima/__main__.py"
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "0.5.6"
+version = "0.5.7"
 tag_format = "v$version"
 changelog_incremental = true
+version_files = [
+  "pyproject.toml:version",
+  # "docs/conf.py:release",
+  "README.md:Version",
+]
+# bump_pattern = "^(break|docs|new|fix|hotfix)"
+# change_type_order = ["BREAKING CHANGE","docs", "fix", "refactor", "perf"]
+# change_type_map =  {"feat" = "Feat", "fix" = "Fix", "docs" = "Docs", "build" = "Build", "style" = "Style", "refactor" = "Refactor", "perf" = "Perf", "test" = "Test"}
+# changelog_pattern = "^(feat|docs|style|build|test|perf)?(!)?"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

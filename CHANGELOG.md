@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.6.0 (2022-07-15)
+
+### Feat
+
+- bima bias|dark|flat|mflat removed scripts.py
+- new dark with solid hot pixel identification
+- tf8 cannot use Client() and persist()
+
+### Refactor
+
+- switch to pathlib
+- replace README.rst with docs/README.md containing Version for cz bump
+- import annotation from __future__
+
 ## v0.5.7 (2022-06-20)
 
 ### Feat
