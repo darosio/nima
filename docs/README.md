@@ -48,6 +48,11 @@ pyenv activate nima-...
 poetry install pre-commit
 install before next first commit: pre-commit run --all-files
 
+
+nox --session=pre-commit -- install
+and activate poetry
+
+
 pyenv activate nima-0.2
 poetry install
 pip install .

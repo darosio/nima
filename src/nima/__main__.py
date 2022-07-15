@@ -253,9 +253,13 @@ def main(  # type: ignore
     objs = ndimage.find_objects(d_im_bg["labels"])
     for n, o in enumerate(objs):
         name = bname / Path("label" + str(n + 1) + "_rcl").with_suffix(".tif")
-        tifffile.imwrite(name, d_im_bg["r_cl"][o], compression="lzma")
+        tifffile.imwrite(
+            name, d_im_bg["r_cl"][o], compression="lzma", photometric="minisblack"
+        )
         name = bname / Path("label" + str(n + 1) + "_rpH").with_suffix(".tif")
-        tifffile.imwrite(name, d_im_bg["r_pH"][o], compression="lzma")
+        tifffile.imwrite(
+            name, d_im_bg["r_pH"][o], compression="lzma", photometric="minisblack"
+        )
 
 
 #######################################################################################
