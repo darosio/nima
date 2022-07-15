@@ -11,13 +11,13 @@ import dask.array as da
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
+import sigfig  # type: ignore
 import tifffile  # type: ignore
 from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client
 from dask.distributed import progress
 from matplotlib.backends import backend_pdf  # type: ignore
 from scipy import ndimage  # type: ignore
-from scipy import stats
 
 from nima import nima
 from nima.nima import ImArray
@@ -315,8 +315,9 @@ def bias(ctx: click.Context, fpath: Path) -> None:
         # FIXME hpix.y is a pd.Series[int]; it could be cast into NDArray[int]
         # TODO: if any of x y is out of the border ignore them
         nima.correct_hotpixel(err, hpix.y, hpix.x)  # type: ignore
-    shapiro = stats.shapiro(err)
-    click.secho("Shapiro-Wilk normality test p-value: " + f"{shapiro[1]:7.3g}")
+    p25, p50, p75 = np.percentile(err.ravel(), [25, 50, 75])
+    err_str = sigfig.round(p50, p75 - p25)
+    click.secho("Estimated read noise: " + err_str)
     tifffile.imwrite(output.with_suffix(".tiff"), bias)
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
@@ -324,7 +325,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
         plt_img_profiles(bias, title, output, hpix)
         plt_img_profiles(
             err,
-            title[:7] + f"{shapiro[1]:7.3g}",
+            "".join(("[", title[:9], "] $\\sigma_{read} = $", err_str)),
             output.with_suffix(".err.png"),
         )
     else:
