@@ -406,7 +406,7 @@ pipenv = ["pipenv"]
 name = "entrypoints"
 version = "0.4"
 description = "Discover and load entry points from installed packages."
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6"
 
@@ -1065,13 +1065,14 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*
 
 [[package]]
 name = "numcodecs"
-version = "0.10.0"
+version = "0.10.1"
 description = "A Python package providing buffer compression and transformation codecs for use in data storage and communication applications."
 category = "main"
 optional = false
 python-versions = ">=3.7, <4"
 
 [package.dependencies]
+entrypoints = "*"
 numpy = ">=1.7"
 typing-extensions = ">=3.7.4"
 
@@ -2673,19 +2674,19 @@ nodeenv = [
     {file = "nodeenv-1.7.0.tar.gz", hash = "sha256:e0e7f7dfb85fc5394c6fe1e8fa98131a2473e04311a45afb6508f7cf1836fa2b"},
 ]
 numcodecs = [
-    {file = "numcodecs-0.10.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0b40ff41e9d721d8fb1e275f13d5efd1cbdc9486c98bacf6c1b54fbfd5cca52a"},
-    {file = "numcodecs-0.10.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9c9f1cc74c999006fd913d636436edbddd2f0b2115b7633cf97f9ba298743dca"},
-    {file = "numcodecs-0.10.0-cp310-cp310-win_amd64.whl", hash = "sha256:4c7acf03dfd469d7fe8f50ba52bbf8f683df256f4ab3adcd959ffa23055fc8fd"},
-    {file = "numcodecs-0.10.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:ecce69de233a6acade87847b33a0a03634de491ae117c49636687781db3fb81d"},
-    {file = "numcodecs-0.10.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6b6c945e70fb2f571fbf9c4270064fcf333e3eaa1023eacbe8aa4d3270626050"},
-    {file = "numcodecs-0.10.0-cp37-cp37m-win_amd64.whl", hash = "sha256:4810b2e056616ddb1775bb78b3914c9145682ab949b61d97b1c3875f51fd1747"},
-    {file = "numcodecs-0.10.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:21f69146fd578f33c804cc89a35afe809b91ad15f638aae0eaa38e3429d437da"},
-    {file = "numcodecs-0.10.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:12ee0a74f75861ee6c4652556ec0e10ff4ba48ec3d13b5f29ff1804ed7edd3a6"},
-    {file = "numcodecs-0.10.0-cp38-cp38-win_amd64.whl", hash = "sha256:bf1772edc490210b8dd880242b91b672a810db795a194eae25b9047f3e66634d"},
-    {file = "numcodecs-0.10.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:d9b07d4d70524e7dd00a0c125285b2fa698b3e0f3db78f7eec3377fe125f3003"},
-    {file = "numcodecs-0.10.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e9f1b40c241419c211ba648fd688c0007f45264212d993e8785c533d43112fcc"},
-    {file = "numcodecs-0.10.0-cp39-cp39-win_amd64.whl", hash = "sha256:b1312d8504a83c39ef37584f08e960220c88d15c43a7afe5540f949fb83f784c"},
-    {file = "numcodecs-0.10.0.tar.gz", hash = "sha256:2dd42564e7772a9385923b02a363e3cedf053ce93094a9064485e7f69a6f1c92"},
+    {file = "numcodecs-0.10.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e30d9da5d20e5aec24282b7228bd07d8cef9da5e6e00b009f2ede128a2fbe9ad"},
+    {file = "numcodecs-0.10.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0786636247f8289c53184e7f74159389b6f22faba5532112a35caab257d8e7f7"},
+    {file = "numcodecs-0.10.1-cp310-cp310-win_amd64.whl", hash = "sha256:78336012a7bdeafcaf071b5dc92559648339a2f3815b0b5603af2d730ea07301"},
+    {file = "numcodecs-0.10.1-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:afe924b0ee4323bad272c29d4cbfeba041397804f05b7399ab8c20d7942f6082"},
+    {file = "numcodecs-0.10.1-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c49de1355fd8ea190145e580940d6e6b57b16d9a04324df0e6a8ce3a84e0fcaa"},
+    {file = "numcodecs-0.10.1-cp37-cp37m-win_amd64.whl", hash = "sha256:17e81487ed37ea99102bde13236c956e67014dc1fa3cf4f038b99598db49789e"},
+    {file = "numcodecs-0.10.1-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:1f0555aca2ceae1ca2d9453239416c1d8a54e2016c9ac9ede3185937fdfbd3a1"},
+    {file = "numcodecs-0.10.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3ad3d357ccea0cba2d66a342aa443220e332eb247bed4f932a09626de8efb4ac"},
+    {file = "numcodecs-0.10.1-cp38-cp38-win_amd64.whl", hash = "sha256:2e5785af9a372b3ee1c8612d72c03c7808f8f714148a4b48ab5dee483ba13b93"},
+    {file = "numcodecs-0.10.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:b061bc8941999a3f15fd79309beeb7a6d3f3dec41afbeaa5652c891523ad03b4"},
+    {file = "numcodecs-0.10.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:179d624d3755b35ab3e677c69cf3374c7e45969d303431c20e717127b00e2318"},
+    {file = "numcodecs-0.10.1-cp39-cp39-win_amd64.whl", hash = "sha256:fae8092594bff849524a04f63634f9162b9dbcd8f6f6fe9f61cb742aff34849c"},
+    {file = "numcodecs-0.10.1.tar.gz", hash = "sha256:8ed6b01477570bc478c44b9077514e2e2f59a647a6a2b7c6fcc192f1092f804b"},
 ]
 numpy = [
     {file = "numpy-1.23.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b15c3f1ed08df4980e02cc79ee058b788a3d0bef2fb3c9ca90bb8cbd5b8a3a04"},
