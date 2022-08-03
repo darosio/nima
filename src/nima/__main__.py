@@ -8,7 +8,7 @@ from pathlib import Path
 
 import click
 import dask.array as da
-import matplotlib as mpl
+import matplotlib as mpl  # type: ignore
 import numpy as np
 import pandas as pd
 import sigfig  # type: ignore
@@ -230,7 +230,7 @@ def main(  # type: ignore
     # show all channels and labels only.
     d = {ch: d_im_bg[ch] for ch in channels}
     d["labels"] = d_im_bg["labels"]
-    f = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore
+    f = nima.d_show(d, cmap=mpl.cm.inferno_r)
     f.savefig(bname.with_name(bname.name + "_dim.png"))
     ##
     # meas csv
@@ -314,7 +314,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
         hpix.to_csv(output.with_suffix(".csv"), index=False)
         # FIXME hpix.y is a pd.Series[int]; it could be cast into NDArray[int]
         # TODO: if any of x y is out of the border ignore them
-        nima.correct_hotpixel(err, hpix.y, hpix.x)  # type: ignore
+        nima.correct_hotpixel(err, hpix.y, hpix.x)
     p25, p50, p75 = np.percentile(err.ravel(), [25, 50, 75])
     err_str = sigfig.round(p50, p75 - p25)
     click.secho("Estimated read noise: " + err_str)
