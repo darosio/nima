@@ -142,7 +142,7 @@ def mypy(session: Session) -> None:
         "rm", "-rf", ".mypy_cache/", external=True
     )  # for types-jinja2 from pyparser
     session.install(".")
-    session.install("mypy", "pytest", "data-science-types", "types-setuptools")
+    session.install("mypy", "pytest", "types-setuptools")
     session.run("mypy", *args)
     if not session.posargs:
         session.run("mypy", f"--python-executable={sys.executable}", "./noxfile.py")

@@ -109,8 +109,8 @@ exclude = "src/nima/__main__.py"
 
 [tool.pylsp-mypy]
 enabled = true
-live_mode = false
-dmypy = true
+live_mode = true
+dmypy = false
 strict = true
 
 [tool.commitizen]
