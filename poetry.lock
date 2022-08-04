@@ -1816,7 +1816,7 @@ python-versions = "*"
 
 [[package]]
 name = "tifffile"
-version = "2022.7.31"
+version = "2022.8.3"
 description = "Read and write TIFF files"
 category = "main"
 optional = false
@@ -3254,8 +3254,8 @@ termcolor = [
     {file = "termcolor-1.1.0.tar.gz", hash = "sha256:1d6d69ce66211143803fbc56652b41d73b4a400a2891d7bf7a1cdf4c02de613b"},
 ]
 tifffile = [
-    {file = "tifffile-2022.7.31-py3-none-any.whl", hash = "sha256:7e6f58aceb5e1d8c47c859e384b318b2f391b56d4dcd59550d6b46fe465cce0d"},
-    {file = "tifffile-2022.7.31.tar.gz", hash = "sha256:47940a048f31fb440434ad3782ee105205b097ac44dbd0b06a498e2b52b92f88"},
+    {file = "tifffile-2022.8.3-py3-none-any.whl", hash = "sha256:9ac1b07b2b920e1f3512f686adf514ef6b040a4a5e667beac771ae6a401eb913"},
+    {file = "tifffile-2022.8.3.tar.gz", hash = "sha256:27bf927b0432fa064bed2426f8bf1778250288a1fc3badb7f4e36ece2e9a6240"},
 ]
 tokenize-rt = [
     {file = "tokenize_rt-4.2.1-py2.py3-none-any.whl", hash = "sha256:08a27fa032a81cf45e8858d0ac706004fcd523e8463415ddf1442be38e204ea8"},
