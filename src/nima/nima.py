@@ -14,10 +14,10 @@ from typing import Any
 from typing import Sequence
 from typing import TypeVar
 
-import matplotlib as mpl  # type: ignore
-import matplotlib.cm  # type: ignore
+import matplotlib as mpl
+import matplotlib.cm
 import matplotlib.colors  # type: ignore
-import matplotlib.pyplot as plt  # type: ignore
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import skimage  # type: ignore
@@ -54,7 +54,7 @@ def myhist(
         plt.figure()
     plt.plot(bin_centers, hist, lw=2)
     if log:
-        plt.yscale("log")
+        plt.yscale("log")  # type: ignore
 
 
 def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], int, int]:
@@ -127,7 +127,7 @@ def d_show(d_im: dict[str, ImArray], **kws: Any) -> plt.Figure:
         for i, r in enumerate(rng):
             ax = f.add_subplot(n_rows, n_channels, i * n_channels + n + 1)
             img0 = ax.imshow(d_im[ch][r], **kws)
-            plt.colorbar(img0, ax=ax, orientation="vertical", pad=0.02, shrink=0.85)
+            plt.colorbar(img0, ax=ax, orientation="vertical", pad=0.02, shrink=0.85)  # type: ignore
             plt.xticks([])
             plt.yticks([])
             plt.ylabel(ch + " @ t = " + str(r))
@@ -315,9 +315,9 @@ def bg(
         f = plt.figure(figsize=(9, 5))
         ax1 = f.add_subplot(121)
         masked = im * m
-        cmap = plt.cm.inferno
+        cmap = plt.cm.inferno  # type: ignore
         img0 = ax1.imshow(masked, cmap=cmap)
-        plt.colorbar(img0, ax=ax1, orientation="horizontal")
+        plt.colorbar(img0, ax=ax1, orientation="horizontal")  # type: ignore
         plt.title(kind + " " + str(title) + "\n" + str(iqr))
         f.add_subplot(122)
         myhist(im[m], log=True)
@@ -329,9 +329,9 @@ def bg(
 
         def plot_lim() -> plt.Figure:
             f = plt.figure(figsize=(9, 4))
-            ax1, ax2, host = f.subplots(nrows=1, ncols=3)
+            ax1, ax2, host = f.subplots(nrows=1, ncols=3)  # type: ignore
             img0 = ax1.imshow(lim)
-            plt.colorbar(img0, ax=ax2, orientation="horizontal")
+            plt.colorbar(img0, ax=ax2, orientation="horizontal")  # type: ignore
             # FIXME: this is horribly duplicating an axes
             f.add_subplot(132)
             myhist(lim)
@@ -675,7 +675,7 @@ def d_meas_props(
                 }
             )
             # concat only on index that are present in both
-            meas[label] = pd.concat([meas[label], df], axis=1, join="inner")
+            meas[label] = pd.concat([meas[label], df], axis=1, join="inner")  # type: ignore
     return meas, pr
 
 
@@ -706,12 +706,12 @@ def d_plot_meas(
     n_axes = len(channels) + 3  # 2 ratios and 1 bg axes
     nrows = int(np.ceil(n_axes / ncols))
     # colors by segmented r.o.i. id and channel names
-    id_colors = mpl.cm.Set2.colors
+    id_colors = mpl.cm.Set2.colors  # type: ignore
     ch_colors = {
         k: k.lower() if k.lower() in mpl.colors.BASE_COLORS else "k" for k in channels
     }
     fig = plt.figure(figsize=(ncols * 5, nrows * 3))
-    axes = fig.subplots(nrows, ncols)
+    axes = fig.subplots(nrows, ncols)  # type: ignore
     for k, df in meas.items():
         c = id_colors[(int(k) - 1) % len(id_colors)]
         axes[0, 0].plot(df["r_pH"], marker="o", color=c, label=k)
@@ -738,11 +738,11 @@ def d_plot_meas(
     if n_axes == nrows * ncols:
         axes.flat[-2].set_xlabel("time")
         axes.flat[-1].set_xlabel("time")
-        bgs.plot(ax=axes[nrows - 1, ncols - 1], grid=True, color=ch_colors)
+        bgs.plot(ax=axes[nrows - 1, ncols - 1], grid=True, color=ch_colors)  # type: ignore
     else:
         axes.flat[-3].set_xlabel("time")
         axes.flat[-2].set_xlabel("time")
-        bgs.plot(ax=axes[nrows - 1, ncols - 2], grid=True, color=ch_colors)
+        bgs.plot(ax=axes[nrows - 1, ncols - 2], grid=True, color=ch_colors)  # type: ignore
         ax = list(chain(*axes))[-1]
         ax.remove()
 
@@ -795,15 +795,15 @@ def plt_img_profile(
 
     if title:
         kw = {"weight": "bold", "ha": "left"}
-        fig.suptitle(title, fontsize=12, x=spacing * 2, **kw)
+        fig.suptitle(title, fontsize=12, x=spacing * 2, **kw)  # type: ignore
 
-    ax = fig.add_axes(rect_im)
-    with plt.style.context("_mpl-gallery"):
-        ax_px = fig.add_axes(rect_px, sharex=ax)
-        ax_py = fig.add_axes(rect_py, sharey=ax)
-    with plt.style.context("seaborn"):
-        ax_hist = fig.add_axes(rect_ht)
-    ax_cm = fig.add_axes([0.45, 0.955, 0.3, 0.034])
+    ax = fig.add_axes(rect_im)  # type: ignore
+    with plt.style.context("_mpl-gallery"):  # type: ignore
+        ax_px = fig.add_axes(rect_px, sharex=ax)  # type: ignore
+        ax_py = fig.add_axes(rect_py, sharey=ax)  # type: ignore
+    with plt.style.context("seaborn"):  # type: ignore
+        ax_hist = fig.add_axes(rect_ht)  # type: ignore
+    ax_cm = fig.add_axes([0.45, 0.955, 0.3, 0.034])  # type: ignore
     # sigfig: ax_hist.set_title("err: " + str(sigfig.
     # sigfig: round(da.std(da.from_zarr(zim)).compute(), sigfigs=3)))
 
@@ -817,34 +817,34 @@ def plt_img_profile(
         vmin: float | None = None,
         vmax: float | None = None,
     ) -> mpl.image.AxesImage:
-        ax_px.tick_params(axis="x", labelbottom=False, labeltop=True, top=True)
-        ax_py.tick_params(
+        ax_px.tick_params(axis="x", labelbottom=False, labeltop=True, top=True)  # type: ignore
+        ax_py.tick_params(  # type: ignore
             axis="y", right=True, labelright=True, left=False, labelleft=False
         )
-        ax.tick_params(axis="y", labelleft=False, right=True)
-        ax.tick_params(axis="x", top=True, labelbottom=False)
+        ax.tick_params(axis="y", labelleft=False, right=True)  # type: ignore
+        ax.tick_params(axis="x", top=True, labelbottom=False)  # type: ignore
         if vmin is None or vmax is None:  # both must be provided
             vmi, vma = np.percentile(im, [18.4, 81.6])  # 1/e (66.6 %)
         else:
             vmi, vma = vmin, vmax
         img = ax.imshow(im, vmin=vmi, vmax=vma, cmap="turbo")
-        ax_px.plot(im.mean(axis=0), lw=4, alpha=0.5)
+        ax_px.plot(im.mean(axis=0), lw=4, alpha=0.5)  # type: ignore
         ymin = round(im.shape[0] / 2 * 0.67)
         ymax = round(im.shape[0] / 2 * 1.33)
         xmin = round(im.shape[1] / 2 * 0.67)
         xmax = round(im.shape[1] / 2 * 1.33)
-        ax_px.plot(im[ymin:ymax, :].mean(axis=0), alpha=0.7, c="k")
-        ax_px.xaxis.set_label_position("top")
+        ax_px.plot(im[ymin:ymax, :].mean(axis=0), alpha=0.7, c="k")  # type: ignore
+        ax_px.xaxis.set_label_position("top")  # type: ignore
         ax.set_xlabel("X")
-        ax.axvline(xmin, c="k")
-        ax.axvline(xmax, c="k")
-        ax.axhline(ymin, c="k")
-        ax.axhline(ymax, c="k")
-        ax.yaxis.set_label_position("left")
+        ax.axvline(xmin, c="k")  # type: ignore
+        ax.axvline(xmax, c="k")  # type: ignore
+        ax.axhline(ymin, c="k")  # type: ignore
+        ax.axhline(ymax, c="k")  # type: ignore
+        ax.yaxis.set_label_position("left")  # type: ignore
         ax.set_ylabel("Y")
-        ax_py.plot(im.mean(axis=1), range(im.shape[0]), lw=4, alpha=0.5)
-        ax_py.plot(im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), alpha=0.7, c="k")
-        axh.hist(
+        ax_py.plot(im.mean(axis=1), range(im.shape[0]), lw=4, alpha=0.5)  # type: ignore
+        ax_py.plot(im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), alpha=0.7, c="k")  # type: ignore
+        axh.hist(  # type: ignore
             im.ravel(),
             bins=max(int(im.max() - im.min()), 25),
             log=True,
@@ -860,7 +860,7 @@ def plt_img_profile(
 
     im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, ax_cm, vmin, vmax)
     ax_cm.axis("off")
-    fig.colorbar(
+    fig.colorbar(  # type: ignore
         im2c, ax=ax_cm, fraction=0.99, shrink=0.99, aspect=4, orientation="horizontal"
     )
     return fig
@@ -881,8 +881,8 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> plt.Figure:
     plt.Figure
 
     """
-    fig = plt.figure(constrained_layout=True)
-    gs = fig.add_gridspec(3, 3)
+    fig = plt.figure(constrained_layout=True)  # type: ignore
+    gs = fig.add_gridspec(3, 3)  # type: ignore
     ax = fig.add_subplot(gs[0:2, 0:2])
     vmi, vma = np.percentile(img, [18.4, 81.6])  # 1/e (66.6 %)
     ax.imshow(img, vmin=vmi, vmax=vma, cmap="turbo")
@@ -890,23 +890,23 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> plt.Figure:
     ymax = round(img.shape[0] / 2 * 1.33)
     xmin = round(img.shape[1] / 2 * 0.67)
     xmax = round(img.shape[1] / 2 * 1.33)
-    ax.axvline(xmin, c="k")
-    ax.axvline(xmax, c="k")
-    ax.axhline(ymin, c="k")
-    ax.axhline(ymax, c="k")
+    ax.axvline(xmin, c="k")  # type: ignore
+    ax.axvline(xmax, c="k")  # type: ignore
+    ax.axhline(ymin, c="k")  # type: ignore
+    ax.axhline(ymax, c="k")  # type: ignore
     ax1 = fig.add_subplot(gs[2, 0:2])
-    ax1.plot(img.mean(axis=0))
-    ax1.plot(img[ymin:ymax, :].mean(axis=0), alpha=0.2, lw=2, c="k")
+    ax1.plot(img.mean(axis=0))  # type: ignore
+    ax1.plot(img[ymin:ymax, :].mean(axis=0), alpha=0.2, lw=2, c="k")  # type: ignore
     ax2 = fig.add_subplot(gs[0:2, 2])
-    ax2.plot(
+    ax2.plot(  # type: ignore
         img[:, xmin:xmax].mean(axis=1), range(img.shape[0]), alpha=0.2, lw=2, c="k"
     )
     ax2.plot(img.mean(axis=1), range(img.shape[0]))
     axh = fig.add_subplot(gs[2, 2])
-    axh.hist(img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True)
+    axh.hist(img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True)  # type: ignore
     if title:
         kw = {"weight": "bold", "ha": "left"}
-        fig.suptitle(title, fontsize=12, **kw)
+        fig.suptitle(title, fontsize=12, **kw)  # type: ignore
     return fig
 
 
@@ -934,8 +934,8 @@ def hotpixels(bias: ImArray, n_sd: int = 20) -> pd.DataFrame:
     m = bias > (ave + n_sd * std)
     n_hpix = m.sum()
     while True:
-        m_ave = np.ma.masked_array(bias, m).mean()  # type: ignore
-        m_std = np.ma.masked_array(bias, m).std()  # type: ignore
+        m_ave = np.ma.masked_array(bias, m).mean()
+        m_std = np.ma.masked_array(bias, m).std()
         m = bias > m_ave + n_sd * m_std
         if n_hpix == m.sum():
             break
