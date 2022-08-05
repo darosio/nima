@@ -95,9 +95,9 @@ def test_plot_img_profile() -> None:
     )
     img = tff.imread(sample_flat_image)
     f = nima.plt_img_profile(img)
-    _, y_plot = f.get_axes()[1].lines[0].get_xydata().T
+    _, y_plot = f.get_axes()[1].lines[0].get_xydata().T  # type: ignore
     ydata = np.array([1.00000001, 0.99999999, 1.00000002, 1.0, 0.99999999])
     np.testing.assert_allclose(y_plot, ydata)
-    _, y_plot = f.get_axes()[1].lines[1].get_xydata().T
+    _, y_plot = f.get_axes()[1].lines[1].get_xydata().T  # type: ignore
     ydata = np.array([1.0, 0.99999997, 1.0, 0.99999998, 0.99999997])
     np.testing.assert_allclose(y_plot, ydata)
