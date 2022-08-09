@@ -1768,8 +1768,8 @@ optional = false
 python-versions = ">=3.5"
 
 [package.extras]
-lint = ["flake8", "mypy", "docutils-stubs"]
 test = ["pytest"]
+lint = ["docutils-stubs", "mypy", "flake8"]
 
 [[package]]
 name = "stack-data"
@@ -1816,7 +1816,7 @@ python-versions = "*"
 
 [[package]]
 name = "tifffile"
-version = "2022.7.31"
+version = "2022.8.8"
 description = "Read and write TIFF files"
 category = "main"
 optional = false
@@ -3254,8 +3254,8 @@ termcolor = [
     {file = "termcolor-1.1.0.tar.gz", hash = "sha256:1d6d69ce66211143803fbc56652b41d73b4a400a2891d7bf7a1cdf4c02de613b"},
 ]
 tifffile = [
-    {file = "tifffile-2022.7.31-py3-none-any.whl", hash = "sha256:7e6f58aceb5e1d8c47c859e384b318b2f391b56d4dcd59550d6b46fe465cce0d"},
-    {file = "tifffile-2022.7.31.tar.gz", hash = "sha256:47940a048f31fb440434ad3782ee105205b097ac44dbd0b06a498e2b52b92f88"},
+    {file = "tifffile-2022.8.8-py3-none-any.whl", hash = "sha256:dfb88106f42883a97b8f76c9ea2dddfd513a896ece4b3558e8c3cf3c10ca9b8a"},
+    {file = "tifffile-2022.8.8.tar.gz", hash = "sha256:594498345c43a4bb2abb67f0e71c17708059a8f5f5ef1ca70a3416d549c78952"},
 ]
 tokenize-rt = [
     {file = "tokenize_rt-4.2.1-py2.py3-none-any.whl", hash = "sha256:08a27fa032a81cf45e8858d0ac706004fcd523e8463415ddf1442be38e204ea8"},
