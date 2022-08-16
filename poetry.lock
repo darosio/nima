@@ -35,7 +35,7 @@ python-versions = "*"
 
 [[package]]
 name = "asttokens"
-version = "2.0.5"
+version = "2.0.8"
 description = "Annotate AST trees with source code positions"
 category = "dev"
 optional = false
@@ -45,7 +45,7 @@ python-versions = "*"
 six = "*"
 
 [package.extras]
-test = ["astroid", "pytest"]
+test = ["astroid (<=2.5.3)", "pytest"]
 
 [[package]]
 name = "atomicwrites"
@@ -568,18 +568,18 @@ optional = false
 python-versions = ">=3.7"
 
 [package.extras]
-woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
-unicode = ["unicodedata2 (>=14.0.0)"]
-ufo = ["fs (>=2.2.0,<3)"]
-type1 = ["xattr"]
-symfont = ["sympy"]
-repacker = ["uharfbuzz (>=0.23.0)"]
-plot = ["matplotlib"]
-pathops = ["skia-pathops (>=0.5.0)"]
-lxml = ["lxml (>=4.0,<5)"]
-interpolatable = ["munkres", "scipy"]
+all = ["fs (>=2.2.0,<3)", "lxml (>=4.0,<5)", "zopfli (>=0.1.4)", "lz4 (>=1.7.4.2)", "matplotlib", "sympy", "skia-pathops (>=0.5.0)", "uharfbuzz (>=0.23.0)", "brotlicffi (>=0.8.0)", "scipy", "brotli (>=1.0.1)", "munkres", "unicodedata2 (>=14.0.0)", "xattr"]
 graphite = ["lz4 (>=1.7.4.2)"]
-all = ["xattr", "unicodedata2 (>=14.0.0)", "munkres", "brotli (>=1.0.1)", "scipy", "brotlicffi (>=0.8.0)", "uharfbuzz (>=0.23.0)", "skia-pathops (>=0.5.0)", "sympy", "matplotlib", "lz4 (>=1.7.4.2)", "zopfli (>=0.1.4)", "lxml (>=4.0,<5)", "fs (>=2.2.0,<3)"]
+interpolatable = ["scipy", "munkres"]
+lxml = ["lxml (>=4.0,<5)"]
+pathops = ["skia-pathops (>=0.5.0)"]
+plot = ["matplotlib"]
+repacker = ["uharfbuzz (>=0.23.0)"]
+symfont = ["sympy"]
+type1 = ["xattr"]
+ufo = ["fs (>=2.2.0,<3)"]
+unicode = ["unicodedata2 (>=14.0.0)"]
+woff = ["zopfli (>=0.1.4)", "brotlicffi (>=0.8.0)", "brotli (>=1.0.1)"]
 
 [[package]]
 name = "fsspec"
@@ -1019,10 +1019,10 @@ sphinx = ">=4,<6"
 typing-extensions = "*"
 
 [package.extras]
-testing = ["sphinx-pytest", "pytest-param-files (>=0.3.4,<0.4.0)", "pytest-regressions", "pytest-cov", "pytest (>=6,<7)", "coverage", "beautifulsoup4"]
-rtd = ["sphinxext-opengraph (>=0.6.3,<0.7.0)", "sphinxcontrib.mermaid (>=0.7.1,<0.8.0)", "sphinxext-rediraffe (>=0.2.7,<0.3.0)", "sphinx-design", "sphinx-book-theme", "ipython"]
-linkify = ["linkify-it-py (>=1.0,<2.0)"]
 code_style = ["pre-commit (>=2.12,<3.0)"]
+linkify = ["linkify-it-py (>=1.0,<2.0)"]
+rtd = ["ipython", "sphinx-book-theme", "sphinx-design", "sphinxext-rediraffe (>=0.2.7,<0.3.0)", "sphinxcontrib.mermaid (>=0.7.1,<0.8.0)", "sphinxext-opengraph (>=0.6.3,<0.7.0)"]
+testing = ["beautifulsoup4", "coverage", "pytest (>=6,<7)", "pytest-cov", "pytest-regressions", "pytest-param-files (>=0.3.4,<0.4.0)", "sphinx-pytest"]
 
 [[package]]
 name = "nest-asyncio"
@@ -2029,8 +2029,8 @@ asciitree = [
     {file = "asciitree-0.3.3.tar.gz", hash = "sha256:4aa4b9b649f85e3fcb343363d97564aa1fb62e249677f2e18a96765145cc0f6e"},
 ]
 asttokens = [
-    {file = "asttokens-2.0.5-py2.py3-none-any.whl", hash = "sha256:0844691e88552595a6f4a4281a9f7f79b8dd45ca4ccea82e5e05b4bbdb76705c"},
-    {file = "asttokens-2.0.5.tar.gz", hash = "sha256:9a54c114f02c7a9480d56550932546a3f1fe71d8a02f1bc7ccd0ee3ee35cf4d5"},
+    {file = "asttokens-2.0.8-py2.py3-none-any.whl", hash = "sha256:e3305297c744ae53ffa032c45dc347286165e4ffce6875dc662b205db0623d86"},
+    {file = "asttokens-2.0.8.tar.gz", hash = "sha256:c61e16246ecfb2cde2958406b4c8ebc043c9e6d73aaa83c941673b35e5d3a76b"},
 ]
 atomicwrites = [
     {file = "atomicwrites-1.4.1.tar.gz", hash = "sha256:81b2c9071a49367a7f770170e5eec8cb66567cfbbc8c73d20ce5ca4a8d71cf11"},
