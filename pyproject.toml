@@ -107,6 +107,12 @@ show_error_context = true
 plugins = "numpy.typing.mypy_plugin"
 exclude = "src/nima/__main__.py"
 
+[tool.pylsp-mypy]
+enabled = true
+live_mode = false
+dmypy = true
+strict = true
+
 [tool.commitizen]
 name = "cz_conventional_commits"
 version = "0.6.0"
