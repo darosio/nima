@@ -32,7 +32,7 @@ from skimage import filters
 from skimage.morphology import disk  # type: ignore
 
 
-ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_])
+ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_], NDArray[np.bool_])
 
 # TODO: https://towardsdatascience.com/creating-custom-plotting-functions-with-matplotlib-1f4b8eba6aa1
 
@@ -55,47 +55,6 @@ def myhist(
     plt.plot(bin_centers, hist, lw=2)
     if log:
         plt.yscale("log")  # type: ignore
-
-
-def plot_im_series(
-    im: ImArray,
-    cmap: matplotlib.colors.Colormap = matplotlib.colors.BASE_COLORS,
-    horizontal: bool = True,
-    **kw: Any,
-) -> None:
-    """Plot a image series with a maximum of 9 elements.
-
-    ..note:: Consider deprecation. Use d_show() instead.
-
-    """
-    if horizontal:
-        fig = plt.figure(figsize=(12, 5.6))
-        s = 100 + len(im) * 10 + 1
-    else:
-        fig = plt.figure(figsize=(5.6, 12))
-        s = len(im) * 100 + 10 + 1
-    for i, img in enumerate(im):
-        ax = fig.add_subplot(s + i)
-        # Switched from plt.cmd to ax.cmd
-        ax.imshow(img, cmap=cmap, **kw)
-        plt.axis("off")  # type: ignore
-    plt.subplots_adjust(wspace=0.02, hspace=0.02, top=1, bottom=0, left=0, right=1)
-
-
-def plot_otsu(
-    im: ImArray, cmap: mpl.colors.Colormap | None = None
-) -> NDArray[np.bool_]:
-    """Otsu threshold and plot im_series.
-
-    .. note:: Consider deprecation.
-
-    """
-    if not cmap:
-        cmap = plt.cm.gray  # type: ignore
-    val = filters.threshold_otsu(im)
-    mask = im > val
-    plot_im_series(im * mask, cmap=cmap)
-    return np.array(mask)
 
 
 def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], int, int]:
@@ -307,6 +266,8 @@ def bg(
         raise Exception("perc must be in [0, 100] range")
     else:
         perc /= 100
+    lim_ = False
+    m = None
     if kind == "arcsinh":
         lim = np.arcsinh(im)
         lim = ndimage.percentile_filter(lim, arcsinh_perc, size=radius)
