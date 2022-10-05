@@ -2000,16 +2000,16 @@ tests-strict = ["cmake (==3.21.2)", "codecov (==2.0.15)", "ninja (==1.10.2)", "p
 
 [[package]]
 name = "zarr"
-version = "2.12.0"
+version = "2.13.2"
 description = "An implementation of chunked, compressed, N-dimensional arrays for Python."
 category = "main"
 optional = false
-python-versions = ">=3.7, <4"
+python-versions = ">=3.8, <4"
 
 [package.dependencies]
 asciitree = "*"
 fasteners = "*"
-numcodecs = ">=0.6.4"
+numcodecs = ">=0.10.0"
 numpy = ">=1.7"
 
 [package.extras]
@@ -3444,8 +3444,8 @@ xdoctest = [
     {file = "xdoctest-1.1.0.tar.gz", hash = "sha256:0fd4fad7932f0a2f082dfdfb857dd6ca41603757586c39b1e5b4d333fc389f8a"},
 ]
 zarr = [
-    {file = "zarr-2.12.0-py3-none-any.whl", hash = "sha256:3713f28f3fafa838f62bb442504da8e89bb969ecd1da09c9a96927536ec9be34"},
-    {file = "zarr-2.12.0.tar.gz", hash = "sha256:515a31ee4bad6bb48ae05178c588ae49a02a35defa01dd9a3293306903368165"},
+    {file = "zarr-2.13.2-py3-none-any.whl", hash = "sha256:d163b7fb087691c7c89b6e9839af292f1e0d85d2139bbbefd8ec4689dfb99d62"},
+    {file = "zarr-2.13.2.tar.gz", hash = "sha256:8fc469238ae818e183d68ad6203d77c206ddb0b12563eb4bc8209fcb69b7c2d6"},
 ]
 zict = [
     {file = "zict-2.2.0-py2.py3-none-any.whl", hash = "sha256:dabcc8c8b6833aa3b6602daad50f03da068322c1a90999ff78aed9eecc8fa92c"},
