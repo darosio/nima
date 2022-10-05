@@ -373,10 +373,10 @@ def mflat(ctx: click.Context, globpath: str, bias: Path) -> None:
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
     click.secho(axes_n_shape, fg="green")
     store = image_sequence.aszarr()
-    Client()
+    Client()  # type: ignore
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
     fp = f.persist()
-    progress(fp)
+    progress(fp)  # type: ignore
     tprojection = fp.compute()
     if ctx.obj["output"]:
         output = ctx.obj["output"]
