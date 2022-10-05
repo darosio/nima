@@ -18,5 +18,5 @@ updates:
     allow:
       - dependency-type: "direct"
       # - dependency-type: "production"
-    target-branch: "develop"
+    target-branch: "deps"
     open-pull-requests-limit: 15
