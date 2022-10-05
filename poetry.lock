@@ -155,7 +155,7 @@ typing-extensions = ">=3.10.0"
 
 [[package]]
 name = "certifi"
-version = "2022.6.15"
+version = "2022.9.24"
 description = "Python package for providing Mozilla's CA Bundle."
 category = "dev"
 optional = false
@@ -271,7 +271,7 @@ python-versions = ">=3.6,<4.0"
 
 [[package]]
 name = "dask"
-version = "2022.8.1"
+version = "2022.9.2"
 description = "Parallel PyData with Task Scheduling"
 category = "main"
 optional = false
@@ -279,7 +279,7 @@ python-versions = ">=3.8"
 
 [package.dependencies]
 cloudpickle = ">=1.1.1"
-distributed = {version = "2022.8.1", optional = true, markers = "extra == \"distributed\""}
+distributed = {version = "2022.9.2", optional = true, markers = "extra == \"distributed\""}
 fsspec = ">=0.6.0"
 packaging = ">=20.0"
 partd = ">=0.3.10"
@@ -288,10 +288,10 @@ toolz = ">=0.8.2"
 
 [package.extras]
 array = ["numpy (>=1.18)"]
-complete = ["bokeh (>=2.4.2)", "distributed (==2022.8.1)", "jinja2", "numpy (>=1.18)", "pandas (>=1.0)"]
+complete = ["bokeh (>=2.4.2)", "distributed (==2022.9.2)", "jinja2", "numpy (>=1.18)", "pandas (>=1.0)"]
 dataframe = ["numpy (>=1.18)", "pandas (>=1.0)"]
 diagnostics = ["bokeh (>=2.4.2)", "jinja2"]
-distributed = ["distributed (==2022.8.1)"]
+distributed = ["distributed (==2022.9.2)"]
 test = ["pandas[test]", "pre-commit", "pytest", "pytest-rerunfailures", "pytest-xdist"]
 
 [[package]]
@@ -339,7 +339,7 @@ python-versions = "*"
 
 [[package]]
 name = "distributed"
-version = "2022.8.1"
+version = "2022.9.2"
 description = "Distributed scheduler for Dask"
 category = "main"
 optional = false
@@ -348,7 +348,7 @@ python-versions = ">=3.8"
 [package.dependencies]
 click = ">=6.6"
 cloudpickle = ">=1.5.0"
-dask = "2022.8.1"
+dask = "2022.9.2"
 jinja2 = "*"
 locket = ">=1.0.0"
 msgpack = ">=0.6.0"
@@ -637,7 +637,7 @@ python-versions = "*"
 
 [[package]]
 name = "identify"
-version = "2.5.3"
+version = "2.5.6"
 description = "File identification library for Python"
 category = "dev"
 optional = false
@@ -1406,7 +1406,7 @@ six = ">=1.5"
 
 [[package]]
 name = "pytz"
-version = "2022.2.1"
+version = "2022.4"
 description = "World timezone definitions, modern and historical"
 category = "main"
 optional = false
@@ -2094,8 +2094,8 @@ bokeh = [
     {file = "bokeh-2.4.3.tar.gz", hash = "sha256:ef33801161af379665ab7a34684f2209861e3aefd5c803a21fbbb99d94874b03"},
 ]
 certifi = [
-    {file = "certifi-2022.6.15-py3-none-any.whl", hash = "sha256:fe86415d55e84719d75f8b69414f6438ac3547d2078ab91b67e779ef69378412"},
-    {file = "certifi-2022.6.15.tar.gz", hash = "sha256:84c85a9078b11105f04f3036a9482ae10e4621616db313fe045dd24743a0820d"},
+    {file = "certifi-2022.9.24-py3-none-any.whl", hash = "sha256:90c1a32f1d68f940488354e36370f6cca89f0f106db09518524c88d6ed83f382"},
+    {file = "certifi-2022.9.24.tar.gz", hash = "sha256:0d9c601124e5a6ba9712dbc60d9c53c21e34f5f641fe83002317394311bdce14"},
 ]
 cffi = [
     {file = "cffi-1.15.1-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:a66d3508133af6e8548451b25058d5812812ec3798c886bf38ed24a98216fab2"},
@@ -2248,8 +2248,8 @@ darglint = [
     {file = "darglint-1.8.1.tar.gz", hash = "sha256:080d5106df149b199822e7ee7deb9c012b49891538f14a11be681044f0bb20da"},
 ]
 dask = [
-    {file = "dask-2022.8.1-py3-none-any.whl", hash = "sha256:4da3f645c638e19ada4b162942adce24a6fcbaa48e9d12bef3d976e24ae17607"},
-    {file = "dask-2022.8.1.tar.gz", hash = "sha256:84f9f229e4fc6c0df8a23620f2b03f277b1bfb15a497603c704743443e38d420"},
+    {file = "dask-2022.9.2-py3-none-any.whl", hash = "sha256:42ee25ade79a1af006b57f0eabe207edfddc1eee23b075e77306a31990541351"},
+    {file = "dask-2022.9.2.tar.gz", hash = "sha256:2e214f97af5195ce08f4a3be198b2fca2de709c23e06966bfa3298851ac91507"},
 ]
 data-science-types = [
     {file = "data-science-types-0.2.23.tar.gz", hash = "sha256:8096b9a35a8a187bf9a122b4707c97de841d810744690ee2a4ac30c6462e0d16"},
@@ -2288,8 +2288,8 @@ distlib = [
     {file = "distlib-0.3.6.tar.gz", hash = "sha256:14bad2d9b04d3a36127ac97f30b12a19268f211063d8f8ee4f47108896e11b46"},
 ]
 distributed = [
-    {file = "distributed-2022.8.1-py3-none-any.whl", hash = "sha256:936cc42e753ff7e000696cb441a4400c1fd56136ddf53390f3c905cac15b7fa2"},
-    {file = "distributed-2022.8.1.tar.gz", hash = "sha256:09ffd3433ba44b856320f8ec657f221af5207d99c9db6bb5101b14f4fca42f56"},
+    {file = "distributed-2022.9.2-py3-none-any.whl", hash = "sha256:63d14e99013b83f5a40a3f82bc449639833abd35438a3d350dbe9f13776fa0a6"},
+    {file = "distributed-2022.9.2.tar.gz", hash = "sha256:910627092a79ba105a80a7e1ea53ccc184ed3cbccd217943940a871515624d0b"},
 ]
 docutils = [
     {file = "docutils-0.18.1-py2.py3-none-any.whl", hash = "sha256:23010f129180089fbcd3bc08cfefccb3b890b0050e1ca00c867036e9d161b98c"},
@@ -2380,8 +2380,8 @@ heapdict = [
     {file = "HeapDict-1.0.1.tar.gz", hash = "sha256:8495f57b3e03d8e46d5f1b2cc62ca881aca392fd5cc048dc0aa2e1a6d23ecdb6"},
 ]
 identify = [
-    {file = "identify-2.5.3-py2.py3-none-any.whl", hash = "sha256:25851c8c1370effb22aaa3c987b30449e9ff0cece408f810ae6ce408fdd20893"},
-    {file = "identify-2.5.3.tar.gz", hash = "sha256:887e7b91a1be152b0d46bbf072130235a8117392b9f1828446079a816a05ef44"},
+    {file = "identify-2.5.6-py2.py3-none-any.whl", hash = "sha256:b276db7ec52d7e89f5bc4653380e33054ddc803d25875952ad90b0f012cbcdaa"},
+    {file = "identify-2.5.6.tar.gz", hash = "sha256:6c32dbd747aa4ceee1df33f25fed0b0f6e0d65721b15bd151307ff7056d50245"},
 ]
 idna = [
     {file = "idna-3.3-py3-none-any.whl", hash = "sha256:84d9dd047ffa80596e0f246e2eab0b391788b0503584e8945f2368256d2735ff"},
@@ -2966,8 +2966,8 @@ python-dateutil = [
     {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
 ]
 pytz = [
-    {file = "pytz-2022.2.1-py2.py3-none-any.whl", hash = "sha256:220f481bdafa09c3955dfbdddb7b57780e9a94f5127e35456a48589b9e0c0197"},
-    {file = "pytz-2022.2.1.tar.gz", hash = "sha256:cea221417204f2d1a2aa03ddae3e867921971d0d76f14d87abb4414415bbdcf5"},
+    {file = "pytz-2022.4-py2.py3-none-any.whl", hash = "sha256:2c0784747071402c6e99f0bafdb7da0fa22645f06554c7ae06bf6358897e9c91"},
+    {file = "pytz-2022.4.tar.gz", hash = "sha256:48ce799d83b6f8aab2020e369b627446696619e79645419610b9facd909b3174"},
 ]
 pyupgrade = [
     {file = "pyupgrade-2.37.3-py2.py3-none-any.whl", hash = "sha256:9746efd064dbf53d7f86d6f88a1d48120f58dbfc378f517768634740ea2225e2"},
