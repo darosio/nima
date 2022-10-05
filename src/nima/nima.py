@@ -716,7 +716,7 @@ def d_meas_props(
                 }
             )
             # concat only on index that are present in both
-            meas[label] = pd.concat([meas[label], df], axis=1, join="inner")  # type: ignore
+            meas[label] = pd.concat([meas[label], df], axis=1, join="inner")
     return meas, pr
 
 
@@ -779,11 +779,11 @@ def d_plot_meas(
     if n_axes == nrows * ncols:
         axes.flat[-2].set_xlabel("time")
         axes.flat[-1].set_xlabel("time")
-        bgs.plot(ax=axes[nrows - 1, ncols - 1], grid=True, color=ch_colors)  # type: ignore
+        bgs.plot(ax=axes[nrows - 1, ncols - 1], grid=True, color=ch_colors)
     else:
         axes.flat[-3].set_xlabel("time")
         axes.flat[-2].set_xlabel("time")
-        bgs.plot(ax=axes[nrows - 1, ncols - 2], grid=True, color=ch_colors)  # type: ignore
+        bgs.plot(ax=axes[nrows - 1, ncols - 2], grid=True, color=ch_colors)
         ax = list(chain(*axes))[-1]
         ax.remove()
 

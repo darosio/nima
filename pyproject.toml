@@ -62,7 +62,6 @@ myst-parser = ">=0.17.2"
 flake8-bandit = "^3.0.0"
 mypy = "^0.961"
 types-setuptools = "^57.4.17"
-data-science-types = "^0.2.23"
 sphinx-click = "^4.1.0"
 pre-commit = "^2.19.0"
 pre-commit-hooks = "^4.3.0"
@@ -77,6 +76,10 @@ pep8-naming = "^0.13.0"
 flake8-rst-docstrings = "^0.2.6"
 typeguard = "^2.13.3"
 commitizen = "^2.27.1"
+
+[tool.poetry.group.dev.dependencies]
+data-science-types = "^0.2.23"
+pandas-stubs = "^1.5.0.221003"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
