@@ -30,11 +30,13 @@ dask-worker-space/
 *.egg-info
 
 # Unittest and coverage
-htmlcov/*
+.cache
 .coverage
-.nox
-junit.xml
+.coverage.*
 coverage.xml
+coverage.xml
+.hypothesis/
+htmlcov/*
 
 # Build and docs folder/files
 build/*
@@ -44,3 +46,10 @@ docs/api/*
 docs/_build/*
 cover/*
 MANIFEST
+
+# Venvs
+.env
+.venv
+# direnv
+.direnv
+.envrc

@@ -65,7 +65,15 @@ repos:
       - id: commitizen
         name: My commitizen check
         entry: cz
-        args: ['check', '--commit-msg-file', '.git/COMMIT_EDITMSG']
+        args: ["check", "--commit-msg-file", ".git/COMMIT_EDITMSG"]
         pass_filenames: false
         language: system
         stages: [commit-msg]
+
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.10.0
+    hooks:
+      - id: pretty-format-ini
+        args: [--autofix]
+      - id: pretty-format-toml
+        args: [--autofix]
