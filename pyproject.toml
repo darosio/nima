@@ -56,7 +56,8 @@ dev = [
   "flake8-docstrings ==1.6.0",
   "darglint ==1.8.1",
   "flake8-bandit ==4.1.1",
-  "ipython ==8.5.0"
+  "ipython ==8.5.0",
+  "pylsp-mypy"
 ]
 docs = [
   "pydata-sphinx-theme ==0.10.1",
