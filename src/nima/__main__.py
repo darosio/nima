@@ -14,8 +14,7 @@ import pandas as pd
 import sigfig  # type: ignore
 import tifffile  # type: ignore
 from dask.diagnostics.progress import ProgressBar
-from dask.distributed import Client
-from dask.distributed import progress
+from dask.distributed import Client, progress
 from matplotlib.backends import backend_pdf  # type: ignore
 from scipy import ndimage  # type: ignore
 

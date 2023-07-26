@@ -210,8 +210,11 @@ type = "mypy src tests docs/conf.py"
 xdoc = "python -m xdoctest nima all"
 
 [tool.isort]
-force_single_line = true
-lines_after_imports = 2
+combine_as_imports = true
+force_single_line = false
+include_trailing_comma = true
+known_first_party = "nima"
+line_length = 88  # to match black's default line length
 multi_line_output = 3
 profile = "black"
 
@@ -229,3 +232,65 @@ dmypy = false
 enabled = true
 live_mode = true
 strict = true
+
+[tool.ruff]
+force-exclude = true
+# ignore = [
+# "ANN101",
+# "ANN102",
+# "ANN201",
+# "E501"
+# ]
+line-length = 88
+select = [
+  # "A",  # builtins
+  # "ANN",  # typing annotation
+  # "ARG",  # unused arguments
+  # "B",  # bugbear
+  # "C",
+  "C4",  # comprehensions
+  # "C90",  # mccabe
+  "D",  # pydocstyle
+  # "DTZ",  # dates
+  "E",  # pycodestyle
+  # "TRY",  # exceptions
+  # "EM",  # exceptions
+  "ERA",  # eradicate
+  "F",  # pyflakes
+  # # "FBT",    # boolean-trap
+  "I",  # isort
+  "ICN",  # import conventions (opinionated)
+  "ISC",  # implicit-str-concat
+  "N",  # pep8-naming
+  # "PD",  # pandas-vet
+  # # "PGH",  # pygrep WAIT
+  # "PL",  # pylint see PLR2004...
+  "PT",  # pytest-style
+  # "PTH",  # use-pathlib
+  "Q",  # quotes
+  # "RUF",  # Ruff
+  "S",  # bandit XXX
+  # "SIM",  # simplify
+  "TID",  # tidy-imports
+  "UP",  # pyupgrade
+  "YTT",  # 2020
+  "W"  # pycodestyle
+]
+
+[tool.ruff.isort]
+combine-as-imports = true
+force-single-line = false
+known-first-party = ["nima"]
+split-on-trailing-comma = true
+
+[tool.ruff.mccabe]
+max-complexity = 12
+
+[tool.ruff.per-file-ignores]
+"tests/*" = [
+  "PLR2004",
+  "S101"
+]
+
+[tool.ruff.pydocstyle]
+convention = "numpy"

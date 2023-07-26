@@ -10,9 +10,7 @@ from __future__ import annotations
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Any
-from typing import Sequence
-from typing import TypeVar
+from typing import Any, Sequence, TypeVar
 
 import matplotlib as mpl
 import matplotlib.cm
@@ -26,11 +24,9 @@ import skimage.segmentation  # type: ignore
 import skimage.transform  # type: ignore
 import tifffile  # type: ignore
 from numpy.typing import NDArray
-from scipy import ndimage  # type: ignore
-from scipy import signal
+from scipy import ndimage, signal  # type: ignore
 from skimage import filters
 from skimage.morphology import disk  # type: ignore
-
 
 ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float_], NDArray[np.bool_])
 

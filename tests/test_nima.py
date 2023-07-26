@@ -7,7 +7,6 @@ from numpy.testing import assert_array_equal
 
 from nima import nima
 
-
 data_fp = "./tests/data/1b_c16_15.tif"
 
 

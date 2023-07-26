@@ -1,8 +1,7 @@
 """Tests for nima script."""
 import os
 from pathlib import Path
-from typing import Any
-from typing import Tuple
+from typing import Any, Tuple
 
 import numpy as np
 import pandas as pd
@@ -15,7 +14,6 @@ from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
 
 from nima import __main__
-
 
 # test data: (rootname, times)
 rootnames = [(Path("1b_c16_15"), 4)]

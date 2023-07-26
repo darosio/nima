@@ -1,7 +1,6 @@
 """Sphinx configuration."""
 from datetime import datetime
 
-
 project = "nima"
 author = "Daniele Arosio"
 copyright = f"{datetime.now().year}, {author}"
