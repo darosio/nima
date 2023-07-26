@@ -95,7 +95,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
     else:
         n_times = 1
     if im.shape[axes.rfind("C")] % n_channels:
-        raise Exception("n_channel mismatch total lenght of tif sequence")
+        raise Exception("n_channel mismatch total length of tif sequence")
     else:
         d_im = {}
         for i, ch in enumerate(channels):
@@ -176,7 +176,7 @@ def d_shading(
 
     Works either with flat or d_flat
     Need also dark for each channel because it can be different when using
-    different acquisiton times.
+    different acquisition times.
 
     Parameters
     ----------
@@ -243,7 +243,7 @@ def bg(
     adaptive_radius : int, optional
         Size for the adaptive filter of skimage (default is im.shape[1]/2).
     arcsinh_perc : int, optional
-        Perc (default=80) used in the percentile_filter (scipy) whithin
+        Perc (default=80) used in the percentile_filter (scipy) within
         *arcsinh* method.
 
     Returns
