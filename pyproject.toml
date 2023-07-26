@@ -52,7 +52,7 @@ docs = [
   "pydata-sphinx-theme ==0.10.1",
   "sphinx-click ==4.3.0",
   "Sphinx ==5.2.3",
-  "Pygments ==2.13.0",
+  "Pygments ==2.15.1",
   "myst-parser ==0.18.1"
 ]
 tests = [
