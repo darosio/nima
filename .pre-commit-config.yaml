@@ -23,19 +23,13 @@ repos:
       - id: detect-private-key
       - id: trailing-whitespace
 
-  - repo: https://github.com/psf/black
-    rev: 23.7.0
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.10.0
     hooks:
-      - id: black-jupyter
-      - id: black
-        require_serial: true
-
-  - repo: https://github.com/asottile/blacken-docs
-    rev: 1.15.0
-    hooks:
-      - id: blacken-docs
-        additional_dependencies: [black]
-        exclude: docs/tutorials/usage.*.rst
+      - id: pretty-format-ini
+        args: [--autofix]
+      - id: pretty-format-toml
+        args: [--autofix]
 
   - repo: local
     hooks:
@@ -62,20 +56,30 @@ repos:
         types: [python]
         args: [--py37-plus]
 
-  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-    rev: v2.10.0
+  - repo: https://github.com/psf/black
+    rev: 23.7.0
     hooks:
-      - id: pretty-format-ini
-        args: [--autofix]
-      - id: pretty-format-toml
-        args: [--autofix]
+      - id: black-jupyter
+      - id: black
+        require_serial: true
+
+  - repo: https://github.com/asottile/blacken-docs
+    rev: 1.15.0
+    hooks:
+      - id: blacken-docs
+        additional_dependencies: [black]
+        exclude: docs/tutorials/usage.*.rst
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.0.0
+    hooks:
+      - id: prettier
+        types_or: [yaml, markdown, html, css, scss, javascript, json]
+        args: [--prose-wrap=always]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
-      # - id: python-check-blanket-noqa
-      # - id: python-check-blanket-type-ignore # same as ruff PGH
-      # - id: python-no-eval
       - id: python-use-type-annotations
       - id: rst-backticks
       - id: rst-directive-colons
@@ -86,7 +90,6 @@ repos:
     hooks:
       - id: bandit
         args: ["-c", "bandit.yml"]
-        # additional_dependencies: ["bandit[toml]"]
 
   - repo: https://github.com/terrencepreilly/darglint
     rev: v1.8.1

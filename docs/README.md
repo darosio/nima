@@ -12,23 +12,22 @@ scikit-image.
 
 # Features
 
--   easy dark and flat correction
--   automatic cell segmentation
--   easy ratio analyses
+- easy dark and flat correction
+- automatic cell segmentation
+- easy ratio analyses
 
 # Installation
 
 :
 
-	pyenv virtualenv 3.10.4 nima-0.5.4
-	pyenv activate
-	poetry install
-	pip install .
+    pyenv virtualenv 3.10.4 nima-0.5.4
+    pyenv activate
+    poetry install
+    pip install .
 
 Optionally:
 
-	python -m ipykernel install --user --name="nima0.3.1"
-
+    python -m ipykernel install --user --name="nima0.3.1"
 
 # Usage
 
@@ -44,20 +43,21 @@ A longer description of your project goes here\...
 
 ## Note
 
-pyenv activate nima-...
-poetry install pre-commit
+    pyenv activate nima-...
+    poetry install pre-commit
+
 install before next first commit: pre-commit run --all-files
 
+    nox --session=pre-commit -- install
+    and activate poetry
 
-nox --session=pre-commit -- install
-and activate poetry
 
+    pyenv activate nima-0.2
+    poetry install
+    pip install .
 
-pyenv activate nima-0.2
-poetry install
-pip install .
-
-so it is not installed in development mode and this version will persist to updates.
+so it is not installed in development mode and this version will persist to
+updates.
 
 ## todo
 

@@ -1,2 +1,3 @@
 # Contributors
--   daniele arosio \<<daniele.arosio@cnr.it>\>
+
+- daniele arosio \<<daniele.arosio@cnr.it>\>
