@@ -41,23 +41,12 @@ version = "0.6.0"
 dev = [
   "commitizen ==2.35.0",
   "pre-commit ==2.20.0",
-  "pre-commit-hooks ==4.3.0",
-  "isort ==5.10.1",
-  "black ==22.8.0",
-  "flake8-eradicate ==1.4.0",
-  "pyupgrade >=3.0.0",
-  "flake8-pytest-style ==1.6.0",
-  "flake8-comprehensions ==3.10.0",
-  "pep8-naming >=0.13.2",
-  "flake8-rst-docstrings ==0.2.7",
   "ipykernel >=6.16.0",
-  "flake8 ==5.0.4",
-  "flake8-bugbear ==22.9.23",
-  "flake8-docstrings ==1.6.0",
-  "darglint ==1.8.1",
-  "flake8-bandit ==4.1.1",
-  "ipython ==8.5.0",
-  "pylsp-mypy"
+  "ruff == 0.0.280",
+  "pylsp-mypy",
+  "jupyter",
+  "jupyterlab",
+  "python-lsp-ruff"
 ]
 docs = [
   "pydata-sphinx-theme ==0.10.1",
@@ -85,6 +74,23 @@ nima = "nima.__main__:main"
 [project.urls]
 homepage = "https://github.com/darosio/nima/"
 repository = "https://github.com/darosio/nima/"
+
+[tool.black]
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+line-length = 88
+skip-string-normalization = false
 
 [tool.commitizen]
 name = "cz_customize"

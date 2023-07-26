@@ -61,7 +61,7 @@ def gen_object(
 def gen_objs(
     max_fluor: float = 20, max_n_obj: int = 8, **kwargs: int
 ) -> npt.NDArray[np.float_]:
-    """Generate a frame with ellipsoid objects; in random number, shape, position and intensity."""
+    """Generate a frame with ellipsoid objects; random n, shape, position and I."""
     img = max_fluor * np.random.rand() * gen_object(**kwargs)
     # MAYBE: convolve the obj to simulate lower peri-cellular profile
     for _ in range(1, np.random.randint(2, max_n_obj)):
