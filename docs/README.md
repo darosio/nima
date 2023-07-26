@@ -1,35 +1,44 @@
-[![PyPI](https://img.shields.io/pypi/v/nima.svg)][pypi status]
-[![Python Version](https://img.shields.io/pypi/pyversions/nima)][pypi status]
-[![image](https://github.com/darosio/nima/actions/workflows/tests.yml/badge.svg)](https://github.com/darosio/nima/actions/workflows/tests.yml)
-[![image](https://codecov.io/gh/darosio/nima/branch/main/graph/badge.svg?token=OR0LUZUJUR)](https://codecov.io/gh/darosio/nima)
+# NImA
 
-[pypi status]: https://pypi.org/project/nima/
+[![PyPI](https://img.shields.io/pypi/v/nima.svg)](https://pypi.org/project/nima/)
+[![CI](https://github.com/darosio/nima/actions/workflows/ci.yml/badge.svg)](https://github.com/darosio/nima/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/darosio/nima/branch/main/graph/badge.svg?token=OU6F9VFUQ6)](https://codecov.io/gh/darosio/nima)
+[![RtD](https://readthedocs.org/projects/nima/badge/)](https://nima.readthedocs.io/)
 
 A library and a cli to help image analyses based on scipy.ndimage and
 scikit-image.
 
 - Version: “0.6.0”
 
-# Features
+## Features
 
 - easy dark and flat correction
 - automatic cell segmentation
 - easy ratio analyses
 
-# Installation
+## Installation
 
-:
+You can get the library directly from [PyPI](https://pypi.org/project/nima/)
+using `pip`:
 
-    pyenv virtualenv 3.10.4 nima-0.5.4
-    pyenv activate
-    poetry install
-    pip install .
+    pip install nima
 
-Optionally:
+Alternatively, you can use [pipx](https://pypa.github.io/pipx/) to install it in
+an isolated environment:
 
-    python -m ipykernel install --user --name="nima0.3.1"
+    pipx install nima
 
-# Usage
+To enable auto completion for the `nima` command, follow these steps:
+
+1.  Generate the completion script by running the following command:
+
+        _CLOP_COMPLETE=bash_source nima > ~/.local/bin/nima-complete.bash
+
+2.  Source the generated completion script to enable auto completion:
+
+        source ~/.local/bin/nima-complete.bash
+
+## Usage
 
 To use nima in a project:
 
