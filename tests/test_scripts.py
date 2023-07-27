@@ -54,7 +54,7 @@ class TestOutputFiles:
         fp_result = result_folder[0] / Path(result_folder[1][0]) / f
         expected = pd.read_csv(fp_expected)
         result = pd.read_csv(fp_result)
-        pd.testing.assert_frame_equal(expected, result, atol=1e-15)  # type: ignore
+        pd.testing.assert_frame_equal(expected, result, atol=1e-15)
 
     @pytest.mark.parametrize(
         "f",
