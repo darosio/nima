@@ -53,7 +53,7 @@ docs = [
   "sphinx-click ==4.3.0",
   "Sphinx ==5.2.3",
   "Pygments ==2.15.1",
-  "myst-parser ==0.18.1"
+  "myst-parser ==2.0.0"
 ]
 tests = [
   "pytest ==7.1.3",
