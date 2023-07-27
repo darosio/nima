@@ -49,11 +49,11 @@ dev = [
   "python-lsp-ruff"
 ]
 docs = [
-  "pydata-sphinx-theme ==0.10.1",
+  "pydata-sphinx-theme ==0.13.2",
   "sphinx-click ==4.3.0",
   "Sphinx ==7.1.0",
   "Pygments ==2.15.1",
-  "myst-parser ==0.18.1"
+  "myst-parser ==2.0.0"
 ]
 tests = [
   "pytest ==7.1.3",
