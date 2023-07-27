@@ -1,5 +1,81 @@
 # Changelog
 
+## v0.7.0 (2023-07-27)
+
+### Feat
+
+- Add support for python 3.11
+- add generat
+
+### Fix
+
+- a darglint error after vmin vmax for kwargs
+- bias return read noise instead of Shapiro-Wilk test
+- imwrite photometric warnings
+
+### Docs
+
+- Update Readme
+
+### Style
+
+- Add prettier to pre-commit
+
+### Build
+
+- **fix**: update sphinx together with theme and myst-parser
+- Update dependencies
+  - bump numpy from 1.23.3 to 1.25.1
+  - bump pandas from 1.5.0 to 2.0.3
+  - bump scikit-image from 0.19.3 to 0.21.0
+  - bump matplotlib from 3.6.0 to 3.7.2
+  - bump tifffile from 2022.8.12 to 2023.7.18
+  - bump scipy from 1.9.1 to 1.11.1
+  - bump click from 8.1.3 to 8.1.6
+  - bump dask from 2022.9.2 to 2023.7.1
+  - bump zarr from 2.13.2 to 2.16.0
+  - bump bokeh from 2.4.3 to 3.2.1
+  - bump pre-commit from 2.20.0 to 3.3.3
+  - bump sphinx-click from 4.3.0 to 4.4.0
+  - bump pytest from 7.1.3 to 7.4.0
+  - bump pandas-stubs from 1.5.0.221003 to 2.0.2.230605
+  - bump mypy from 0.982 to 1.4.1
+- **deps-dev**: bump sphinx from 5.2.3 to 7.1.0
+- **deps-dev**: bump commitizen from 2.35.0 to 3.5.3 (#243)
+- **deps-dev**: bump types-setuptools from 65.4.0.0 to 68.0.0.3 (#237)
+- **deps-dev**: bump xdoctest from 1.1.0 to 1.1.1 (#235)
+- **deps-dev**: bump coverage[toml] from 6.5.0 to 7.2.7 (#232)
+- **deps**: bump actions/cache from 2 to 3 (#230)
+- **deps**: bump actions/configure-pages from 2 to 3 (#229)
+- **constraint.txt**: Update pip from 22.3.3 to 23.2.1
+- **deps-dev**: bump pygments from 2.13.0 to 2.15.1 (#234)
+- Move dependabot from deps to target main branch
+- **pre-commit**: Add pygrep-hooks, bandit, shellcheck-py and blaken-docs
+- from poetry to hatch and customized commitizen
+- updates:
+  - virtualenv in /.github/workflows
+  - pydata-sphinx-theme in /docs
+  - xdoctest from 1.0.2 to 1.1.0
+  - poetry from 1.1.14 to 1.2.1 in /.github/workflows
+  - codecov/codecov-action from 3.1.0 to 3.1.1
+  - myst-parser from 0.18.0 to 0.18.1 in /docs
+  - sphinx from 5.1.1 to 5.2.3 in /docs
+  - dask from 2022.8.1 to 2022.9.2
+- **deps**: bump pywavelets from 1.3.0 to 1.4.1 (#121)
+- **deps**: bump pytz from 2022.2.1 to 2022.4 (#119)
+- **deps**: bump certifi from 2022.6.15 to 2022.9.24 (#120)
+- Updating distlib (0.3.4 -> 0.3.5)
+
+### Refactor
+
+- **ruff**: isort
+- Add ruff (drop pyupgrade, isort, flake8) to pre-commit
+- **codespell**: Add codespell to pre-commit
+
+### chore
+
+- dependabot with time
+
 ## v0.6.0 (2022-07-15)
 
 ### Feat
