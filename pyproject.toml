@@ -51,7 +51,7 @@ dev = [
 docs = [
   "pydata-sphinx-theme ==0.13.2",
   "sphinx-click == 4.4.0",
-  "Sphinx == 7.1.0",
+  "Sphinx == 7.1.1",
   "Pygments == 2.15.1",
   "myst-parser == 2.0.0"
 ]
