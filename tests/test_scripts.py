@@ -1,5 +1,4 @@
 """Tests for nima script."""
-import os
 from pathlib import Path
 from typing import Any, Tuple
 
@@ -38,7 +37,7 @@ def test_stdout(result_folder: Any) -> None:
     assert result_folder[2].return_value is None
     assert result_folder[2].exit_code == 0
     assert (
-        int([line for line in out.splitlines() if "Times:" in str(line)][0].split()[1])
+        int(next(line for line in out.splitlines() if "Times:" in str(line)).split()[1])
         == result_folder[1][1]
     )
 
@@ -107,7 +106,7 @@ def test_bias_mflat(tmp_path: Path) -> None:
     d = tmp_path
     tmpflt = d / "ff.tif"
     tmpraw = d / "ff-raw.tif"
-    filename = os.path.join("tests", "data", "test_flat*.tif")
+    filename = str(Path("tests") / "data" / "test_flat*.tif")
     runner = CliRunner()
     result = runner.invoke(
         __main__.bima,

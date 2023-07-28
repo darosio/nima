@@ -1,5 +1,6 @@
 """Tests for nima module."""
-import os
+
+from pathlib import Path
 
 import numpy as np
 import tifffile as tff  # type: ignore
@@ -89,9 +90,7 @@ def test_plot_img_profile() -> None:
     Test both lines (whole frame and central region) along x (axis=0).
 
     """
-    sample_flat_image = os.path.join(
-        "tests", "data", "output", "test_flat_gaussnorm.tif"
-    )
+    sample_flat_image = Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif"
     img = tff.imread(sample_flat_image)
     f = nima.plt_img_profile(img)
     _, y_plot = f.get_axes()[1].lines[0].get_xydata().T  # type: ignore

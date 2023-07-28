@@ -3,7 +3,7 @@ from datetime import datetime
 
 project = "nima"
 author = "Daniele Arosio"
-copyright = f"{datetime.now().year}, {author}"
+copyright = f"{datetime.now().year}, {author}"  # noqa A001
 html_static_path = ["_static"]
 # -- General configuration -----------------------------------------------------
 

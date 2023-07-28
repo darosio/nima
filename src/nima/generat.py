@@ -1,5 +1,4 @@
 """Generate mock images."""
-
 from __future__ import annotations
 
 import warnings
@@ -82,12 +81,12 @@ def gen_frame(
     if bias is None:
         bias = gen_bias(nrows, ncols)
     elif bias.shape != (nrows, ncols):
-        warnings.warn("Shape mismatch. Generate Bias...", UserWarning)
+        warnings.warn("Shape mismatch. Generate Bias...", UserWarning, stacklevel=2)
         bias = gen_bias(nrows, ncols)
     if flat is None:
         flat = gen_flat(nrows, ncols)
     elif flat.shape != (nrows, ncols):
-        warnings.warn("Shape mismatch. Generate Flat...", UserWarning)
+        warnings.warn("Shape mismatch. Generate Flat...", UserWarning, stacklevel=2)
         flat = gen_flat(nrows, ncols)
     noise = np.random.normal(0, noise_sd, size=(nrows, ncols))
     img = bias + flat * (sky + objs) + dark + noise

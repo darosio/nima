@@ -113,7 +113,7 @@ from nima.nima import ImArray
 @click.argument("tiffstk", type=click.Path(path_type=Path))
 # @click.argument("channels", type=list[str], default=["G", "R", "C"])
 @click.argument("channels", type=str, nargs=-1)
-def main(  # type: ignore
+def main(  # type: ignore # noqa: C901"
     silent,
     output,
     hotpixels,

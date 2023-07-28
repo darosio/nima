@@ -21,22 +21,22 @@ def test_flat() -> None:
 
 def test_flat_shape() -> None:
     """Test nrows and ncols."""
-    object = generat.gen_flat(nrows=12)
-    assert object.shape == (12, 128)
+    obj = generat.gen_flat(nrows=12)
+    assert obj.shape == (12, 128)
 
 
 def test_object() -> None:
     """Test generation of a single cell object in a frame."""
     np.random.seed(111)
-    object = generat.gen_object(nrows=10, ncols=10, min_radius=2, max_radius=5)
-    assert object[4, 4]
-    assert not object[8, 8]
+    obj = generat.gen_object(nrows=10, ncols=10, min_radius=2, max_radius=5)
+    assert obj[4, 4]
+    assert not obj[8, 8]
 
 
 def test_object_shape() -> None:
     """Test nrows and ncols."""
-    object = generat.gen_object(nrows=12)
-    assert object.shape == (12, 128)
+    obj = generat.gen_object(nrows=12)
+    assert obj.shape == (12, 128)
 
 
 class TestFrame:

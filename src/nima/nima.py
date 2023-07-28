@@ -108,7 +108,7 @@ def d_show(d_im: dict[str, ImArray], **kws: Any) -> plt.Figure:
     """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
     max_rows = 9
     n_channels = len(d_im.keys())
-    first_channel = d_im[list(d_im.keys())[0]]
+    first_channel = d_im[next(iter(d_im.keys()))]
     n_times = len(first_channel)
     if n_times <= max_rows:
         rng = range(n_times)
@@ -215,7 +215,7 @@ def d_shading(
     return d_cor
 
 
-def bg(
+def bg(  # noqa: C901
     im: NDArray[Any],
     kind: str = "arcsinh",
     perc: float = 10.0,
@@ -374,7 +374,6 @@ def d_bg(
     downscale: tuple[int, int] | None = None,
     kind: str = "li_adaptive",
     clip: bool = True,
-    **kw: dict[str, Any],
 ) -> tuple[
     dict[str, ImArray],
     pd.DataFrame,
@@ -393,8 +392,6 @@ def d_bg(
         Bg method among {'li_adaptive', 'arcsinh', 'entropy', 'adaptive', 'li_li'}.
     clip : bool
         Boolean (default=True) for clipping values >=0.
-    kw : dict
-        Keywords passed to bg() function.
 
     Returns
     -------
@@ -637,12 +634,12 @@ def d_meas_props(
     meas = {}
     # labels are 3D and "0" is always label for background
     labels = np.unique(d_im["labels"])[1:]
-    for label in labels:
+    for lbl in labels:
         idx = []
         d = defaultdict(list)
         for time, props in enumerate(pr[channels[0]]):
             try:
-                i_label = [prop.label == label for prop in props].index(True)
+                i_label = [prop.label == lbl for prop in props].index(True)
                 prop_ch0 = props[i_label]
                 idx.append(time)
                 d["equivalent_diameter"].append(prop_ch0.equivalent_diameter)
@@ -652,10 +649,10 @@ def d_meas_props(
                     d[ch].append(pr[ch][time][i_label].mean_intensity)
             except ValueError:
                 pass  # label is absent in this timepoint
-        df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
-        df["r_cl"] = df[channels_cl[0]] / df[channels_cl[1]]
-        df["r_pH"] = df[channels_ph[0]] / df[channels_ph[1]]
-        meas[label] = df
+        res_df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
+        res_df["r_cl"] = res_df[channels_cl[0]] / res_df[channels_cl[1]]
+        res_df["r_pH"] = res_df[channels_ph[0]] / res_df[channels_ph[1]]
+        meas[lbl] = res_df
     if ratios_from_image:
         kwargs = {}
         if radii:
@@ -669,15 +666,15 @@ def d_meas_props(
             r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels))
         ratios_ph = np.array(r_ph)
         ratios_cl = np.array(r_cl)
-        for label in meas:
-            df = pd.DataFrame(
+        for lbl in meas:
+            res_df = pd.DataFrame(
                 {
-                    "r_pH_median": ratios_ph[:, label - 1],
-                    "r_cl_median": ratios_cl[:, label - 1],
+                    "r_pH_median": ratios_ph[:, lbl - 1],
+                    "r_cl_median": ratios_cl[:, lbl - 1],
                 }
             )
             # concat only on index that are present in both
-            meas[label] = pd.concat([meas[label], df], axis=1, join="inner")
+            meas[lbl] = pd.concat([meas[lbl], res_df], axis=1, join="inner")
     return meas, pr
 
 
@@ -815,7 +812,6 @@ def plt_img_profile(
         ax_px: plt.Axes,
         ax_py: plt.Axes,
         axh: plt.Axes,
-        axc: plt.Axes,
         vmin: float | None = None,
         vmax: float | None = None,
     ) -> mpl.image.AxesImage:
@@ -864,7 +860,7 @@ def plt_img_profile(
         if not hpix.empty:
             ax.plot(hpix["x"], hpix["y"], "+", mfc="gray", mew=2, ms=14)
 
-    im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, ax_cm, vmin, vmax)
+    im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, vmin, vmax)
     ax_cm.axis("off")
     fig.colorbar(  # type: ignore
         im2c, ax=ax_cm, fraction=0.99, shrink=0.99, aspect=4, orientation="horizontal"
@@ -949,9 +945,9 @@ def hotpixels(bias: ImArray, n_sd: int = 20) -> pd.DataFrame:
             break
         n_hpix = m.sum()
     w = np.where(m)
-    df = pd.DataFrame({"y": w[0], "x": w[1]})
-    df = df.assign(val=lambda row: bias[row.y, row.x])
-    return df
+    hpix_df = pd.DataFrame({"y": w[0], "x": w[1]})
+    hpix_df = hpix_df.assign(val=lambda row: bias[row.y, row.x])
+    return hpix_df
 
 
 def correct_hotpixel(
