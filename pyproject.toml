@@ -235,16 +235,11 @@ strict = true
 
 [tool.ruff]
 force-exclude = true
-# ignore = [
-# "ANN101",
-# "ANN102",
-# "ANN201",
-# "E501"
-# ]
+ignore = ["ANN101", "ANN102"]
 line-length = 88
 select = [
   "A",  # builtins
-  # "ANN",  # typing annotation
+  "ANN",  # typing annotation
   "ARG",  # unused arguments
   "B",  # bugbear
   "C",

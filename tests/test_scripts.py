@@ -1,6 +1,6 @@
 """Tests for nima script."""
 from pathlib import Path
-from typing import Any, Tuple
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -8,7 +8,7 @@ import pytest
 import skimage.io  # type: ignore
 import skimage.measure  # type: ignore
 import tifffile as tff  # type: ignore
-from click.testing import CliRunner
+from click.testing import CliRunner, Result
 from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
 
@@ -16,22 +16,24 @@ from nima import __main__
 
 # test data: (rootname, times)
 rootnames = [(Path("1b_c16_15"), 4)]
+ResultFolder = Tuple[Path, Tuple[Path, int], Result]  # py3.8 requires Tuple
 
 
 @pytest.fixture(scope="module", params=rootnames)
-def result_folder(tmp_path_factory: Any, request: Any) -> Tuple[Path, Any, Any]:
-    # ) -> Tuple[Path, Any, subprocess.Popen[bytes]]: # requires python>=3.9
+def result_folder(
+    tmp_path_factory: pytest.TempPathFactory, request: pytest.FixtureRequest
+) -> ResultFolder:
     """Fixture for creating results folder and opening a sub-process."""
     tmpdir = tmp_path_factory.getbasetemp()
     filename = Path("tests/data") / request.param[0].with_suffix(".tif")
     runner = CliRunner()
     result = runner.invoke(
-        __main__.main, [f"{filename.resolve()}", "G", "R", "C", "-o", tmpdir]
+        __main__.main, [f"{filename.resolve()}", "G", "R", "C", "-o", str(tmpdir)]
     )
     return tmpdir, request.param, result
 
 
-def test_stdout(result_folder: Any) -> None:
+def test_stdout(result_folder: ResultFolder) -> None:
     """It outputs the correct value for 'Times'."""
     out = result_folder[2].output
     assert result_folder[2].return_value is None
@@ -46,7 +48,7 @@ class TestOutputFiles:
     """It checks all output files."""
 
     @pytest.mark.parametrize("f", ["bg.csv", "label1.csv", "label2.csv", "label3.csv"])
-    def test_csv(self, result_folder: str, f: str) -> None:
+    def test_csv(self: "TestOutputFiles", result_folder: ResultFolder, f: str) -> None:
         """It checks csv tables."""
         fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
         # # TODO: why Path is needed?
@@ -66,7 +68,7 @@ class TestOutputFiles:
             "label3_rcl.tif",
         ],
     )
-    def test_tif(self, result_folder: Any, f: str) -> None:
+    def test_tif(self, result_folder: ResultFolder, f: str) -> None:
         """It checks tif files: r_Cl, r_pH of segmented cells."""
         fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
         fp_result = result_folder[0] / result_folder[1][0] / f
@@ -76,7 +78,7 @@ class TestOutputFiles:
 
     # @pytest.mark.mpl_image_compare(remove_text=True, tolerance=13)
     @pytest.mark.parametrize(("f", "tol"), [("_dim.png", 8.001), ("_meas.png", 20)])
-    def test_png(self, result_folder: Any, f: str, tol: float) -> None:
+    def test_png(self, result_folder: ResultFolder, f: str, tol: float) -> None:
         """It checks png files: saved segmentation and analysis."""
         fp_expected = Path("tests/data/output/") / "".join(
             (result_folder[1][0].name, f)
@@ -89,7 +91,7 @@ class TestOutputFiles:
     @pytest.mark.parametrize(
         "f", ["bg-C-li_adaptive.pdf", "bg-G-li_adaptive.pdf", "bg-R-li_adaptive.pdf"]
     )
-    def test_pdf(self, result_folder: Any, f: str) -> None:
+    def test_pdf(self, result_folder: ResultFolder, f: str) -> None:
         """It checks pdf files: saved bg estimation."""
         fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
         fp_result = result_folder[0] / result_folder[1][0] / f

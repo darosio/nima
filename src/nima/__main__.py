@@ -5,6 +5,7 @@ import os
 import sys
 import zipfile
 from pathlib import Path
+from typing import Any
 
 import click
 import dask.array as da
@@ -38,8 +39,12 @@ from nima.nima import ImArray
     default=False,
     help="Median filter (rad=0.5) to remove hotpixels.",
 )
-@click.option("-f", "--flat", type=str, help="Dark for shading correction.")
-@click.option("-d", "--dark", type=str, help="Flat for shading correction.")
+@click.option(
+    "-f", "--flat", "flat_f", type=str, default="", help="Dark for shading correction."
+)
+@click.option(
+    "-d", "--dark", "dark_f", type=str, default="", help="Flat for shading correction."
+)
 @click.option(
     "--bg-method",
     type=click.Choice(
@@ -109,35 +114,33 @@ from nima.nima import ImArray
     default=("G", "C"),
     help="Channels for pH ratio [default:G/C].",
 )
-# # TODO: @click.argument("tiffstk", type=click.File("r"))
 @click.argument("tiffstk", type=click.Path(path_type=Path))
-# @click.argument("channels", type=list[str], default=["G", "R", "C"])
 @click.argument("channels", type=str, nargs=-1)
-def main(  # type: ignore # noqa: C901"
-    silent,
-    output,
-    hotpixels,
-    flat,
-    dark,
-    fg_method,
-    min_size,
-    clear_border,
-    wiener,
-    watershed,
-    randomwalk,
-    bg_method,
-    bg_downscale,
-    bg_radius,
-    bg_adaptive_radius,
-    bg_percentile,
-    bg_percentile_filter,
-    image_ratios,
-    ratio_median_radii,
-    channels_cl,
-    channels_ph,
-    tiffstk,
-    channels,
-):
+def main(  # noqa: C901"
+    silent: bool | None,
+    output: Path,
+    hotpixels: bool,
+    flat_f: str,
+    dark_f: str,
+    bg_method: str,
+    bg_downscale: tuple[int, int] | None,
+    bg_radius: float | None,
+    bg_adaptive_radius: float | None,
+    bg_percentile: float | None,
+    bg_percentile_filter: float | None,
+    fg_method: str,
+    min_size: float | None,
+    clear_border: bool | None,
+    wiener: bool | None,
+    watershed: bool | None,
+    randomwalk: bool | None,
+    image_ratios: bool,
+    ratio_median_radii: str | None,
+    channels_cl: tuple[str, str],
+    channels_ph: tuple[str, str],
+    tiffstk: Path,
+    channels: list[str],
+) -> None:
     """Analyze multichannel (default:["G", "R", "C"]) tiff time-lapse stack.
 
     TIFFSTK  :  Image file.
@@ -155,18 +158,19 @@ def main(  # type: ignore # noqa: C901"
     and (6) ratio images ``BN/label[1,2,⋯]_r[cl,pH].tif``.
     """
     click.echo(tiffstk)
-    channels = ("G", "R", "C") if len(channels) == 0 else channels
+    channels = ["G", "R", "C"] if len(channels) == 0 else channels
     click.echo(channels)
     d_im, _, t = nima.read_tiff(tiffstk, channels)
     if not silent:
         print("  Times: ", t)
     if hotpixels:
         d_im = nima.d_median(d_im)
-    if flat:
+    if flat_f:
         # XXX: this is imperfect: dark must be present of flat
-        dark, _, _ = nima.read_tiff(dark, channels)
-        flat, _, _ = nima.read_tiff(flat, channels)
+        dark, _, _ = nima.read_tiff(Path(dark_f), channels)
+        flat, _, _ = nima.read_tiff(Path(flat_f), channels)
         d_im = nima.d_shading(d_im, dark, flat, clip=True)
+    kwargs_bg: dict[str, Any]
     kwargs_bg = {"kind": bg_method}
     if bg_downscale:
         kwargs_bg["downscale"] = bg_downscale
@@ -182,6 +186,7 @@ def main(  # type: ignore # noqa: C901"
     d_im_bg, bgs, ff, _bgv = nima.d_bg(d_im, **kwargs_bg)  # clip=True
     print(bgs)
 
+    kwargs_mask_label: dict[str, Any]
     kwargs_mask_label = {"channels": channels, "threshold_method": fg_method}
     if min_size:
         kwargs_mask_label["min_size"] = min_size
@@ -195,7 +200,7 @@ def main(  # type: ignore # noqa: C901"
         kwargs_mask_label["randomwalk"] = True
     click.secho(kwargs_mask_label)
     nima.d_mask_label(d_im_bg, **kwargs_mask_label)
-    kwargs_meas_props = {"channels": channels}
+    kwargs_meas_props: dict[str, Any] = {"channels": channels}
     kwargs_meas_props["ratios_from_image"] = image_ratios
     if ratio_median_radii:
         kwargs_meas_props["radii"] = tuple(
@@ -205,10 +210,10 @@ def main(  # type: ignore # noqa: C901"
     meas, pr = nima.d_meas_props(
         d_im_bg, channels_cl=channels_cl, channels_ph=channels_ph, **kwargs_meas_props
     )
-    #     # output for bg
-    bname = tiffstk.with_suffix("").name
+    # output for bg
+    bname_str = tiffstk.with_suffix("").name
     output.mkdir(exist_ok=True)
-    bname = output / bname
+    bname = output / bname_str
     if not bname.exists():
         bname.mkdir()
     for ch, llf in ff.items():
@@ -231,7 +236,6 @@ def main(  # type: ignore # noqa: C901"
     d["labels"] = d_im_bg["labels"]
     f = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore
     f.savefig(bname.with_name(bname.name + "_dim.png"))
-    ##
     # meas csv
     for k, df in meas.items():
         column_order = [
@@ -247,8 +251,7 @@ def main(  # type: ignore # noqa: C901"
             "r_pH_median",
         ]
         df[column_order].to_csv(bname / Path("label" + str(k)).with_suffix(".csv"))
-    # ##
-    # labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
+    # # XXX: labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
     objs = ndimage.find_objects(d_im_bg["labels"])
     for n, o in enumerate(objs):
         name = bname / Path("label" + str(n + 1) + "_rcl").with_suffix(".tif")

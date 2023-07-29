@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Any, Sequence, TypeVar
+from typing import Any, Dict, Sequence, TypeVar, Union
 
 import matplotlib as mpl
 import matplotlib.cm
@@ -29,6 +29,7 @@ from skimage import filters
 from skimage.morphology import disk  # type: ignore
 
 ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float_], NDArray[np.bool_])
+Kwargs = Dict[str, Union[str, int, float, bool, None]]
 
 # TODO: https://towardsdatascience.com/creating-custom-plotting-functions-with-matplotlib-1f4b8eba6aa1
 
@@ -104,7 +105,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
         return d_im, n_channels, n_times
 
 
-def d_show(d_im: dict[str, ImArray], **kws: Any) -> plt.Figure:
+def d_show(d_im: dict[str, ImArray], **kws: Any) -> plt.Figure:  # noqa: ANN401
     """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
     max_rows = 9
     n_channels = len(d_im.keys())

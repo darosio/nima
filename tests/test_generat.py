@@ -2,6 +2,7 @@
 
 import numpy as np
 import pytest
+from numpy import typing as npt
 
 from nima import generat
 
@@ -41,6 +42,11 @@ def test_object_shape() -> None:
 
 class TestFrame:
     """Test simulation of an acquired frame."""
+
+    bias: npt.NDArray[np.float_]
+    flat: npt.NDArray[np.float_]
+    objs: npt.NDArray[np.float_]
+    frame: npt.NDArray[np.float_]
 
     def setup_class(self) -> None:
         """Read test data."""
