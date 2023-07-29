@@ -30,7 +30,9 @@ from skimage.morphology import disk  # type: ignore
 
 ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float_], NDArray[np.bool_])
 Kwargs = Dict[str, Union[str, int, float, bool, None]]
-
+AXES_LENGTH_4D = 4
+AXES_LENGTH_3D = 3
+AXES_LENGTH_2D = 2
 # TODO: https://towardsdatascience.com/creating-custom-plotting-functions-with-matplotlib-1f4b8eba6aa1
 
 
@@ -87,19 +89,16 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
         im = tif.asarray()
         axes = tif.series[0].axes
     idx = axes.rfind("T")
-    if idx >= 0:
-        n_times = im.shape[idx]
-    else:
-        n_times = 1
+    n_times = im.shape[idx] if idx >= 0 else 1
     if im.shape[axes.rfind("C")] % n_channels:
         raise Exception("n_channel mismatch total length of tif sequence")
     else:
         d_im = {}
         for i, ch in enumerate(channels):
             # FIXME: must be 'TCYX' or 'ZCYX'
-            if len(axes) == 4:
+            if len(axes) == AXES_LENGTH_4D:
                 d_im[ch] = im[:, i]  # im[i::n_channels]
-            elif len(axes) == 3:
+            elif len(axes) == AXES_LENGTH_3D:
                 d_im[ch] = im[np.newaxis, i]
         print(d_im["G"].shape)
         return d_im, n_channels, n_times
@@ -154,10 +153,10 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
     d_out = {}
     for k, im in d_im.items():
         disk = skimage.morphology.disk(1)
-        if im.ndim == 3:
+        if im.ndim == AXES_LENGTH_3D:
             sel = np.conj((np.zeros((3, 3)), disk, np.zeros((3, 3))))
             d_out[k] = ndimage.median_filter(im, footprint=sel)
-        elif im.ndim == 2:
+        elif im.ndim == AXES_LENGTH_2D:
             d_out[k] = ndimage.median_filter(im, footprint=disk)
         else:
             raise Exception("Only for single image or stack (3D).")
@@ -200,7 +199,7 @@ def d_shading(
     # assertion type(flat) == np.ndarray or flat.keys() == d_im.keys(),
     # raise_msg will be replaced by type checking.
     d_cor = {}
-    for k in d_im.keys():
+    for k in d_im:
         d_cor[k] = d_im[k].astype(float)
         if type(dark) == dict:
             d_cor[k] -= dark[k]
@@ -211,7 +210,7 @@ def d_shading(
         else:
             d_cor[k] /= flat  # numpy.ndarray
     if clip:
-        for k in d_cor.keys():
+        for k in d_cor:
             d_cor[k] = d_cor[k].clip(0)
     return d_cor
 
@@ -261,7 +260,8 @@ def bg(  # noqa: C901
         adaptive_radius = int(im.shape[1] / 2)
         if adaptive_radius % 2 == 0:  # sk >0.12.0 check for even value
             adaptive_radius += 1
-    if (perc < 0.0) or (perc > 100.0):
+    min_perc, max_perc = 0.0, 100.0
+    if (perc < min_perc) or (perc > max_perc):
         raise Exception("perc must be in [0, 100] range")
     else:
         perc /= 100
@@ -413,18 +413,19 @@ def d_bg(
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
     dd_cor: dict[str, NDArray[Any]] = {}
-    for k in d_im.keys():
+    for k in d_im:
         for t, im in enumerate(d_im[k]):
+            im_for_bg = im
             if downscale:
-                im = skimage.transform.downscale_local_mean(im, downscale)
-            med, v, ff = bg(im, kind=kind, perc=10)
+                im_for_bg = skimage.transform.downscale_local_mean(im, downscale)
+            med, v, ff = bg(im_for_bg, kind=kind, perc=10)
             d_bg[k].append(med)
             d_bg_values[k].append(v)
             d_cor[k].append(d_im[k][t] - med)
             d_fig[k].append(ff)
         dd_cor[k] = np.array(d_cor[k])
     if clip:
-        for k in d_cor.keys():
+        for k in d_cor:
             dd_cor[k] = dd_cor[k].clip(0)
     bgs = pd.DataFrame({k: np.array(v) for k, v in d_bg.items()})
     return dd_cor, bgs, d_fig, d_bg_values
@@ -581,9 +582,10 @@ def d_ratio(
         ratio = np.array(d_im[channels[0]] / d_im[channels[1]], dtype=(float))
     for i, r in enumerate(ratio):
         np.nan_to_num(r, copy=False, posinf=0, neginf=0)
+        filtered_r = r
         for radius in radii:
-            r = ndimage.median_filter(r, radius)
-        ratio[i] = r * d_im["mask"][i]
+            filtered_r = ndimage.median_filter(filtered_r, radius)
+        ratio[i] = filtered_r * d_im["mask"][i]
     d_im[name] = ratio
 
 
@@ -857,9 +859,8 @@ def plt_img_profile(
         )
         return img
 
-    if hpix is not None:
-        if not hpix.empty:
-            ax.plot(hpix["x"], hpix["y"], "+", mfc="gray", mew=2, ms=14)
+    if hpix is not None and not hpix.empty:
+        ax.plot(hpix["x"], hpix["y"], "+", mfc="gray", mew=2, ms=14)
 
     im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, vmin, vmax)
     ax_cm.axis("off")
@@ -969,7 +970,7 @@ def correct_hotpixel(
         x-coordinate(s).
 
     """
-    if img.ndim == 2:
+    if img.ndim == AXES_LENGTH_2D:
         v1 = img[y - 1, x]
         v2 = img[y + 1, x]
         v3 = img[y, x - 1]

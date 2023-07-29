@@ -22,6 +22,8 @@ from scipy import ndimage  # type: ignore
 from nima import nima
 from nima.nima import ImArray
 
+AXES_LENGTH_2D = 2
+
 
 @click.command()
 @click.version_option()
@@ -308,10 +310,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     err = np.std(store, axis=0)
     # hotpixels
     hpix = nima.hotpixels(bias)
-    if ctx.obj["output"]:
-        output = ctx.obj["output"]
-    else:
-        output = fpath.with_suffix(".png")
+    output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     if not hpix.empty:
         hpix.to_csv(output.with_suffix(".csv"), index=False)
         # FIXME hpix.y is a pd.Series[int]; it could be cast into NDArray[int]
@@ -323,7 +322,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     tifffile.imwrite(output.with_suffix(".tiff"), bias)
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
-    if bias.ndim == 2:
+    if bias.ndim == AXES_LENGTH_2D:
         plt_img_profiles(bias, title, output, hpix)
         plt_img_profiles(
             err,
@@ -347,13 +346,11 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
 
 
     """
+    dark_thr = 4.5
     store = tifffile.imread(fpath)
     click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
     dark = np.median(store, axis=0)
-    if ctx.obj["output"]:
-        output = ctx.obj["output"]
-    else:
-        output = fpath.with_suffix(".png")
+    output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     if bias is not None:
@@ -362,7 +359,7 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
     if time:
         dark /= time
     plt_img_profiles(dark, title, output)
-    print(np.where(dark > 4.5))
+    print(np.where(dark > dark_thr))
 
 
 @bima.command()
@@ -400,10 +397,7 @@ def flat(ctx: click.Context, fpath: Path, bias: Path) -> None:
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
     with ProgressBar():  # type: ignore
         tprojection = f.compute()
-    if ctx.obj["output"]:
-        output = ctx.obj["output"]
-    else:
-        output = fpath.with_suffix(".tiff")
+    output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
     if bias is not None:
         bias = tifffile.imread(bias)
     _output_flat(output, tprojection, bias)
@@ -449,10 +443,7 @@ def _output_flat(
 def plot(ctx: click.Context, fpath: Path) -> None:
     """Plot profiles of 2D (Bias-Flat) image."""
     img = tifffile.imread(fpath)
-    if ctx.obj["output"]:
-        output = ctx.obj["output"]
-    else:
-        output = fpath.with_suffix(".png")
+    output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     title = os.fspath(output.with_suffix("").name)
     plt_img_profiles(img, title, output)
 
@@ -461,7 +452,7 @@ def plt_img_profiles(
     img: ImArray, title: str, output: Path, hpix: pd.DataFrame | None = None
 ) -> None:
     """Compute and save image profiles graphics."""
-    if img.ndim == 2:
+    if img.ndim == AXES_LENGTH_2D:
         f = nima.plt_img_profile(img, title=title, hpix=hpix)
         f.savefig(output.with_suffix(".png"), dpi=250, facecolor="w")
         # mark f = nima.plt_img_profile_2(img, title=title)
