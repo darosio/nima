@@ -12,11 +12,13 @@ from click.testing import CliRunner, Result
 from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
 
-from nima import __main__
+from nima.__main__ import bima, main
 
+# tests path
+tpath = Path(__file__).parent
 # test data: (rootname, times)
-rootnames = [(Path("1b_c16_15"), 4)]
-ResultFolder = Tuple[Path, Tuple[Path, int], Result]  # py3.8 requires Tuple
+rootnames = [("1b_c16_15", 4)]
+ResultFolder = Tuple[Path, Tuple[str, int], Result]  # py3.8 requires Tuple
 
 
 @pytest.fixture(scope="module", params=rootnames)
@@ -25,11 +27,9 @@ def result_folder(
 ) -> ResultFolder:
     """Fixture for creating results folder and opening a sub-process."""
     tmpdir = tmp_path_factory.getbasetemp()
-    filename = Path("tests/data") / request.param[0].with_suffix(".tif")
+    filename = (tpath / "data" / request.param[0]).with_suffix(".tif")
     runner = CliRunner()
-    result = runner.invoke(
-        __main__.main, [f"{filename.resolve()}", "G", "R", "C", "-o", str(tmpdir)]
-    )
+    result = runner.invoke(main, [str(filename), "G", "R", "C", "-o", str(tmpdir)])
     return tmpdir, request.param, result
 
 
@@ -52,7 +52,7 @@ class TestOutputFiles:
         """It checks csv tables."""
         fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
         # # TODO: why Path is needed?
-        fp_result = result_folder[0] / Path(result_folder[1][0]) / f
+        fp_result = result_folder[0] / result_folder[1][0] / f
         expected = pd.read_csv(fp_expected)
         result = pd.read_csv(fp_result)
         pd.testing.assert_frame_equal(expected, result, atol=1e-15)
@@ -80,10 +80,8 @@ class TestOutputFiles:
     @pytest.mark.parametrize(("f", "tol"), [("_dim.png", 8.001), ("_meas.png", 20)])
     def test_png(self, result_folder: ResultFolder, f: str, tol: float) -> None:
         """It checks png files: saved segmentation and analysis."""
-        fp_expected = Path("tests/data/output/") / "".join(
-            (result_folder[1][0].name, f)
-        )
-        fp_result = result_folder[0] / "".join((result_folder[1][0].name, f))
+        fp_expected = tpath / "data" / "output" / "".join([result_folder[1][0], f])
+        fp_result = result_folder[0] / "".join((result_folder[1][0], f))
         msg = compare_images(fp_expected, fp_result, tol)
         if msg:
             raise ImageComparisonFailure(msg)
@@ -110,10 +108,7 @@ def test_bias_mflat(tmp_path: Path) -> None:
     tmpraw = d / "ff-raw.tif"
     filename = str(Path("tests") / "data" / "test_flat*.tif")
     runner = CliRunner()
-    result = runner.invoke(
-        __main__.bima,
-        ["-o", f"{tmpflt.resolve()}", "mflat", filename],
-    )
+    result = runner.invoke(bima, ["-o", f"{tmpflt.resolve()}", "mflat", filename])
     assert str(3) in result.output
     test = tff.imread(tmpraw)
     expect = tff.imread(Path("tests") / "data" / "output" / "test_flat.tif")

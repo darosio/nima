@@ -5,7 +5,6 @@ be used to apply dark, flat correction; segment cells from bg; label cells;
 obtain statistics for each label; compute ratio and ratio images between
 channels.
 """
-from __future__ import annotations
 
 from collections import defaultdict
 from itertools import chain
@@ -29,6 +28,8 @@ from skimage import filters
 from skimage.morphology import disk  # type: ignore
 
 ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float_], NDArray[np.bool_])
+Im = TypeVar("Im", NDArray[np.int_], NDArray[np.float_])
+# MAYBE: DIm eq TypeVar("DIm", Dict[str, Im])
 Kwargs = Dict[str, Union[str, int, float, bool, None]]
 AXES_LENGTH_4D = 4
 AXES_LENGTH_3D = 3
@@ -216,20 +217,20 @@ def d_shading(
 
 
 def bg(  # noqa: C901
-    im: NDArray[Any],
+    im: Im,
     kind: str = "arcsinh",
     perc: float = 10.0,
     radius: int | None = 10,
     adaptive_radius: int | None = None,
     arcsinh_perc: int | None = 80,
-) -> tuple[float, ImArray, list[Any]]:
+) -> tuple[float, NDArray[np.int_] | NDArray[np.float_], list[plt.Figure]]:
     """Bg segmentation.
 
     Return median, whole vector, figures (in a [list])
 
     Parameters
     ----------
-    im
+    im: Im
         An image stack.
     kind : str
         Method {'arcsinh', 'entropy', 'adaptive', 'li_adaptive', 'li_li'} used for the
@@ -266,7 +267,7 @@ def bg(  # noqa: C901
     else:
         perc /= 100
     lim_ = False
-    m = None
+    m = np.ones_like(im)  # default value for m; instead of m = None
     if kind == "arcsinh":
         lim = np.arcsinh(im)
         lim = ndimage.percentile_filter(lim, arcsinh_perc, size=radius)
@@ -371,15 +372,15 @@ def bg(  # noqa: C901
 
 
 def d_bg(
-    d_im: dict[str, ImArray],
+    d_im: dict[str, Im],
     downscale: tuple[int, int] | None = None,
     kind: str = "li_adaptive",
     clip: bool = True,
 ) -> tuple[
-    dict[str, ImArray],
+    dict[str, Im],
     pd.DataFrame,
     dict[str, list[list[plt.Figure]]],
-    dict[str, list[Any]],
+    dict[str, list[NDArray[np.int_] | NDArray[np.float_]]],
 ]:
     """Bg segmentation for d_im.
 
@@ -412,7 +413,7 @@ def d_bg(
     d_bg_values = defaultdict(list)
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
-    dd_cor: dict[str, NDArray[Any]] = {}
+    dd_cor: dict[str, Im] = {}
     for k in d_im:
         for t, im in enumerate(d_im[k]):
             im_for_bg = im
@@ -590,13 +591,13 @@ def d_ratio(
 
 
 def d_meas_props(
-    d_im: dict[str, ImArray],
+    d_im: dict[str, Im],
     channels: Sequence[str] = ("C", "G", "R"),
     channels_cl: tuple[str, str] = ("C", "R"),
     channels_ph: tuple[str, str] = ("G", "C"),
     ratios_from_image: bool | None = True,
     radii: tuple[int, int] | None = None,
-) -> tuple[dict[np.int32, pd.DataFrame], dict[str, list[Any]]]:
+) -> tuple[dict[np.int32, pd.DataFrame], dict[str, list[list[Any]]]]:
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
@@ -627,7 +628,7 @@ def d_meas_props(
         For each channel: {'channel': [props]} i.e. {'channel': [time][label]}.
 
     """
-    pr: dict[str, list[Any]] = defaultdict(list)
+    pr: dict[str, list[list[Any]]] = defaultdict(list)
     for ch in channels:
         pr[ch] = []
         for time, label_im in enumerate(d_im["labels"]):
