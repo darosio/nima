@@ -196,7 +196,7 @@ features = ["tests"]
 template = "tests"
 
 [[tool.hatch.envs.tests.matrix]]
-python = ["3.11", "3.10", "3.9", "3.8"]  # reverse order to ensure the presence in older python of module included in newer versions
+python = ["3.11", "3.10"]  # reverse order to ensure the presence in older python of module included in newer versions
 
 [tool.hatch.envs.tests.scripts]
 all = ["test", "type", "xdoc", "cov"]
