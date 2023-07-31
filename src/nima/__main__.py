@@ -1,5 +1,4 @@
 """Command-line interface."""
-from __future__ import annotations
 
 import os
 import sys
@@ -141,7 +140,7 @@ def main(  # noqa: C901"
     channels_cl: tuple[str, str],
     channels_ph: tuple[str, str],
     tiffstk: Path,
-    channels: list[str],
+    channels: tuple[str, ...],
 ) -> None:
     """Analyze multichannel (default:["G", "R", "C"]) tiff time-lapse stack.
 
@@ -160,7 +159,7 @@ def main(  # noqa: C901"
     and (6) ratio images ``BN/label[1,2,⋯]_r[cl,pH].tif``.
     """
     click.echo(tiffstk)
-    channels = ["G", "R", "C"] if len(channels) == 0 else channels
+    channels = ("G", "R", "C") if len(channels) == 0 else channels
     click.echo(channels)
     d_im, _, t = nima.read_tiff(tiffstk, channels)
     if not silent:
@@ -366,7 +365,7 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
 @click.pass_context
 @click.option("--bias", type=click.Path(path_type=Path))
 @click.argument("globpath", type=str)
-def mflat(ctx: click.Context, globpath: str, bias: Path) -> None:
+def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
     """Flat from a collection of (.tif) files."""
     image_sequence = tifffile.TiffSequence(globpath)
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))

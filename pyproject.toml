@@ -58,7 +58,7 @@ docs = [
 tests = [
   "pytest == 7.4.0",
   "coverage[toml] == 7.2.7",
-  "typeguard ==2.13.3",
+  "typeguard ==4.1.0",
   "pandas-stubs == 2.0.2.230605",
   "mypy == 1.4.1",
   "data-science-types == 0.2.23",
