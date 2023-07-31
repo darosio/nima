@@ -33,8 +33,8 @@ keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
 license = "BSD-3-Clause"
 license-files = {paths = ["LICENSE.txt"]}
 name = "nima"
-readme = "docs/README.md"
-requires-python = ">=3.8,<3.12"
+readme = "README.md"
+requires-python = ">=3.10,<3.12"
 version = "0.7.0"
 
 [project.optional-dependencies]
@@ -49,11 +49,12 @@ dev = [
   "python-lsp-ruff"
 ]
 docs = [
-  "pydata-sphinx-theme ==0.13.2",
-  "sphinx-click == 4.4.0",
-  "Sphinx == 7.1.1",
+  "autodocsumm == 0.2.11",
+  "pydata-sphinx-theme == 0.13.3",
   "Pygments == 2.15.1",
-  "myst-parser == 2.0.0"
+  "Sphinx == 7.1.1",
+  "sphinx-click == 4.4.0",
+  "sphinx_autodoc_typehints == 1.24.0",
 ]
 tests = [
   "pytest == 7.4.0",
@@ -99,7 +100,7 @@ version = "0.7.0"
 version_files = [
   "pyproject.toml:version",
   "docs/conf.py:release",
-  "docs/README.md:Version"
+  "README.md:Version"
 ]
 
 [tool.commitizen.customize]

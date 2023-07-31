@@ -1,26 +1,58 @@
-"""Sphinx configuration."""
-from datetime import datetime
+"""Configuration file for the Sphinx documentation builder."""
+
+# This file only contains a selection of the most common options. For a full
+# list see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+# -- Path setup --------------------------------------------------------------
+
+# If extensions (or modules to document with autodoc) are in another directory,
+# add these directories to sys.path here. If the directory is relative to the
+# documentation root, use os.path.abspath to make it absolute, like shown here.
+#
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("../..").resolve()))
+
+
+# -- Project information -----------------------------------------------------
 
 project = "nima"
+release = "0.7.0"
 author = "Daniele Arosio"
-copyright = f"{datetime.now().year}, {author}"  # noqa A001
+copyright = f"2023, {author}"  # noqa A001
 html_static_path = ["_static"]
-# -- General configuration -----------------------------------------------------
+
+# -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "autodocsumm",
     "sphinx.ext.napoleon",
+    "sphinx_autodoc_typehints",
     "sphinx_click",
-    "myst_parser",
 ]
-autodoc_typehints = "description"
+
+
+# Napoleon settings to Default
+napoleon_use_ivar = False
 napoleon_include_init_with_doc = False
-napoleon_include_private_with_doc = True
+napoleon_include_private_with_doc = False
 napoleon_include_special_with_doc = True
-napoleon_use_rtype = False
+
+autodoc_default_options = {
+    "members": True,
+    "member-order": "bysource",
+    "undoc-members": False,
+    "autosummary": True,
+}
+
+autodoc_typehints = "description"
 
 # The suffix of source filenames.
 source_suffix = {
@@ -30,15 +62,21 @@ source_suffix = {
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
+latex_elements = {
+    "papersize": "a4paper",
+    "pointsize": "10pt",
+    # Additional preamble content
+    "preamble": r"""
+\usepackage[utf8]{inputenc}
+\usepackage{newunicodechar}
+\newunicodechar{█}{\rule{1ex}{1ex}}
+""",
+}
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
-
-
-# The name of the Pygments (syntax highlighting) style to use.
-pygments_style = "sphinx"
 
 
 # -- Options for HTML output -------------------------------------------------

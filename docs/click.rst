@@ -1,12 +1,10 @@
-=========
-Reference
-=========
+.. _cli:
+
+Command-line tool
+=================
 
 .. contents::
-    :local:
-
-Usage
------
+   :local:
 
 .. click:: nima.__main__:main
     :prog: nima
@@ -16,9 +14,3 @@ Usage
     :prog: bias
     :nested: full
 
-
-nima
-----
-
-.. automodule:: nima.nima
-   :members:
