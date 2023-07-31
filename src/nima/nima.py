@@ -9,7 +9,7 @@ channels.
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Any, Dict, Sequence, TypeVar, Union
+from typing import Any, Sequence, TypeVar
 
 import matplotlib as mpl
 import matplotlib.cm
@@ -30,7 +30,7 @@ from skimage.morphology import disk  # type: ignore
 ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float_], NDArray[np.bool_])
 Im = TypeVar("Im", NDArray[np.int_], NDArray[np.float_])
 # MAYBE: DIm eq TypeVar("DIm", Dict[str, Im])
-Kwargs = Dict[str, Union[str, int, float, bool, None]]
+Kwargs = dict[str, str | int | float | bool | None]
 AXES_LENGTH_4D = 4
 AXES_LENGTH_3D = 3
 AXES_LENGTH_2D = 2
