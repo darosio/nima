@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.7.1 (2023-07-31)
+
+### Fix
+
+- **docs**: Update .gitignore
+
+### Docs
+
+- Update tfor API inclusion
+
+### Test
+
+- Rename script to cli
+
+### Build
+
+- **deps-dev**: bump commitizen from 3.5.3 to 3.5.4 (#249)
+- drop python 3.8 and 3.9
+- **deps-dev**: bump typeguard from 2.13.3 to 4.1.0
+- **deps-dev**: bump sphinx from 7.1.0 to 7.1.1 (#247)
+
+### Refactor
+
+- Follow also SIM code in ruff
+- After adding ANN code to ruff
+- Align code to ruff linter provisions
+
 ## v0.7.0 (2023-07-27)
 
 ### Feat
