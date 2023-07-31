@@ -1,7 +1,6 @@
 """Command-line interface."""
 
 import os
-import sys
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -421,11 +420,7 @@ def _output_flat(
         Bias frame.
 
     """
-    if sys.version_info >= (3, 9):
-        tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
-    else:
-        rename = "-".join([output.stem, "raw"]) + output.suffix
-        tifffile.imwrite(output.with_name(rename), tprojection)
+    tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
     if bias is None:
         flat = ndimage.gaussian_filter(tprojection, sigma=100)
     else:

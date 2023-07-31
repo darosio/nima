@@ -8,4 +8,3 @@ usage patterns.
 
 .. toctree::
    :numbered:
-

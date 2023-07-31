@@ -30,4 +30,3 @@ to the `Semantic Versioning <https://semver.org/>`_ scheme.
    tutorials/tutorials
    api/api
    references/references
-   

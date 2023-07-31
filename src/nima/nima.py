@@ -7,9 +7,10 @@ channels.
 """
 
 from collections import defaultdict
+from collections.abc import Sequence
 from itertools import chain
 from pathlib import Path
-from typing import Any, Sequence, TypeVar
+from typing import Any, TypeVar
 
 import matplotlib as mpl
 import matplotlib.cm
@@ -525,7 +526,7 @@ def d_mask_label(
             max_diameter = max(max_diameter, p.equivalent_diameter)
         print(max_diameter)
         # for time, (d, l) in enumerate(zip(ga_wiener, labels)):
-        for time, (d, lbl) in enumerate(zip(distance, labels)):
+        for time, (d, lbl) in enumerate(zip(distance, labels, strict=True)):
             local_maxi = skimage.feature.peak_local_max(
                 d,
                 labels=lbl,
@@ -665,7 +666,7 @@ def d_meas_props(
         d_ratio(d_im, "r_pH", channels=channels_ph, **kwargs)
         r_ph = []
         r_cl = []
-        for time, (ph, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"])):
+        for time, (ph, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"], strict=True)):
             r_ph.append(ndimage.median(ph, d_im["labels"][time], index=labels))
             r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels))
         ratios_ph = np.array(r_ph)

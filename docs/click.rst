@@ -13,4 +13,3 @@ Command-line tool
 .. click:: nima.__main__:bima
     :prog: bias
     :nested: full
-
