@@ -16,7 +16,7 @@ classifiers = [
   "Development Status :: 2 - Pre-Alpha"
 ]
 dependencies = [
-  "numpy < 1.25.2",
+  "numpy < 1.25.3",
   "pandas == 2.0.3",
   "scikit-image == 0.21.0",
   "matplotlib == 3.7.2",
