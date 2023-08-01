@@ -39,7 +39,7 @@ version = "0.7.1"
 
 [project.optional-dependencies]
 dev = [
-  "commitizen == 3.5.4",
+  "commitizen == 3.6.0",
   "pre-commit == 3.3.3",
   "ipykernel >=6.16.0",
   "ruff == 0.0.280",
