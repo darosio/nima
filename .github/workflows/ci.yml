@@ -35,8 +35,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key:
-            ${{ runner.os }}-pip-${{ matrix.python }}-${{
+          key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
             hashFiles('**/constraints.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ matrix.python }}-
@@ -52,8 +51,7 @@ jobs:
         run: hatch run lint
 
   checks:
-    name:
-      Mypy and xdoctest ${{ matrix.python }} on ${{ startsWith(matrix.os,
+    name: Mypy and xdoctest ${{ matrix.python }} on ${{ startsWith(matrix.os,
       'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' ||
       'Linux' }}
     runs-on: ${{ matrix.os }}
@@ -72,8 +70,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key:
-            ${{ runner.os }}-pip-${{ matrix.python }}-${{
+          key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
             hashFiles('**/constraints.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ matrix.python }}-
@@ -103,8 +100,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key:
-            ${{ runner.os }}-pip-${{ matrix.python }}-${{
+          key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
             hashFiles('**/constraints.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ matrix.python }}-
@@ -136,8 +132,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key:
-            ${{ runner.os }}-pip-${{ matrix.python }}-${{
+          key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
             hashFiles('**/constraints.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ matrix.python }}-
