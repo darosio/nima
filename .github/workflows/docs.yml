@@ -27,8 +27,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
-          key:
-            ${{ runner.os }}-pip-${{ matrix.python }}-${{
+          key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
             hashFiles('**/constraints.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-${{ matrix.python }}-
