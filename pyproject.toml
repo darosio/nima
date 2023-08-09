@@ -51,7 +51,7 @@ dev = [
 docs = [
   "autodocsumm == 0.2.11",
   "pydata-sphinx-theme == 0.13.3",
-  "Pygments == 2.15.1",
+  "Pygments == 2.16.1",
   "Sphinx == 7.1.2",
   "sphinx-click == 4.4.0",
   "sphinx_autodoc_typehints == 1.24.0"
