@@ -22,7 +22,7 @@ import skimage  # type: ignore
 import skimage.feature  # type: ignore
 import skimage.segmentation  # type: ignore
 import skimage.transform  # type: ignore
-import tifffile  # type: ignore
+import tifffile
 from numpy.typing import NDArray
 from scipy import ndimage, signal  # type: ignore
 from skimage import filters

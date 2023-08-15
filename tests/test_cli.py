@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import skimage.io  # type: ignore
 import skimage.measure  # type: ignore
-import tifffile as tff  # type: ignore
+import tifffile as tff
 from click.testing import CliRunner, Result
 from matplotlib.testing.compare import compare_images  # type: ignore
 from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
@@ -110,9 +110,11 @@ def test_bias_mflat(tmp_path: Path) -> None:
     result = runner.invoke(bima, ["-o", f"{tmpflt.resolve()}", "mflat", filename])
     assert str(3) in result.output
     test = tff.imread(tmpraw)
-    expect = tff.imread(Path("tests") / "data" / "output" / "test_flat.tif")
-    np.testing.assert_allclose(test, expect)
-    test = tff.imread(tmpflt)
-    expect = tff.imread(Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif")
+    expect = np.array(tff.imread(Path("tests") / "data" / "output" / "test_flat.tif"))
+    np.testing.assert_allclose(np.array(test), expect)
+    test = np.array(tff.imread(tmpflt))
+    expect = np.array(
+        tff.imread(Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif")
+    )
     np.testing.assert_allclose(test, expect)
     assert tmpflt.with_suffix(".png").exists()

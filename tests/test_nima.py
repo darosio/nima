@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import numpy as np
-import tifffile as tff  # type: ignore
+import tifffile as tff
 from numpy.testing import assert_array_equal
 
 from nima import nima
@@ -46,7 +46,7 @@ class TestBg:
 
     def setup_class(self) -> None:
         """Read test data."""
-        self.im = tff.imread(data_fp)
+        self.im = np.array(tff.imread(data_fp))
 
     def test_default(self) -> None:
         """Test default (arcsinh) method."""
@@ -91,7 +91,7 @@ def test_plot_img_profile() -> None:
 
     """
     sample_flat_image = Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif"
-    img = tff.imread(sample_flat_image)
+    img = np.array(tff.imread(sample_flat_image))
     f = nima.plt_img_profile(img)
     _, y_plot = f.get_axes()[1].lines[0].get_xydata().T  # type: ignore
     ydata = np.array([1.00000001, 0.99999999, 1.00000002, 1.0, 0.99999999])
