@@ -2,6 +2,7 @@
 
 import os
 import zipfile
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +12,7 @@ import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import sigfig  # type: ignore
-import tifffile  # type: ignore
+import tifffile
 from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client, progress
 from matplotlib.backends import backend_pdf  # type: ignore
@@ -298,14 +299,17 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
     """
     if fpath.suffix == ".zip":
-        zf = zipfile.ZipFile(fpath)
-        fo = zf.open(zf.namelist()[0])
-        store = tifffile.imread(fo)
+        with zipfile.ZipFile(fpath) as zf, zf.open(zf.namelist()[0]) as fo:
+            # Alternatively: ignore store = tifffile.imread(fo)
+            store = tifffile.imread(BytesIO(fo.read()))
     else:
         store = tifffile.imread(fpath)
-    click.secho("Bias image-stack shape: " + str(store.shape), fg="green")
-    bias = np.median(store, axis=0)
-    err = np.std(store, axis=0)
+    if isinstance(store, np.ndarray):
+        click.secho("Bias image-stack shape: " + str(store.shape), fg="green")
+        bias = np.median(store, axis=0)
+        err = np.std(store, axis=0)
+    else:
+        raise TypeError("Expected store to be a numpy.ndarray")
     # hotpixels
     hpix = nima.hotpixels(bias)
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
@@ -346,14 +350,16 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
     """
     dark_thr = 4.5
     store = tifffile.imread(fpath)
+    if not isinstance(store, np.ndarray):
+        store = np.array(store)
     click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
     dark = np.median(store, axis=0)
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     if bias is not None:
-        bias = tifffile.imread(bias)
-        dark = dark - bias
+        bias_frame = np.array(tifffile.imread(bias))
+        dark = dark - bias_frame
     if time:
         dark /= time
     plt_img_profiles(dark, title, output)
@@ -380,9 +386,8 @@ def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
     else:
         output = Path(globpath).name.replace("*", "").replace("?", "")
         output = Path(output).with_suffix(".tiff")
-    if bias is not None:
-        bias = tifffile.imread(bias)
-    _output_flat(output, tprojection, bias)
+    bias_frame = None if bias is None else np.array(tifffile.imread(bias))
+    _output_flat(output, tprojection, bias_frame)
 
 
 @bima.command()
@@ -396,29 +401,39 @@ def flat(ctx: click.Context, fpath: Path, bias: Path) -> None:
     with ProgressBar():  # type: ignore
         tprojection = f.compute()
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
-    if bias is not None:
-        bias = tifffile.imread(bias)
-    _output_flat(output, tprojection, bias)
+    bias_frame = np.array(tifffile.imread(bias))
+    _output_flat(output, tprojection, bias_frame)
 
 
 def _output_flat(
     output: Path, tprojection: ImArray, bias: ImArray | None = None
 ) -> None:
-    """Help output from flat calculations.
+    """Help to generate and save output files from flat field calculations.
 
-    - raw mean (_raw.tif)
-    - bias subtracted, smoothed and normalized mean (.tif)
-    - a summary graphics (.png)
+    The function performs the following tasks:
+    - Saves the raw mean of frames to a file with a '_raw.tif' suffix.
+    - If a bias frame is provided, it subtracts this from the raw mean,
+      smooths the result using a Gaussian filter, and normalizes the smoothed
+      image. This is saved to a '.tif' file.
+    - Generates summary graphics and saves as '.png'.
 
     Parameters
     ----------
     output : Path
-        Base for output file paths.
-    tprojection : ImArray
-        Raw flat array (mean of frames).
-    bias : ImArray
-        Bias frame.
+        Base path for generating output file names.
 
+    tprojection : ImArray
+        2D array representing the raw flat field image (mean of frames).
+
+    bias : ImArray, optional
+        2D array representing the bias frame for subtraction.
+        If None (default), no bias subtraction is performed.
+
+    Notes
+    -----
+    The constant value (e.g., 20) added to 'tprojection' before subtracting
+    'bias' in the function's implementation may need further review or
+    adjustment based on the specific requirements of the flat field correction.
     """
     tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
     if bias is None:
@@ -436,7 +451,7 @@ def _output_flat(
 @click.argument("fpath", type=click.Path(exists=True, path_type=Path))
 def plot(ctx: click.Context, fpath: Path) -> None:
     """Plot profiles of 2D (Bias-Flat) image."""
-    img = tifffile.imread(fpath)
+    img = np.array(tifffile.imread(fpath))
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     title = os.fspath(output.with_suffix("").name)
     plt_img_profiles(img, title, output)
