@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.7.2 (2023-08-16)
+
+### Fix
+
+- mypy errors
+
+### Build
+
+- **deps-dev**: bump typeguard from 4.1.0 to 4.1.1 (#268)
+- **deps-dev**: bump types-setuptools from 68.0.0.3 to 68.1.0.0 (#267)
+- **deps-dev**: update bokeh requirement from <3.2.2 to <3.2.3 (#265)
+- **deps-dev**: bump pandas-stubs from 2.0.2.230605 to 2.0.3.230814 (#264)
+- **deps-dev**: update tifffile requirement from <=2023.7.18 to <=2023.8.12
+- **deps-dev**: update tifffile requirement
+- **deps-dev**: bump coverage[toml] from 7.2.7 to 7.3.0 (#262)
+- **deps-dev**: bump mypy from 1.4.1 to 1.5.0 (#261)
+- **deps-dev**: bump ruff from 0.0.283 to 0.0.284 (#260)
+- **deps-dev**: bump ruff from 0.0.282 to 0.0.283 (#259)
+- **deps-dev**: update dask[distributed] requirement from <=2023.7.1 to <=2023.8.0 (#257)
+- **deps-dev**: bump pygments from 2.15.1 to 2.16.1 (#256)
+- prettier --prose-wrap=preserve
+- **deps-dev**: bump sphinx from 7.1.1 to 7.1.2 (#255)
+- **deps-dev**: bump ruff from 0.0.281 to 0.0.282 (#254)
+- **deps-dev**: bump ruff from 0.0.280 to 0.0.281 (#252)
+- **deps-dev**: update numpy requirement from <1.25.2 to <1.25.3 (#251)
+- **deps-dev**: bump commitizen from 3.5.4 to 3.6.0 (#250)
+
 ## v0.7.1 (2023-07-31)
 
 ### Fix
