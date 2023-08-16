@@ -60,7 +60,7 @@ tests = [
   "pytest == 7.4.0",
   "coverage[toml] == 7.3.0",
   "typeguard ==4.1.0",
-  "pandas-stubs == 2.0.2.230605",
+  "pandas-stubs == 2.0.3.230814",
   "mypy == 1.5.0",
   "data-science-types == 0.2.23",
   "xdoctest == 1.1.1",
