@@ -203,11 +203,11 @@ def d_shading(
     d_cor = {}
     for k in d_im:
         d_cor[k] = d_im[k].astype(float)
-        if type(dark) == dict:
+        if isinstance(dark, dict):
             d_cor[k] -= dark[k]
         else:
             d_cor[k] -= dark  # numpy.ndarray
-        if type(flat) == dict:
+        if isinstance(flat, dict):
             d_cor[k] /= flat[k]
         else:
             d_cor[k] /= flat  # numpy.ndarray
