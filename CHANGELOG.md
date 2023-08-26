@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.7.3 (2023-08-26)
+
+### Build
+
+- **deps-dev**: bump sphinx from 7.2.2 to 7.2.3 (#279)
+- **deps-dev**: bump zarr from 2.16.0 to 2.16.1 (#276)
+- **deps-dev**: update scipy requirement from <1.11.2 to <1.11.3 (#273)
+- **deps-dev**: bump sphinx from 7.1.2 to 7.2.2 (#274)
+- **deps-dev**: bump ruff from 0.0.284 to 0.0.285 (#275)
+- **deps-dev**: bump click from 8.1.6 to 8.1.7 (#272)
+- **deps-dev**: bump typeguard from 4.1.1 to 4.1.2 (#271)
+- **deps-dev**: bump sphinx-click from 4.4.0 to 5.0.1 (#270)
+- **deps-dev**: bump mypy from 1.5.0 to 1.5.1 (#269)
+
+### Refactor
+
+- to respect ruff 0.0.285
+
+### chore
+
+- Adjust python-version
+
 ## v0.7.2 (2023-08-16)
 
 ### Fix
