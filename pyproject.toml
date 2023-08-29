@@ -28,7 +28,7 @@ dependencies = [
   "dask[distributed] <= 2023.8.1",
   "zarr == 2.16.1",
   "bokeh < 3.2.3",
-  "sigfig == 1.3.2"
+  "sigfig == 1.3.3"
 ]
 description = "Numerical IMage Analyses."
 keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
