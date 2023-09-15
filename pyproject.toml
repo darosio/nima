@@ -54,7 +54,7 @@ docs = [
   "autodocsumm == 0.2.11",
   "pydata-sphinx-theme == 0.13.3",
   "Pygments == 2.16.1",
-  "Sphinx == 7.2.5",
+  "Sphinx == 7.2.6",
   "sphinx-click == 5.0.1",
   "sphinx_autodoc_typehints == 1.24.0"
 ]
