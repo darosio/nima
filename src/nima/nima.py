@@ -805,7 +805,6 @@ def plt_img_profile(
     with plt.style.context("_mpl-gallery"):  # type: ignore
         ax_px = fig.add_axes(rect_px, sharex=ax)  # type: ignore
         ax_py = fig.add_axes(rect_py, sharey=ax)  # type: ignore
-    with plt.style.context("seaborn"):  # type: ignore
         ax_hist = fig.add_axes(rect_ht)  # type: ignore
     ax_cm = fig.add_axes([0.45, 0.955, 0.3, 0.034])  # type: ignore
     # sigfig: ax_hist.set_title("err: " + str(sigfig.
