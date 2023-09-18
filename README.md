@@ -8,7 +8,7 @@
 A library and a cli to help image analyses based on scipy.ndimage and
 scikit-image.
 
-- Version: “0.7.3”
+- Version: “0.7.4”
 
 ## Features
 

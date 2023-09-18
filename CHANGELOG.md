@@ -1,5 +1,50 @@
 # Changelog
 
+## v0.7.4 (2023-09-18)
+
+### Fix
+
+- type checking for matplotlib-3.8.0
+- seaborn left over in hist profile plot
+
+### Build
+
+- **deps-dev**: bump matplotlib from 3.7.3 to 3.8.0
+- **deps-dev**: update dask[distributed] requirement (#315)
+- **deps-dev**: update numpy requirement from <1.25.3 to <1.26.1 (#314)
+- **deps-dev**: bump ruff from 0.0.289 to 0.0.290 (#313)
+- **deps-dev**: bump commitizen from 3.8.2 to 3.9.0 (#312)
+- **deps-dev**: bump pydata-sphinx-theme from 0.13.3 to 0.14.0 (#311)
+- **deps-dev**: bump sphinx from 7.2.5 to 7.2.6 (#310)
+- **deps-dev**: bump ruff from 0.0.288 to 0.0.289 (#309)
+- **deps-dev**: bump matplotlib from 3.7.2 to 3.7.3 (#308)
+- **deps-dev**: bump typeguard from 4.1.4 to 4.1.5 (#306)
+- **deps-dev**: bump ruff from 0.0.287 to 0.0.288 (#305)
+- **deps-dev**: bump typeguard from 4.1.3 to 4.1.4 (#304)
+- **deps-dev**: bump commitizen from 3.8.0 to 3.8.2 (#303)
+- **deps-dev**: bump pytest from 7.4.1 to 7.4.2 (#302)
+- **deps-dev**: bump types-setuptools from 68.1.0.1 to 68.2.0.0 (#301)
+- **deps-dev**: update dask[distributed] requirement (#300)
+- **deps-dev**: bump coverage[toml] from 7.3.0 to 7.3.1 (#299)
+- **deps-dev**: bump commitizen from 3.7.1 to 3.8.0 (#298)
+- **deps**: bump actions/checkout from 3 to 4 (#296)
+- **deps-dev**: bump commitizen from 3.7.0 to 3.7.1 (#295)
+- **deps-dev**: update dask[distributed] requirement (#294)
+- **deps-dev**: bump ruff from 0.0.286 to 0.0.287 (#293)
+- **deps-dev**: bump pytest from 7.4.0 to 7.4.1 (#292)
+- **deps-dev**: bump pre-commit from 3.3.3 to 3.4.0 (#291)
+- **deps-dev**: update tifffile requirement (#290)
+- **deps-dev**: bump pandas from 2.0.3 to 2.1.0 (#289)
+- **deps-dev**: bump sphinx from 7.2.4 to 7.2.5 (#288)
+- **deps-dev**: bump types-setuptools from 68.1.0.0 to 68.1.0.1 (#287)
+- **deps-dev**: bump sphinx from 7.2.3 to 7.2.4 (#285)
+- **deps-dev**: bump sigfig from 1.3.2 to 1.3.3 (#284)
+- **deps-dev**: bump typeguard from 4.1.2 to 4.1.3 (#283)
+- **deps-dev**: bump ruff from 0.0.285 to 0.0.286 (#282)
+- **deps-dev**: bump commitizen from 3.6.0 to 3.7.0 (#281)
+- **deps-dev**: update tifffile requirement (#280)
+- **deps-dev**: update dask[distributed] requirement (#277)
+
 ## v0.7.3 (2023-08-26)
 
 ### Build
