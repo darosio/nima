@@ -15,7 +15,7 @@ import sigfig  # type: ignore
 import tifffile
 from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client, progress
-from matplotlib.backends import backend_pdf  # type: ignore
+from matplotlib.backends import backend_pdf
 from scipy import ndimage  # type: ignore
 
 from nima import nima
@@ -218,13 +218,13 @@ def main(  # noqa: C901"
     if not bname.exists():
         bname.mkdir()
     for ch, llf in ff.items():
-        pp = backend_pdf.PdfPages(
+        pp = backend_pdf.PdfPages(  # type: ignore
             bname / Path("bg-" + ch + "-" + bg_method).with_suffix(".pdf")
         )
         for lf in llf:
-            for f_i in lf:
-                pp.savefig(f_i)  # e.g. entropy output 2 figs
-        pp.close()
+            for f_i in lf:  # e.g. entropy output 2 figs
+                pp.savefig(f_i)  # type: ignore
+        pp.close()  # type: ignore
     column_order = ["C", "G", "R"]  # FIXME must be equal anyway in testing
     bgs[column_order].to_csv(bname / "bg.csv")
     # TODO: plt.close('all') or control mpl warning
