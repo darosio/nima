@@ -14,7 +14,7 @@ from typing import Any, TypeVar
 
 import matplotlib as mpl
 import matplotlib.cm
-import matplotlib.colors  # type: ignore
+import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

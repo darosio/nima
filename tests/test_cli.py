@@ -8,8 +8,8 @@ import skimage.io  # type: ignore
 import skimage.measure  # type: ignore
 import tifffile as tff
 from click.testing import CliRunner, Result
-from matplotlib.testing.compare import compare_images  # type: ignore
-from matplotlib.testing.exceptions import ImageComparisonFailure  # type: ignore
+from matplotlib.testing.compare import compare_images
+from matplotlib.testing.exceptions import ImageComparisonFailure
 
 from nima.__main__ import bima, main
 
@@ -81,7 +81,7 @@ class TestOutputFiles:
         """It checks png files: saved segmentation and analysis."""
         fp_expected = tpath / "data" / "output" / "".join([result_folder[1][0], f])
         fp_result = result_folder[0] / "".join((result_folder[1][0], f))
-        msg = compare_images(fp_expected, fp_result, tol)
+        msg = compare_images(str(fp_expected), str(fp_result), tol)
         if msg:
             raise ImageComparisonFailure(msg)
 
@@ -92,7 +92,7 @@ class TestOutputFiles:
         """It checks pdf files: saved bg estimation."""
         fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
         fp_result = result_folder[0] / result_folder[1][0] / f
-        msg = compare_images(fp_expected, fp_result, 13)
+        msg = compare_images(str(fp_expected), str(fp_result), 13)
         # Created by compare_images into tests/data folder
         rename = "_".join((fp_expected.name[:-4], "pdf.png"))
         fp_expected.with_name(rename).unlink()
