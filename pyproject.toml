@@ -22,7 +22,7 @@ dependencies = [
   "pandas == 2.1.0",
   "scikit-image == 0.21.0",
   "matplotlib == 3.8.0",
-  "tifffile <= 2023.8.30",  # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
+  "tifffile <= 2023.9.18",  # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
   "scipy < 1.11.3",
   "click == 8.1.7",
   "dask[distributed] <= 2023.9.2",
