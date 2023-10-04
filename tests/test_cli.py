@@ -4,8 +4,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-import skimage.io  # type: ignore
-import skimage.measure  # type: ignore
+import skimage.io
+import skimage.measure
 import tifffile as tff
 from click.testing import CliRunner, Result
 from matplotlib.testing.compare import compare_images
@@ -71,8 +71,9 @@ class TestOutputFiles:
         """It checks tif files: r_Cl, r_pH of segmented cells."""
         fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
         fp_result = result_folder[0] / result_folder[1][0] / f
-        expected = skimage.io.imread(fp_expected)
-        result = skimage.io.imread(str(fp_result))  # for utf8 encoding?
+        expected = skimage.io.imread(fp_expected)  # type: ignore
+        # FIXME: for utf8 encoding?
+        result = skimage.io.imread(str(fp_result))  # type: ignore
         assert np.sum(result - expected) == pytest.approx(0, 2.3e-06)
 
     # @pytest.mark.mpl_image_compare(remove_text=True, tolerance=13)

@@ -18,15 +18,15 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import skimage  # type: ignore
-import skimage.feature  # type: ignore
-import skimage.segmentation  # type: ignore
-import skimage.transform  # type: ignore
+import skimage
+import skimage.feature
+import skimage.segmentation
+import skimage.transform
 import tifffile
 from numpy.typing import NDArray
 from scipy import ndimage, signal  # type: ignore
 from skimage import filters
-from skimage.morphology import disk  # type: ignore
+from skimage.morphology import disk
 
 ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float_], NDArray[np.bool_])
 Im = TypeVar("Im", NDArray[np.int_], NDArray[np.float_])
@@ -154,7 +154,7 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
     """
     d_out = {}
     for k, im in d_im.items():
-        disk = skimage.morphology.disk(1)
+        disk = skimage.morphology.disk(1)  # type: ignore
         if im.ndim == AXES_LENGTH_3D:
             sel = np.conj((np.zeros((3, 3)), disk, np.zeros((3, 3))))
             d_out[k] = ndimage.median_filter(im, footprint=sel)
@@ -278,9 +278,9 @@ def bg(  # noqa: C901
         m = lim < thr
     elif kind == "entropy":
         if im.dtype == float:
-            lim = filters.rank.entropy(im / im.max(), disk(radius))
+            lim = filters.rank.entropy(im / im.max(), disk(radius))  # type: ignore
         else:
-            lim = filters.rank.entropy(im, disk(radius))
+            lim = filters.rank.entropy(im, disk(radius))  # type: ignore
         lim_ = True
         title = radius, perc
         thr = (1 - perc) * lim.min() + perc * lim.max()
@@ -288,27 +288,27 @@ def bg(  # noqa: C901
     elif kind == "adaptive":
         lim_ = False
         title = adaptive_radius
-        f = im > filters.threshold_local(im, adaptive_radius)
+        f = im > filters.threshold_local(im, adaptive_radius)  # type: ignore
         m = ~f
     elif kind == "li_adaptive":
         lim_ = False
         title = adaptive_radius
-        li = filters.threshold_li(im.copy())
+        li = filters.threshold_li(im.copy())  # type: ignore
         m = im < li
         # # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
         imm = im * m
-        f = imm > filters.threshold_local(imm, adaptive_radius)
+        f = imm > filters.threshold_local(imm, adaptive_radius)  # type: ignore
         m = ~f * m
     elif kind == "li_li":
         lim_ = False
         title = None
-        li = filters.threshold_li(im.copy())
+        li = filters.threshold_li(im.copy())  # type: ignore
         m = im < li
         # # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
         imm = im * m
         # To avoid zeros generated after first thesholding, clipping to the
         # min value of original image is needed before second thesholding.
-        thr2 = filters.threshold_li(imm.clip(np.min(im)))
+        thr2 = filters.threshold_li(imm.clip(np.min(im)))  # type: ignore
         m = im < thr2
         # # FIXME: in case mm = skimage.morphology.binary_closing(mm)
     pixel_values = im[m]
@@ -419,7 +419,7 @@ def d_bg(
         for t, im in enumerate(d_im[k]):
             im_for_bg = im
             if downscale:
-                im_for_bg = skimage.transform.downscale_local_mean(im, downscale)
+                im_for_bg = skimage.transform.downscale_local_mean(im, downscale)  # type: ignore
             med, v, ff = bg(im_for_bg, kind=kind, perc=10)
             d_bg[k].append(med)
             d_bg_values[k].append(v)
@@ -498,15 +498,15 @@ def d_mask_label(
     if threshold_method == "yen":
         threshold_function = skimage.filters.threshold_yen
     elif threshold_method == "li":
-        threshold_function = skimage.filters.threshold_li
+        threshold_function = skimage.filters.threshold_li  # type: ignore
     mask = []
     for _, im in enumerate(ga_wiener):
-        m = im > threshold_function(im)
-        m = skimage.morphology.remove_small_objects(m, min_size=min_size)
+        m = im > threshold_function(im)  # type: ignore
+        m = skimage.morphology.remove_small_objects(m, min_size=min_size)  # type: ignore
         m = skimage.morphology.closing(m)
         # clear border always
         if clear_border:
-            m = skimage.segmentation.clear_border(m)
+            m = skimage.segmentation.clear_border(m)  # type: ignore
         mask.append(m)
     d_im["mask"] = np.array(mask)
     labels, n_labels = ndimage.label(mask)
@@ -517,7 +517,7 @@ def d_mask_label(
         # use props[0].label == 1
         # TODO: Voronoi? depends critically on max_diameter.
         distance = ndimage.distance_transform_edt(mask)
-        pr = skimage.measure.regionprops(
+        pr = skimage.measure.regionprops(  # type: ignore
             labels[0], intensity_image=d_im[channels[0]][0]
         )
         max_diameter = pr[0].equivalent_diameter
@@ -527,7 +527,7 @@ def d_mask_label(
         print(max_diameter)
         # for time, (d, l) in enumerate(zip(ga_wiener, labels)):
         for time, (d, lbl) in enumerate(zip(distance, labels, strict=True)):
-            local_maxi = skimage.feature.peak_local_max(
+            local_maxi = skimage.feature.peak_local_max(  # type: ignore
                 d,
                 labels=lbl,
                 footprint=np.ones((size, size)),
@@ -535,13 +535,13 @@ def d_mask_label(
                 indices=False,
                 exclude_border=False,
             )
-            markers = skimage.measure.label(local_maxi)
+            markers = skimage.measure.label(local_maxi)  # type: ignore
             print(np.unique(markers))
             if randomwalk:
                 markers[~mask[time]] = -1
                 labels_ws = skimage.segmentation.random_walker(mask[time], markers)
             else:
-                labels_ws = skimage.morphology.watershed(-d, markers, mask=lbl)
+                labels_ws = skimage.morphology.watershed(-d, markers, mask=lbl)  # type: ignore
             labels[time] = labels_ws
     d_im["labels"] = labels
 
@@ -634,7 +634,7 @@ def d_meas_props(
         pr[ch] = []
         for time, label_im in enumerate(d_im["labels"]):
             im = d_im[ch][time]
-            props = skimage.measure.regionprops(label_im, intensity_image=im)
+            props = skimage.measure.regionprops(label_im, intensity_image=im)  # type: ignore
             pr[ch].append(props)
     meas = {}
     # labels are 3D and "0" is always label for background
