@@ -312,6 +312,10 @@ def bg(  # noqa: C901
         thr2 = filters.threshold_li(imm.clip(np.min(im)))  # type: ignore
         m = im < thr2
         # # FIXME: in case mm = skimage.morphology.binary_closing(mm)
+    elif kind == "inverse_local_yen":
+        title = None
+        f = filters.threshold_local(1 / im)  # type: ignore
+        m = f > filters.threshold_yen(f)  # type: ignore
     pixel_values = im[m]
     iqr = np.percentile(pixel_values, [25, 50, 75])
 
