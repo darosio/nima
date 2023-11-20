@@ -277,10 +277,11 @@ def bg(  # noqa: C901
         thr = (1 - perc) * lim.min() + perc * lim.max()
         m = lim < thr
     elif kind == "entropy":
+        im8 = skimage.util.img_as_ubyte(im)  # type: ignore
         if im.dtype == float:
-            lim = filters.rank.entropy(im / im.max(), disk(radius))  # type: ignore
+            lim = filters.rank.entropy(im8 / im8.max(), disk(radius))  # type: ignore
         else:
-            lim = filters.rank.entropy(im, disk(radius))  # type: ignore
+            lim = filters.rank.entropy(im8, disk(radius))  # type: ignore
         lim_ = True
         title = radius, perc
         thr = (1 - perc) * lim.min() + perc * lim.max()
@@ -328,6 +329,7 @@ def bg(  # noqa: C901
         return f
 
     f1 = plot()
+    figures = [f1]
     if lim_:
 
         def plot_lim() -> plt.Figure:
@@ -363,9 +365,12 @@ def bg(  # noqa: C901
             return f
 
         f2 = plot_lim()
-        return iqr[1], pixel_values, [f1, f2]
-    else:
-        return iqr[1], pixel_values, [f1]
+        figures.append(f2)
+    # Close all figures explicitly just before returning
+    for fig in figures:
+        plt.close(fig)
+
+    return iqr[1], pixel_values, figures
 
 
 # TODO: add new bg/fg segmentation based on conditional probability but

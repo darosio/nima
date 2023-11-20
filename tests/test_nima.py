@@ -67,8 +67,8 @@ class TestBg:
 
     def test_entropy(self) -> None:
         """Test entropy method and radius argument."""
-        assert nima.bg(self.im[3, 2], kind="entropy")[0] == 274
-        assert nima.bg(self.im[3, 2], kind="entropy", radius=20)[0] == 280
+        assert nima.bg(self.im[3, 2], kind="entropy")[0] == 297
+        assert nima.bg(self.im[3, 2], kind="entropy", radius=20)[0] == 293
 
     def test_adaptive(self) -> None:
         """Test adaptive method and adaptive_radius argument."""
