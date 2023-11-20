@@ -44,7 +44,7 @@ dev = [
   "commitizen == 3.12.0",
   "pre-commit == 3.5.0",
   "ipykernel >=6.16.0",
-  "ruff == 0.1.5",
+  "ruff == 0.1.6",
   "pylsp-mypy",
   "jupyter",
   "jupyterlab",
