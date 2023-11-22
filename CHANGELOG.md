@@ -1,5 +1,73 @@
 # Changelog
 
+## v0.8.0 (2023-11-22)
+
+### Feat
+
+- New bg kind `inverse_local_yen`
+
+### Fix
+
+- Remove bokeh dep; generating win-py310 error
+- warnings for not closing plots and entropy filter on 16-bit
+
+### Style
+
+- Add type: ignore to all skimage function calls
+
+### Build
+
+- **deps-dev**: bump sphinx-click from 5.0.1 to 5.1.0 (#376)
+- **deps-dev**: bump pygments from 2.17.1 to 2.17.2 (#375)
+- **deps-dev**: update scipy requirement from <1.11.4 to <1.11.5 (#373)
+- **deps-dev**: bump pygments from 2.16.1 to 2.17.1 (#372)
+- **deps-dev**: bump matplotlib from 3.8.1 to 3.8.2 (#371)
+- **deps-dev**: bump ruff from 0.1.5 to 0.1.6 (#370)
+- **deps-dev**: bump pandas from 2.1.2 to 2.1.3 (#367)
+- **deps-dev**: bump mypy from 1.6.1 to 1.7.0 (#368)
+- **deps-dev**: update dask[distributed] requirement (#366)
+- **deps-dev**: bump sphinx-autodoc-typehints from 1.25.0 to 1.25.2 (#365)
+- **deps-dev**: update numpy requirement from <1.26.2 to <1.26.3 (#364)
+- **deps-dev**: bump sphinx-autodoc-typehints from 1.24.1 to 1.25.0 (#363)
+- **deps-dev**: update bokeh requirement from <3.3.1 to <3.3.2 (#362)
+- **deps-dev**: bump types-setuptools from 68.2.0.0 to 68.2.0.1 (#361)
+- **deps-dev**: bump ruff from 0.1.4 to 0.1.5 (#360)
+- **deps-dev**: bump ruff from 0.1.3 to 0.1.4 (#358)
+- **deps-dev**: bump sphinx-autodoc-typehints from 1.24.0 to 1.24.1 (#357)
+- **deps-dev**: bump matplotlib from 3.8.0 to 3.8.1 (#356)
+- **deps-dev**: bump pydata-sphinx-theme from 0.14.2 to 0.14.3 (#355)
+- **deps-dev**: update dask[distributed] requirement (#353)
+- **deps-dev**: bump ruff from 0.1.2 to 0.1.3 (#352)
+- **deps-dev**: bump pandas from 2.1.1 to 2.1.2 (#351)
+- **deps-dev**: bump xdoctest from 1.1.1 to 1.1.2 (#350)
+- **deps-dev**: bump pydata-sphinx-theme from 0.14.1 to 0.14.2 (#349)
+- **deps-dev**: bump ruff from 0.1.1 to 0.1.2 (#348)
+- **deps-dev**: bump pytest from 7.4.2 to 7.4.3 (#347)
+- **deps**: bump pip from 23.3 to 23.3.1 in /.github/workflows (#345)
+- **deps-dev**: bump commitizen from 3.10.1 to 3.12.0 (#342)
+- **deps-dev**: bump ruff from 0.1.0 to 0.1.1 (#344)
+- **deps-dev**: bump mypy from 1.6.0 to 1.6.1 (#343)
+- **deps-dev**: bump ruff from 0.0.292 to 0.1.0 (#341)
+- **deps-dev**: bump commitizen from 3.10.0 to 3.10.1 (#338)
+- **deps**: bump pip from 23.2.1 to 23.3 in /.github/workflows (#339)
+- **deps-dev**: update numpy requirement from <1.26.1 to <1.26.2 (#337)
+- **deps-dev**: update dask[distributed] requirement (#336)
+- **deps-dev**: bump pre-commit from 3.4.0 to 3.5.0 (#335)
+- **deps-dev**: bump mypy from 1.5.1 to 1.6.0 (#334)
+- **deps-dev**: update bokeh requirement from <3.2.3 to <3.3.1 (#333)
+- **deps-dev**: bump scikit-image from 0.21.0 to 0.22.0
+- **deps-dev**: bump coverage[toml] from 7.3.1 to 7.3.2 (#329)
+- **deps-dev**: bump ruff from 0.0.291 to 0.0.292 (#328)
+- **deps-dev**: update dask[distributed] requirement (#327)
+- **deps-dev**: bump pandas-stubs from 2.0.3.230814 to 2.1.1.230928 (#326)
+- **deps-dev**: update tifffile requirement (#325)
+- **deps-dev**: update scipy requirement from <1.11.3 to <1.11.4 (#324)
+- **deps-dev**: bump commitizen from 3.9.0 to 3.10.0 (#322)
+- **deps-dev**: bump ruff from 0.0.290 to 0.0.291 (#321)
+- **deps-dev**: bump pydata-sphinx-theme from 0.14.0 to 0.14.1 (#320)
+- **deps-dev**: bump pandas from 2.1.0 to 2.1.1 (#319)
+- **deps-dev**: update tifffile requirement (#318)
+
 ## v0.7.4 (2023-09-18)
 
 ### Fix
