@@ -32,7 +32,7 @@ jobs:
         with:
           python-version: ${{ env.STABLE_PYTHON_VERSION }}
       - name: Cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
@@ -67,7 +67,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
@@ -97,7 +97,7 @@ jobs:
         with:
           python-version: ${{ env.STABLE_PYTHON_VERSION }}
       - name: Cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
@@ -129,7 +129,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - name: Cache pip
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ matrix.python }}-${{
