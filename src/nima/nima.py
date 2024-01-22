@@ -35,7 +35,6 @@ Kwargs = dict[str, str | int | float | bool | None]
 AXES_LENGTH_4D = 4
 AXES_LENGTH_3D = 3
 AXES_LENGTH_2D = 2
-# TODO: https://towardsdatascience.com/creating-custom-plotting-functions-with-matplotlib-1f4b8eba6aa1
 
 
 def myhist(
