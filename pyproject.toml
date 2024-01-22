@@ -19,7 +19,7 @@ classifiers = [
 ]
 dependencies = [
   "numpy <= 1.26.3",
-  "pandas <= 2.1.4",
+  "pandas <= 2.2.0",
   "scikit-image <= 0.22.0",
   "matplotlib <= 3.8.2",
   "tifffile <= 2023.12.9",  # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
