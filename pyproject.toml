@@ -51,6 +51,10 @@ dev = [
 ]
 docs = [
   "autodocsumm <= 0.2.12",
+  "statsmodels",
+  "seaborn",
+  "holoviews",
+  "nbsphinx <= 0.9.3",
   "pydata-sphinx-theme <= 0.15.2",
   "Pygments <= 2.17.2",
   "Sphinx <= 7.2.6",

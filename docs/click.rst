@@ -7,9 +7,9 @@ Command-line tool
    :local:
 
 .. click:: nima.__main__:main
-    :prog: nima
-    :nested: full
+   :prog: nima
+   :nested: full
 
 .. click:: nima.__main__:bima
-    :prog: bias
-    :nested: full
+   :prog: bima
+   :nested: full

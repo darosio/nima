@@ -8,3 +8,7 @@ usage patterns.
 
 .. toctree::
    :numbered:
+
+   usage.ipynb
+   ratioing.ipynb
+   holoviews.ipynb
