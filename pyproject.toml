@@ -65,7 +65,7 @@ tests = [
   "mypy <= 1.8.0",
   "data-science-types <= 0.2.23",
   "xdoctest <= 1.1.2",
-  "types-setuptools <= 69.0.0.20240115"
+  "types-setuptools <= 69.0.0.20240125"
 ]
 
 [project.scripts]
