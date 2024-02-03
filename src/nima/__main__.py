@@ -351,7 +351,7 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
     dark_thr = 4.5
     store = tifffile.imread(fpath)
     if not isinstance(store, np.ndarray):
-        store = np.array(store)
+        raise ValueError("Expected 'store' to be a numpy array.")
     click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
     dark = np.median(store, axis=0)
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
