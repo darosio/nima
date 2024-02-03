@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 import skimage.io
 import skimage.measure
-import tifffile as tff
+import tifffile as tff  # type: ignore
 from click.testing import CliRunner, Result
 from matplotlib.testing.compare import compare_images
 from matplotlib.testing.exceptions import ImageComparisonFailure
