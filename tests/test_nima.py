@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import numpy as np
-import tifffile as tff
+import tifffile as tff  # type: ignore
 from numpy.testing import assert_array_equal
 
 from nima import nima
