@@ -1,4 +1,5 @@
 """Tests for nima script."""
+
 from pathlib import Path
 
 import numpy as np
