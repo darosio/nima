@@ -64,18 +64,23 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
     ----------
     fp : Path
         File (TIF format) to be opened.
-    channels: list of string
+    channels: Sequence[str]
         List a name for each channel.
 
     Returns
     -------
-    d_im : dict
+    d_im : dict[str, ImArray]
         Dictionary of images. Each keyword represents a channel, named
         according to channels string list.
     n_channels : int
         Number of channels.
     n_times : int
         Number of timepoints.
+
+    Raises
+    ------
+    Exception
+        When number of channels and total length of tif sequence does not match.
 
     Examples
     --------
@@ -143,12 +148,18 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
 
     Parameters
     ----------
-    d_im : dict of images
+    d_im : dict[str, ImArray]
+        dict of images
 
     Return
     ------
-    d_im : dict of images
-        preserve dtype of input
+    d_im : dict[str, ImArray]
+        dict of images preserve dtype of input
+
+    Raises
+    ------
+    Exception
+        When ImArray is neither a single image nor a stack.
 
     """
     d_out = {}
@@ -180,18 +191,18 @@ def d_shading(
 
     Parameters
     ----------
-    d_im
+    d_im : dict[str, ImArray]
         Dictionary of images.
-    dark : 2D image or (2D) d_im
-        Dark image.
-    flat : 2D image or (2D) d_im
-        Flat image.
+    dark : dict[str, ImArray] | NDArray[np.float_]
+        Dark image (either a 2D image or 2D d_im).
+    flat : dict[str, ImArray] | NDArray[np.float_]
+        Flat image (either a 2D image or 2D d_im).
     clip : bool
         Boolean for clipping values >=0.
 
     Returns
     -------
-    d_im
+    dict[str, ImArray]
         Corrected d_im.
 
     """
@@ -232,18 +243,18 @@ def bg(  # noqa: C901
     ----------
     im: Im
         An image stack.
-    kind : str
+    kind : str, optional
         Method {'arcsinh', 'entropy', 'adaptive', 'li_adaptive', 'li_li'} used for the
         segmentation.
-    perc : float
+    perc : float, optional
         Perc % of max-min (default=10) for thresholding *entropy* and *arcsinh*
         methods.
-    radius : int, optional
+    radius : int | None, optional
         Radius (default=10) used in *entropy* and *arcsinh* (percentile_filter)
         methods.
-    adaptive_radius : int, optional
+    adaptive_radius : int | None, optional
         Size for the adaptive filter of skimage (default is im.shape[1]/2).
-    arcsinh_perc : int, optional
+    arcsinh_perc : int | None, optional
         Perc (default=80) used in the percentile_filter (scipy) within
         *arcsinh* method.
 
@@ -251,10 +262,15 @@ def bg(  # noqa: C901
     -------
     median : float
         Median of the bg masked pixels.
-    pixel_values : list ?
+    pixel_values : NDArray[np.int_] | NDArray[np.float_]
         Values of all bg masked pixels.
-    figs : {[f1], [f1, f2]}
+    figs : list[plt.Figure]
         List of fig(s). Only entropy and arcsinh methods have 2 elements.
+
+    Raises
+    ------
+    Exception
+        When % radius is out of bounds.
 
     """
     if adaptive_radius is None:
@@ -395,25 +411,25 @@ def d_bg(
 
     Parameters
     ----------
-    d_im : d_im
+    d_im : dict[str, Im]
         desc
-    downscale : {None, tupla}
-        Tupla, x, y are downscale factors for rows, cols.
-    kind : str
+    downscale : tuple[int, int] | None
+        Tupla, x, y are downscale factors for rows, cols (default=None).
+    kind : str, optional
         Bg method among {'li_adaptive', 'arcsinh', 'entropy', 'adaptive', 'li_li'}.
-    clip : bool
+    clip : bool, optional
         Boolean (default=True) for clipping values >=0.
 
     Returns
     -------
-    d_cor : d_im
+    d_cor : dict[str, Im]
         Dictionary of images subtracted for the estimated bg.
     bgs : pd.DataFrame
         Median of the estimated bg; columns for channels and index for time
         points.
-    figs : list
+    figs : dict[str, list[list[plt.Figure]]]
         List of (list ?) of figures.
-    d_bg_values : dict
+    d_bg_values : dict[str, list[NDArray[np.int_] | NDArray[np.float_]]]
         Background values keys are channels containing a list (for each time
         point) of list of values.
 
@@ -446,10 +462,10 @@ def d_mask_label(
     min_size: int | None = 640,
     channels: Sequence[str] = ("C", "G", "R"),
     threshold_method: str | None = "yen",
-    wiener: bool | None = False,
-    watershed: bool | None = False,
-    clear_border: bool | None = False,
-    randomwalk: bool | None = False,
+    wiener: bool = False,
+    watershed: bool = False,
+    clear_border: bool = False,
+    randomwalk: bool = False,
 ) -> None:
     """Label cells in d_im. Add two keys, mask and label.
 
@@ -466,25 +482,22 @@ def d_mask_label(
 
     Parameters
     ----------
-    d_im : d_im
+    d_im : dict[str, ImArray]
         desc
-    min_size : type, optional
-        Objects smaller than min_size (default=640 pixels) are discarded from
-        mask.
-    channels : list of string
+    min_size : int | None, optional
+        Objects smaller than min_size (default=640 pixels) are discarded from mask.
+    channels : Sequence[str], optional
         List a name for each channel.
-    threshold_method : {'yen', 'li'}
-        Method for thresholding (skimage) the geometric average plane-by-plane.
+    threshold_method : str | None, optional
+        Threshold method applied to the geometric average plane-by-plane (default=yen).
     wiener : bool, optional
-        Boolean (default=False) for wiener filter.
+        Boolean for wiener filter (default=False).
     watershed : bool, optional
-        Boolean (default=False) for watershed on labels.
+        Boolean for watershed on labels (default=False).
     clear_border :  bool, optional
-        Boolean (default=False) for removing objects that are touching the
-        image (2D) border.
+        Whether to filter out objects near the 2D image edge (default=False).
     randomwalk :  bool, optional
-        Boolean (default=False) for using random_walker in place of watershed
-        (skimage) algorithm after ndimage.distance_transform_edt() calculation.
+        Use random_walker instead of watershed post-ndimage-EDT (default=False).
 
     Notes
     -----
@@ -572,15 +585,14 @@ def d_ratio(
 
     Parameters
     ----------
-    d_im : d_im
+    d_im : dict[str, ImArray]
         desc
-    name : str
+    name : str, optional
         Name (default='r_cl') for the new key.
-    channels : list of string
-        Names (default=['C', 'R']) for the two channels [Numerator,
-        Denominator].
-    radii : tupla of int, optional
-        Each element contain a radius value for a median filter cycle.
+    channels : tuple[str, str], optional
+        Names for the two channels (Numerator, Denominator) (default=('C', 'R')).
+    radii : tuple[int, int], optional
+        Each element contain a radius value for a median filter cycle (default=(7, 3)).
 
     Notes
     -----
@@ -604,36 +616,34 @@ def d_meas_props(
     channels: Sequence[str] = ("C", "G", "R"),
     channels_cl: tuple[str, str] = ("C", "R"),
     channels_ph: tuple[str, str] = ("G", "C"),
-    ratios_from_image: bool | None = True,
+    ratios_from_image: bool = True,
     radii: tuple[int, int] | None = None,
 ) -> tuple[dict[np.int32, pd.DataFrame], dict[str, list[list[Any]]]]:
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
     ----------
-    d_im : d_im
+    d_im : dict[str, Im]
         desc
-    channels : list of string
-        All d_im channels (default=['C', 'G', 'R']).
-    channels_cl : tuple of string
-        Names (default=('C', 'R')) of the numerator and denominator channels for cl
-        ratio.
-    channels_ph : tuple of string
-        Names (default=('G', 'C')) of the numerator and denominator channels for pH
-        ratio.
+    channels : Sequence[str], optional
+        All d_im channels (default=('C', 'G', 'R')).
+    channels_cl : tuple[str, str], optional
+        Numerator and denominator channels for cl ratio (default=('C', 'R')).
+    channels_ph : tuple[str, str], optional
+        Numerator and denominator channels for pH ratio (default=('G', 'C')).
     ratios_from_image : bool, optional
-        Boolean (default=True) for executing d_ratio i.e. compute ratio images.
-    radii : (int, int), Optional
-        Radii of the optional median average performed on ratio images.
+        Boolean for executing d_ratio i.e. compute ratio images (default=True).
+    radii : tuple[int, int] | None, optional
+        Radii of the optional median average performed on ratio images (default=None).
 
     Returns
     -------
-    meas : dict of pd.DataFrame
+    meas : dict[np.int32, pd.DataFrame]
         For each label in labels: {'label': df}.
         DataFrame columns are: mean intensity of all channels,
         'equivalent_diameter', 'eccentricity', 'area', ratios from the mean
         intensities and optionally ratios from ratio-image.
-    pr : dict of list of list
+    pr : dict[str, list[list[Any]]]
         For each channel: {'channel': [props]} i.e. {'channel': [time][label]}.
 
     """
@@ -703,14 +713,14 @@ def d_plot_meas(
     ----------
     bgs : pd.DataFrame
         Estimated bg returned from d_bg()
-    meas : dict of pd.DataFrame
+    meas : dict[np.int32, pd.DataFrame]
         meas object returned from d_meas_props().
-    channels : list of string
+    channels : Sequence[str]
         All bgs and meas channels (default=['C', 'G', 'R']).
 
     Returns
     -------
-    fig : plt.Figure
+    plt.Figure
         Figure.
 
     """
@@ -775,18 +785,19 @@ def plt_img_profile(
     ----------
     img : ImArray
         Image of Flat or Bias.
-    title : Optional[str]
-        Title of the figure.
-    hpix : pd.DataFrame, optional
-        Identified hot pixels (as empty or not empty df).
-    vmin : float, optional
-        Minimum value.
-    vmax : float, optional
-        Maximum value.
+    title : str | None, optional
+        Title of the figure (default=None).
+    hpix : pd.DataFrame | None, optional
+        Identified hot pixels (as empty or not empty df) (default=None).
+    vmin : float | None, optional
+        Minimum value (default=None).
+    vmax : float | None, optional
+        Maximum value (default=None).
 
     Returns
     -------
     plt.Figure
+        Profile plot.
 
     """
     # definitions for the axes
@@ -886,12 +897,13 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> plt.Figure:
     ----------
     img : ImArray
         Image of Flat or Bias.
-    title : Optional[str]
-        Title of the figure.
+    title : str | None, optional
+        Title of the figure  (default=None).
 
     Returns
     -------
     plt.Figure
+        Profile plot.
 
     """
     fig = plt.figure(constrained_layout=True)  # type: ignore
@@ -973,9 +985,9 @@ def correct_hotpixel(
     ----------
     img : ImArray
         Frame (2D) image.
-    y : int | list(int)
+    y : int | NDArray[np.int_]
         y-coordinate(s).
-    x : int | list(int)
+    x : int | NDArray[np.int_]
         x-coordinate(s).
 
     """

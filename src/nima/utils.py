@@ -51,7 +51,7 @@ def bg(
     ----------
     im : ImArray
         Single YX image.
-    bgmax: float
+    bgmax: float | None
         Maximum value for bg?.
 
     Returns

@@ -425,7 +425,7 @@ def _output_flat(
     tprojection : ImArray
         2D array representing the raw flat field image (mean of frames).
 
-    bias : ImArray, optional
+    bias : ImArray | None
         2D array representing the bias frame for subtraction.
         If None (default), no bias subtraction is performed.
 
