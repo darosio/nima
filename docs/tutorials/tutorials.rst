@@ -12,3 +12,6 @@ usage patterns.
    usage.ipynb
    ratioing.ipynb
    holoviews.ipynb
+   Untitled.ipynb
+   flat_bg_dask.ipynb
+   xr_hvplot.ipynb
