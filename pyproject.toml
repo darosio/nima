@@ -43,7 +43,7 @@ version = "0.8.0"
 dev = [
   "commitizen <= 3.14.1",
   "pre-commit <= 3.6.0",
-  "ipykernel <=6.29.0",
+  "ipykernel <=6.29.1",
   "ruff <= 0.2.1",
   "pylsp-mypy",
   "jupyter",
