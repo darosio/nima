@@ -12,5 +12,4 @@ usage patterns.
    usage.ipynb
    ratioing.ipynb
    flat_bg_dask.ipynb
-   xr_hvplot.ipynb
-   holoviews.ipynb
+   dev_xr_hvplot_holoviews.ipynb
