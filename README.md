@@ -5,16 +5,17 @@
 [![codecov](https://codecov.io/gh/darosio/nima/branch/main/graph/badge.svg?token=OU6F9VFUQ6)](https://codecov.io/gh/darosio/nima)
 [![RtD](https://readthedocs.org/projects/nima/badge/)](https://nima.readthedocs.io/)
 
-A library and a cli to help image analyses based on scipy.ndimage and
-scikit-image.
+A library and a command-line interface (CLI) designed to assist with image
+analysis tasks using scipy.ndimage and scikit-image.
 
 - Version: “0.8.0”
 
 ## Features
 
-- easy dark and flat correction
-- automatic cell segmentation
-- easy ratio analyses
+- Bias and Flat Correction
+- Automatic Cell Segmentation
+- Multi-Ratio Ratiometric Imaging, enabling users to analyze multiple ratios
+  with ease.
 
 ## Installation
 
@@ -40,34 +41,77 @@ To enable auto completion for the `nima` command, follow these steps:
 
 ## Usage
 
-To use nima in a project:
+### Library
 
-    from nima import nima
+To use nima in your python code, import it as follows:
 
-See documentation for the `nima` command line.
+    from nima import nima, generat, utils
 
-## Description
+### Command-Line Interface (CLI)
 
-A longer description of your project goes here\...
+The CLI for this project provides two main commands: `nima` and `bima`. You can
+find detailed usage information and examples in the
+[documentation](https://nima.readthedocs.io/en/latest/click.html). Here are some
+examples of how to use each command:
 
-## Note
+#### nima
 
-    pyenv activate nima-...
-    poetry install pre-commit
+The `nima` command is used to perform multi-ratio ratiometric imaging analyses
+on multi-channel TIFF time-lapse stacks.
 
-install before next first commit: pre-commit run --all-files
+To perform multi-ratio ratiometric imaging analyses on a multichannel TIFF
+time-lapse stack, use the following command:
 
-    nox --session=pre-commit -- install
-    and activate poetry
+    nima <TIFFSTK> CHANNELS
 
+Replace \<TIFFSTK> with the path to the TIFF time-lapse stack file, and `CHANNELS`
+with the channel names. By default, the channels are set to ["G", "R", "C"].
 
-    pyenv activate nima-0.2
-    poetry install
-    pip install .
+#### bima
 
-so it is not installed in development mode and this version will persist to
-updates.
+The `bima` command is used to compute bias, dark, and flat corrections.
 
-## todo
+To estimate the detector bias frame:
 
-- restore sane complexity value (< 21).
+    bima bias <FPATH>
+
+Replace \<FPATH> with the paths to the bias stack (Light Off - 0 acquisition time).
+
+To estimate the system dark (multi-channel) frame:
+
+    bima dark <FPATH>
+
+Replace \<FPATH> with the paths to the dark stack (Light Off - Long acquisition time).
+
+Note: The estimation of the system dark may be removed in future versions
+because it risks being redundant with the flat estimation. It is likely to be
+removed soon.
+
+To estimate the system flat (multi-channel) frame:
+
+    bima flat --bias <BIAS_PATH> <FPATH>
+
+Replace \<FPATH> with the path to the tf8 stack and <BIAS_PATH> with the path to
+the bias image.
+
+## Contributing
+
+Contributions to the project are welcome!
+
+If you are interested in contributing to the project, please read our
+[contributing](https://darosio.github.io/ClopHfit/references/contributing.html)
+and [development
+environment](https://darosio.github.io/ClopHfit/references/development.html)
+guides, which outline the guidelines and conventions that we follow for
+contributing code, documentation, and other resources.
+
+## License
+
+We use a shared copyright model that enables all contributors to maintain the
+copyright on their contributions - see the [revised BSD license](LICENSE.txt)
+for details.
+
+## Acknowledgments
+
+Special thanks to the developers of scipy.ndimage and scikit-image for their
+invaluable contributions to image processing in Python.

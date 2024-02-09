@@ -21,100 +21,57 @@ from scipy import ndimage  # type: ignore
 from nima import nima
 from nima.nima import ImArray
 
+## flake8: noqa: E501
+
 AXES_LENGTH_2D = 2
 
 
 @click.command()
 @click.version_option()
-@click.option("--silent", is_flag=True, help="Do not print; verbose=0.")
-@click.option(
-    "-o",
-    "--output",
-    default="nima",
-    type=click.Path(writable=True, path_type=Path),
-    help="Output path [default: ./nima/].",
-)
-@click.option(
-    "--hotpixels",
-    is_flag=True,
-    default=False,
-    help="Median filter (rad=0.5) to remove hotpixels.",
-)
-@click.option(
-    "-f", "--flat", "flat_f", type=str, default="", help="Dark for shading correction."
-)
-@click.option(
-    "-d", "--dark", "dark_f", type=str, default="", help="Flat for shading correction."
-)
-@click.option(
-    "--bg-method",
-    type=click.Choice(
-        ["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False
-    ),
-    default="li_adaptive",
-    prompt_required=False,
-    prompt=True,
-    help="Background estimation algorithm [default:li_adaptive].",
-)
-@click.option("--bg-downscale", type=(int, int), help="Binning Y X.")
-@click.option(
-    "--bg-radius", type=float, help="Radius for entropy or arcsinh methods [def:10]."
-)
-@click.option(
-    "--bg-adaptive-radius", type=float, help="Radius for adaptive methods [def:X/2]."
-)
-@click.option(
-    "--bg-percentile",
-    type=float,
-    help="Percentile for entropy or arcsinh methods [def:10].",
-)
-@click.option(
-    "--bg-percentile-filter",
-    type=float,
-    help="Percentile filter for arcsinh method [def:80].",
-)
-@click.option(
-    "--fg-method",
-    type=click.Choice(["yen", "li"], case_sensitive=False),
-    default="yen",
-    prompt_required=False,
-    prompt=True,
-    help="Segmentation algorithm [default:yen].",
-)
-@click.option("--min-size", type=float, help="Minimum size labeled objects [def:2000].")
-@click.option(
-    "--clear-border", is_flag=True, help="Remove labels touching image borders."
-)
-@click.option("--wiener", is_flag=True, help="Wiener filter before segmentation.")
-@click.option(
-    "--watershed", is_flag=True, help="Watershed binary mask (to label cells)."
-)
-@click.option(
-    "--randomwalk", is_flag=True, help="Randomwalk binary mask (to label cells)."
-)
-#
-@click.option(
-    "--image-ratios/--no-image-ratios",
-    default=True,
-    help="Compute ratio images? [default:True]",
-)
-@click.option(
-    "--ratio-median-radii",
-    type=str,
-    help="Median filter ratio images with radii [def:(7,3)].",
-)
-@click.option(
-    "--channels-cl",
-    type=(str, str),
-    default=("C", "R"),
-    help="Channels for Cl ratio [default:C/R].",
-)
-@click.option(
-    "--channels-ph",
-    type=(str, str),
-    default=("G", "C"),
-    help="Channels for pH ratio [default:G/C].",
-)
+# fmt: off
+@click.option("--silent", is_flag=True,
+              help="Suppress output; verbose=0.")
+@click.option("-o", "--output", default="nima", type=click.Path(writable=True, path_type=Path), # noqa: E501
+              help="Output directory path [default: ./nima/].")
+@click.option("--hotpixels", is_flag=True, default=False,
+              help="Apply median filter (rad=0.5) to remove hot pixels.")
+@click.option("-f", "--flat", "flat_f", type=str, default="",
+              help="Path to flat image for shading correction.")
+@click.option("-d", "--dark", "dark_f", type=str, default="",
+              help="Path to dark image for shading correction.")
+@click.option("--bg-method", type=click.Choice(["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False), default="li_adaptive", # noqa: E501
+              help="Background estimation algorithm [default: li_adaptive].")
+@click.option("--bg-downscale", type=(int, int),
+              help="Binning Y X.")
+@click.option("--bg-radius", type=float,
+              help="Radius for entropy or arcsinh methods [default: 10].")
+@click.option("--bg-adaptive-radius", type=float,
+              help="Radius for adaptive methods [default: X/2].")
+@click.option("--bg-percentile", type=float,
+              help="Percentile for entropy or arcsinh methods [default: 10].")
+@click.option("--bg-percentile-filter", type=float,
+              help="Percentile filter for arcsinh method [default: 80].")
+@click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen", # noqa: E501
+              help="Segmentation algorithm [default: yen].")
+@click.option("--min-size", type=float,
+              help="Minimum size of labeled objects [default: 2000].")
+@click.option("--clear-border", is_flag=True,
+              help="Remove labels touching image borders.")
+@click.option("--wiener", is_flag=True,
+              help="Apply Wiener filter before segmentation.")
+@click.option("--watershed", is_flag=True,
+              help="Apply watershed binary mask (to label cells).")
+@click.option("--randomwalk", is_flag=True,
+              help="Apply randomwalk binary mask (to label cells).")
+@click.option("--image-ratios/--no-image-ratios", default=True,
+              help="Compute ratio images? [default: True].")
+@click.option("--ratio-median-radii", type=str,
+              help="Median filter ratio images with radii [default: (7, 3)].")
+@click.option("--channels-cl", type=(str, str), default=("C", "R"),
+              help="Channels for Cl ratio [default: C/R].")
+@click.option("--channels-ph", type=(str, str), default=("G", "C"),
+              help="Channels for pH ratio [default: G/C].")
+# fmt: on
 @click.argument("tiffstk", type=click.Path(path_type=Path))
 @click.argument("channels", type=str, nargs=-1)
 def main(  # noqa: C901"
@@ -142,21 +99,26 @@ def main(  # noqa: C901"
     tiffstk: Path,
     channels: tuple[str, ...],
 ) -> None:
-    """Analyze multichannel (default:["G", "R", "C"]) tiff time-lapse stack.
+    """Analyze a multichannel TIFF time-lapse stack.
 
-    TIFFSTK  :  Image file.
+    tiffstk : str
+        Path to the TIFF image file.
 
-    CHANNELS :  Channel names.
+    channels : list of str, optional
+        Names of the channels in the TIFF image. Default is ["G", "R", "C"].
 
-    Save:
-    (1) representation of image channels and segmentation ``BN_dim.png``,
-    (2) plot of ratios and channel intensities for each label and bg vs.
-    time ``BN_meas.png``,
-    (3) table of bg values ``*/bg.csv``,
-    (4) representation of bg image and histogram at all time points for
-    each channel ``BN/bg-[C1,C2,⋯]-method.pdf``, and for each label:
-    (5) table of ratios and measured properties ``BN/label[1,2,⋯].csv``
-    and (6) ratio images ``BN/label[1,2,⋯]_r[cl,pH].tif``.
+    Saves
+    -----
+    1. Representation of image channels and segmentation saved as `BN_dim.png`.
+    2. Plot of ratios and channel intensities for each label and background vs.
+       time saved as `BN_meas.png`.
+    3. Table of background values saved as `*/bg.csv`.
+    4. Representation of background image and histogram at all time points for
+       each channel saved as `BN/bg-[C1,C2,⋯]-method.pdf`.
+    5. For each label: Table of ratios and measured properties saved as
+       `BN/label[1,2,⋯].csv`.
+    6. For each label: Ratio images saved as `BN/label[1,2,⋯]_r[cl,pH].tif`.
+
     """
     click.echo(tiffstk)
     channels = ("G", "R", "C") if len(channels) == 0 else channels
@@ -265,16 +227,14 @@ def main(  # noqa: C901"
         )
 
 
-#######################################################################################
+##  bima  ##################################################
 @click.group()
 @click.pass_context
 @click.version_option()
-@click.option(
-    "-o",
-    "--output",
-    type=click.Path(writable=True, path_type=Path),
-    help="Output path [default: *.tif, *.png].",
-)
+# fmt: off
+@click.option("-o", "--output", type=click.Path(writable=True, path_type=Path),
+              help="Output path [default: *.tif, *.png].")
+# fmt: on
 def bima(ctx: click.Context, output: Path) -> None:
     """Compute bias, dark and flat."""
     ctx.ensure_object(dict)
@@ -285,17 +245,17 @@ def bima(ctx: click.Context, output: Path) -> None:
 @click.pass_context
 @click.argument("fpath", type=click.Path(path_type=Path))
 def bias(ctx: click.Context, fpath: Path) -> None:
-    """Compute BIAS frame and estimate read noise.
+    """Compute the BIAS frame and estimate read noise.
 
-    FPATH: the bias stack (Light Off - 0 acquisition time).
+    fpath : str
+        Path to the bias stack (Light Off - 0 acquisition time).
 
-    Output:
-
-    * .tif BIAS image = median projection
-
-    * .png plot (histograms, median, projection, hot pixels)
-
-    * [.csv coordinates and values of hot pixels] if detected
+    Saves
+    -----
+    1. BIAS image (.tif): Median projection.
+    2. Plot (.png): Includes histograms, median projection, and visualization of
+       hot pixels.
+    3. Hot pixel coordinates and values (.csv): If hot pixels are detected.
 
     """
     if fpath.suffix == ".zip":
@@ -338,14 +298,23 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", type=click.Path(path_type=Path))
-@click.option("--time", type=float)
+# fmt: off
+@click.option("--bias", type=click.Path(path_type=Path),
+              help="File path to the bias stack (Light Off - Long acquisition time).")
+@click.option("--time", type=float,
+              help="Acquisition time.")
+# fmt: on
 @click.argument("fpath", type=click.Path(path_type=Path))
 def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
     """Compute DARK.
 
-    FPATH: the bias stack (Light Off - Long acquisition time).
+    fpath : str
+        Path to the dark stack (Light Off - Long acquisition time).
 
+    Saves
+    -----
+    1. DARK image (.tif): Median projection.
+    2. Plot (.png): Includes histograms, median projection, ...
 
     """
     dark_thr = 4.5
@@ -368,10 +337,23 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", type=click.Path(path_type=Path))
+# fmt: off
+@click.option("--bias", type=click.Path(path_type=Path),
+              help="Path to the bias stack (Light Off - 0 acquisition time).")
+# fmt: on
 @click.argument("globpath", type=str)
 def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
-    """Flat from a collection of (.tif) files."""
+    """Compute the flat field from a collection of (.tif) files.
+
+    globpath : "glob expression"
+        Glob pattern (enclosed in quotes) for a collection of (.tif) files.
+
+    Saves
+    -----
+    1. FLAT image (.tif): Mean projection.
+    2. Plot (.png): Includes histograms, mean projection, ...
+
+    """
     image_sequence = tifffile.TiffSequence(globpath)
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
     click.secho(axes_n_shape, fg="green")
@@ -392,10 +374,23 @@ def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", type=click.Path(path_type=Path))
+# fmt: off
+@click.option("--bias", type=click.Path(path_type=Path),
+              help="Path to the bias stack (Light Off - 0 acquisition time).")
+# fmt: on
 @click.argument("fpath", type=click.Path(path_type=Path))
 def flat(ctx: click.Context, fpath: Path, bias: Path) -> None:
-    """Flat from (.tf8) file."""
+    """Flat from (.tf8) file stack.
+
+    fpath : str
+        Path to the (.tf8) file containing the image data.
+
+    Saves
+    -----
+    1. FLAT image (.tif): Mean projection.
+    2. Plot (.png): Includes histograms, mean projection, ...
+
+    """
     store = tifffile.imread(fpath, aszarr=True)
     f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
     with ProgressBar():  # type: ignore
@@ -421,10 +416,8 @@ def _output_flat(
     ----------
     output : Path
         Base path for generating output file names.
-
     tprojection : ImArray
         2D array representing the raw flat field image (mean of frames).
-
     bias : ImArray | None
         2D array representing the bias frame for subtraction.
         If None (default), no bias subtraction is performed.
@@ -434,6 +427,7 @@ def _output_flat(
     The constant value (e.g., 20) added to 'tprojection' before subtracting
     'bias' in the function's implementation may need further review or
     adjustment based on the specific requirements of the flat field correction.
+
     """
     tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
     if bias is None:
@@ -450,7 +444,16 @@ def _output_flat(
 @click.pass_context
 @click.argument("fpath", type=click.Path(exists=True, path_type=Path))
 def plot(ctx: click.Context, fpath: Path) -> None:
-    """Plot profiles of 2D (Bias-Flat) image."""
+    """Plot profiles of a 2D image.
+
+    fpath : str
+        Path to the 2D image file (e.g. Bias or Dark).
+
+    Saves
+    -----
+    A plot of profiles is saved as a '.png' file.
+
+    """
     img = np.array(tifffile.imread(fpath))
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     title = os.fspath(output.with_suffix("").name)
