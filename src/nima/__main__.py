@@ -434,6 +434,7 @@ def _output_flat(
         flat = ndimage.gaussian_filter(tprojection, sigma=100)
     else:
         flat = ndimage.gaussian_filter(tprojection + 20 - bias, sigma=100)  # FIXME
+        # MAYBE: consider skimage.filters.gaussian and  cmap=plt.cm.Set2_r
     flat /= flat.mean()
     tifffile.imwrite(output, flat)
     title = os.fspath(output.with_suffix("").name)
