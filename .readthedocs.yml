@@ -9,7 +9,7 @@ sphinx:
 formats:
   - htmlzip
   - epub
-  - pdf
+  # - pdf
 python:
   install:
     - method: pip
