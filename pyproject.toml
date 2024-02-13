@@ -250,7 +250,11 @@ strict = true
 
 [tool.ruff]
 force-exclude = true
-ignore = ["ANN101", "ANN102"]
+ignore = [
+  "ANN101",
+  "ANN102",
+  "S311"  # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
 line-length = 88
 select = [
   "A",  # builtins
