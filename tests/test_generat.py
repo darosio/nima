@@ -58,13 +58,13 @@ class TestFrame:
 
     def test_objs(self) -> None:
         """Test generation of a frame with objects."""
-        np.random.seed(111)
-        assert generat.gen_objs()[23, 16] == 14.245461722859172
+        np.random.seed(2)
+        assert generat.gen_objs()[25, 50] == 8.40735604174978
 
     def test_frame(self) -> None:
         """Test simulation of an acquired frame."""
         np.random.seed(121)
-        assert generat.gen_frame(self.objs)[50, 31] == 24.46459269580741
+        assert generat.gen_frame(self.objs)[50, 31] == 2.0
 
     def test_frame_shape(self) -> None:
         """Test (nrows, ncols) shape."""

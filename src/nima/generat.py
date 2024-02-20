@@ -63,7 +63,7 @@ def gen_objs(
         max_fluor * np.random.rand() * gen_object(nrows, ncols, min_radius, max_radius)
         for _ in range(num_objs)
     ]
-    img = np.sum(objs, axis=0).astype(np.float16)
+    img = np.sum(objs, axis=0)
     return img  # type: ignore
 
 
