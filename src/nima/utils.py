@@ -48,9 +48,10 @@ def _bgmax(img: ImArray, step: int = 4) -> float:
 
 
 # fit the bg for clop3 experiments
-def bg(
-    im: ImArray, bgmax: float | None = None
-) -> tuple[float, float,]:
+def bg(im: ImArray, bgmax: float | None = None) -> tuple[
+    float,
+    float,
+]:
     """Estimate image bg.
 
     Parameters
