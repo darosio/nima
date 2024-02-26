@@ -33,20 +33,24 @@ def _bgmax(img: ImArray, step: int = 4) -> float:
     vals = img[img < thr / 1]
     mmin: float = vals.min()
     mmax = vals.max()
-    density = stats.gaussian_kde(vals)
-    x = np.arange(mmin, mmax, step=step)
-    density = density(x)
+    density = stats.gaussian_kde(vals)(
+        np.linspace(mmin, mmax, num=((mmax - mmin) // step))
+    )
     # fail with G550E_CFTR_DMSO_1
-    first_peak_pos = signal.find_peaks(-density, width=2, rel_height=0.1)[0][0] * step
-    result = mmin + first_peak_pos if isinstance(first_peak_pos, float) else mmin
-    return result
+    peaks_indices = signal.find_peaks(-density, width=2, rel_height=0.1)[0]
+    if peaks_indices.size > 0:
+        first_peak_val = peaks_indices[0]
+        result = mmin + (first_peak_val * step)
+        return float(result)
+    else:
+        # Handle the case where no peaks are found
+        return mmin
 
 
 # fit the bg for clop3 experiments
-def bg(im: ImArray, bgmax: float | None = None) -> tuple[
-    float,
-    float,
-]:
+def bg(
+    im: ImArray, bgmax: float | None = None
+) -> tuple[float, float,]:
     """Estimate image bg.
 
     Parameters
