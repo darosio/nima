@@ -69,7 +69,7 @@ docs = [
   "sphinx_autodoc_typehints <= 2.0.0"
 ]
 tests = [
-  "pytest <= 8.1.0",
+  "pytest <= 8.1.1",
   "coverage[toml] <= 7.4.3",
   "typeguard <=4.1.5",
   "pandas-stubs <= 2.2.0.240218",
