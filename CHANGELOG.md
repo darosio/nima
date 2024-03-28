@@ -1,5 +1,171 @@
 # Changelog
 
+## v0.9.0 (2024-03-28)
+
+### Feat
+
+- Add utils and more temporary tutorials
+
+### Fix
+
+- **ci**: TestPYPI upload
+- tests after refactoring
+- trivial type error
+- commitizen version v3.13.0 from 3.12.0
+
+### Docs
+
+- Cleaning tutorials
+- Improve CLI doc strings
+- Reorganize and update tutorials
+- Fix tutorials
+- Fix tutorials building
+- Add ipynb tutorial
+- Adopt github-pages-deploy-action
+
+### Style
+
+- pyproject.toml
+
+### Build
+
+- **deps**: bump codecov/codecov-action from 4.1.0 to 4.1.1 (#511)
+- **deps-dev**: update typeguard requirement from <=4.1.5 to <=4.2.1 (#509)
+- **deps-dev**: update pre-commit requirement from <=3.6.2 to <=3.7.0 (#508)
+- **deps-dev**: update ruff requirement from <=0.3.3 to <=0.3.4 (#507)
+- **deps-dev**: update commitizen requirement from <=3.18.4 to <=3.20.0 (#506)
+- **deps-dev**: update pyarrow requirement from <=15.0.1 to <=15.0.2 (#505)
+- **deps-dev**: update pandas-stubs requirement (#503)
+- **deps-dev**: update types-setuptools requirement (#502)
+- **deps-dev**: update ruff requirement from <=0.3.2 to <=0.3.3 (#501)
+- **deps-dev**: update dask[distributed] requirement (#500)
+- **deps-dev**: update coverage[toml] requirement (#499)
+- **deps-dev**: update commitizen requirement from <=3.18.3 to <=3.18.4 (#498)
+- **deps**: bump hatch from 1.9.3 to 1.9.4 in /.github/workflows (#497)
+- **deps-dev**: update dask[distributed] requirement (#496)
+- **deps-dev**: update commitizen requirement from <=3.18.0 to <=3.18.3 (#494)
+- **deps-dev**: update mypy requirement from <=1.8.0 to <=1.9.0 (#493)
+- **deps-dev**: update pytest requirement from <=8.1.0 to <=8.1.1 (#492)
+- **deps-dev**: update ruff requirement from <=0.3.1 to <=0.3.2 (#491)
+- **deps-dev**: update types-setuptools requirement (#490)
+- **deps-dev**: update types-setuptools requirement (#489)
+- **deps-dev**: update commitizen requirement from <=3.17.0 to <=3.18.0 (#488)
+- **deps-dev**: update pyarrow requirement from <=15.0.0 to <=15.0.1 (#487)
+- **deps-dev**: update ruff requirement from <=0.3.0 to <=0.3.1 (#486)
+- **deps-dev**: update zarr requirement from <=2.17.0 to <=2.17.1 (#485)
+- **deps-dev**: update commitizen requirement from <=3.16.0 to <=3.17.0 (#484)
+- **deps-dev**: update types-setuptools requirement (#483)
+- **deps-dev**: update pytest requirement from <=8.0.2 to <=8.1.0 (#482)
+- **deps-dev**: update types-setuptools requirement (#481)
+- **deps-dev**: update ruff requirement from <=0.2.2 to <=0.3.0 (#480)
+- **deps-dev**: update types-setuptools requirement (#479)
+- **deps**: bump codecov/codecov-action from 4.0.2 to 4.1.0 (#478)
+- **deps-dev**: update commitizen requirement from <=3.15.0 to <=3.16.0 (#477)
+- **deps-dev**: update ipykernel requirement from <=6.29.2 to <=6.29.3 (#476)
+- **deps-dev**: update pytest requirement from <=8.0.1 to <=8.0.2 (#473)
+- **deps**: bump codecov/codecov-action from 4.0.1 to 4.0.2 (#475)
+- **deps-dev**: update dask[distributed] requirement (#474)
+- **deps-dev**: update pandas requirement from <=2.2.0 to <=2.2.1 (#472)
+- **deps-dev**: update coverage[toml] requirement (#471)
+- **deps-dev**: update types-setuptools requirement (#470)
+- **deps-dev**: update coverage[toml] requirement (#469)
+- **deps-dev**: update commitizen requirement from <=3.14.1 to <=3.15.0 (#464)
+- **deps-dev**: update pytest requirement from <=8.0.0 to <=8.0.1 (#466)
+- **deps-dev**: update ruff requirement from <=0.2.1 to <=0.2.2 (#465)
+- **deps-dev**: update types-setuptools requirement (#463)
+- **deps-dev**: update pre-commit requirement from <=3.6.1 to <=3.6.2 (#462)
+- **deps-dev**: update pandas-stubs requirement (#461)
+- **deps-dev**: update matplotlib requirement from <=3.8.2 to <=3.8.3 (#460)
+- **deps-dev**: update zarr requirement from <=2.16.1 to <=2.17.0 (#459)
+- **deps-dev**: update types-setuptools requirement (#458)
+- **deps-dev**: update tifffile requirement (#457)
+- **deps-dev**: update pre-commit requirement from <=3.6.0 to <=3.6.1 (#455)
+- **deps-dev**: update dask[distributed] requirement (#454)
+- **deps-dev**: update ipykernel requirement from <=6.29.1 to <=6.29.2 (#453)
+- **deps-dev**: update sphinx-autodoc-typehints requirement (#452)
+- **deps-dev**: update ipykernel requirement from <=6.29.0 to <=6.29.1 (#450)
+- **deps-dev**: update numpy requirement from <=1.26.3 to <=1.26.4 (#451)
+- **deps-dev**: update ruff requirement from <=0.2.0 to <=0.2.1 (#449)
+- **deps**: bump pip from 23.3.2 to 24.0 in /.github/workflows (#445)
+- **deps-dev**: update commitizen requirement from <=3.14.0 to <=3.14.1 (#444)
+- **pre-commit**: Run autoupdate
+- **pre-commit**: prettier v4.0.0-alpha.8
+- **docs**: Drop darglint in favor of pydoclint; fix some docstring
+- **deps-dev**: update tifffile requirement
+- **deps**: bump codecov/codecov-action from 4.0.0 to 4.0.1 (#442)
+- **deps-dev**: update commitizen requirement from <=3.13.0 to <=3.14.0 (#441)
+- **deps-dev**: update ruff requirement from <=0.1.15 to <=0.2.0 (#440)
+- **deps**: bump codecov/codecov-action from 3.1.5 to 4.0.0 (#439)
+- **deps-dev**: update xdoctest requirement from <=1.1.2 to <=1.1.3 (#438)
+- **deps-dev**: update ruff requirement from <=0.1.14 to <=0.1.15 (#435)
+- **deps-dev**: update coverage[toml] requirement (#434)
+- **deps-dev**: update dask[distributed] requirement (#433)
+- **deps-dev**: update pytest requirement from <=7.4.4 to <=8.0.0 (#432)
+- **deps-dev**: update sphinx-autodoc-typehints requirement (#431)
+- **deps**: bump codecov/codecov-action from 3.1.4 to 3.1.5 (#430)
+- **deps**: bump hatch from 1.9.2 to 1.9.3 in /.github/workflows (#429)
+- **deps-dev**: update types-setuptools requirement (#428)
+- **deps**: bump hatch from 1.9.1 to 1.9.2 in /.github/workflows (#427)
+- **deps-dev**: update ruff requirement from <=0.1.13 to <=0.1.14 (#426)
+- **deps-dev**: update pandas requirement from <=2.1.4 to <=2.2.0 (#425)
+- **deps-dev**: update scipy requirement from <=1.11.4 to <=1.12.0 (#424)
+- **deps-dev**: update pydata-sphinx-theme requirement (#423)
+- **deps**: bump actions/cache from 3 to 4 (#422)
+- **deps-dev**: update ipykernel requirement from <=6.28.0 to <=6.29.0 (#421)
+- **deps-dev**: update ruff requirement from <=0.1.12 to <=0.1.13 (#420)
+- **deps-dev**: update types-setuptools requirement (#419)
+- **deps-dev**: update dask[distributed] requirement (#418)
+- **deps-dev**: update ruff requirement from <=0.1.11 to <=0.1.12 (#417)
+- **deps-dev**: update autodocsumm requirement (#416)
+- **deps-dev**: update types-setuptools requirement (#415)
+- **deps-dev**: update pydata-sphinx-theme requirement (#414)
+- **deps-dev**: update ruff requirement from <=0.1.9 to <=0.1.11 (#413)
+- **deps-dev**: update numpy requirement from <=1.26.2 to <=1.26.3 (#412)
+- **deps-dev**: update pytest requirement from <=7.4.3 to <=7.4.4 (#411)
+- **deps-dev**: update coverage[toml] requirement (#410)
+- **deps-dev**: update pandas-stubs requirement (#409)
+- **deps-dev**: update ipykernel requirement from <=6.27.1 to <=6.28.0 (#408)
+- **deps**: bump hatch from 1.9.0 to 1.9.1 in /.github/workflows (#407)
+- **deps-dev**: update ruff requirement from <=0.1.8 to <=0.1.9 (#406)
+- **deps-dev**: update mypy requirement from <=1.7.1 to <=1.8.0 (#405)
+- **deps-dev**: update coverage[toml] requirement (#404)
+- **deps**: bump hatch from 1.8.1 to 1.9.0 in /.github/workflows (#400)
+- **deps-dev**: update pandas-stubs requirement (#399)
+- **deps**: bump pip from 23.3.1 to 23.3.2 in /.github/workflows (#398)
+- **deps-dev**: update dask[distributed] requirement from <=2023.12.0 to <=2023.12.1 (#397)
+- **deps-dev**: update coverage[toml] requirement (#396)
+- **deps**: bump hatch from 1.8.0 to 1.8.1 in /.github/workflows (#395)
+- **deps**: bump actions/download-artifact from 3 to 4 (#394)
+- **deps-dev**: update ruff requirement from <=0.1.7 to <=0.1.8 (#393)
+- **deps**: bump hatch from 1.7.0 to 1.8.0 in /.github/workflows (#392)
+- **deps-dev**: update pandas requirement from <=2.1.3 to <=2.1.4 (#391)
+- **deps-dev**: update pre-commit requirement from <=3.5.0 to <=3.6.0 (#390)
+- **deps-dev**: update tifffile requirement (#389)
+- **deps**: bump actions/setup-python from 4 to 5 (#388)
+- **deps-dev**: update ruff requirement from <=0.1.6 to <=0.1.7 (#387)
+- **deps-dev**: update ipykernel requirement from <=6.27.0 to <=6.27.1 (#386)
+- **deps**: bump actions/configure-pages from 3 to 4 (#385)
+- **deps**: bump actions/deploy-pages from 2 to 3 (#384)
+- **deps-dev**: update dask[distributed] requirement (#382)
+- **deps-dev**: bump commitizen from 3.12.0 to 3.13.0
+- **deps-dev**: bump types-setuptools from 68.2.0.2 to 69.0.0.0 (#380)
+- **deps-dev**: bump pydata-sphinx-theme from 0.14.3 to 0.14.4 (#379)
+- **deps-dev**: bump mypy from 1.7.0 to 1.7.1 (#378)
+- **deps-dev**: bump types-setuptools from 68.2.0.1 to 68.2.0.2 (#377)
+
+### CI/CD
+
+- Docs out of gh-pages
+
+### Refactor
+
+- utils
+- Improve generat module
+
+### chore
+
+- Fix lint
+
 ## v0.8.0 (2023-11-22)
 
 ### Feat
