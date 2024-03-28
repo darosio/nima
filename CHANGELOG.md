@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.9.1 (2024-03-28)
+
+### Fix
+
+- **ci**: Add codecov token
+
+### Build
+
+- **deps-dev**: update ipykernel requirement from <=6.29.3 to <=6.29.4 (#512)
+
 ## v0.9.0 (2024-03-28)
 
 ### Feat
