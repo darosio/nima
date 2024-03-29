@@ -1,31 +1,39 @@
 """Utils for simple ratio imaging calculation."""
 
 from collections import defaultdict
-from typing import Any, NewType, TypeVar
+from typing import Any, NewType, TypeVar, cast, overload
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import skimage
 import tifffile as tff  # type: ignore
 from dask.diagnostics.progress import ProgressBar
+from numpy.typing import NDArray
 from scipy import optimize, signal, special, stats  # type: ignore
 
-ImArray = TypeVar("ImArray", npt.NDArray[np.float_], npt.NDArray[np.int_])
-ImMask = NewType("ImMask", npt.NDArray[np.bool_])
+ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_])
+ImMask = NewType("ImMask", NDArray[np.bool_])
 
 pbar = ProgressBar()  # type: ignore
 pbar.register()
 
 
+@overload
+def prob(v: float, bg: float, sd: float) -> float: ...
+@overload
+def prob(v: NDArray[np.float_], bg: float, sd: float) -> NDArray[np.float_]: ...
+
+
 def prob(
-    v: float | npt.NDArray[np.float_], bg: float, sd: float
-) -> float | npt.NDArray[np.float_]:
+    v: float | NDArray[np.float_], bg: float, sd: float
+) -> float | NDArray[np.float_]:
     """Compute pixel probability of belonging to background."""
+    result = special.erfc((v - bg) / sd)
+    # Use typing.cast to explicitly inform mypy
     if isinstance(v, float):
-        return float(special.erfc((v - bg) / sd))
+        return cast(float, result)
     else:
-        return np.array(special.erfc((v - bg) / sd))
+        return cast(NDArray[np.float_], result)
 
 
 def _bgmax(img: ImArray, step: int = 4) -> float:
@@ -78,15 +86,13 @@ def bg(im: ImArray, bgmax: float | None = None) -> tuple[
     """
 
     def fitfunc(
-        p: list[float], x: float | npt.NDArray[np.float_]
-    ) -> float | npt.NDArray[np.float_]:
+        p: list[float], x: float | NDArray[np.float_]
+    ) -> float | NDArray[np.float_]:
         return p[0] * np.exp(-0.5 * ((x - p[1]) / p[2]) ** 2) + p[3]
 
     def errfunc(
-        p: list[float],
-        x: float | npt.NDArray[np.float_],
-        y: float | npt.NDArray[np.float_],
-    ) -> float | npt.NDArray[np.float_]:
+        p: list[float], x: float | NDArray[np.float_], y: float | NDArray[np.float_]
+    ) -> float | NDArray[np.float_]:
         return y - fitfunc(p, x)
 
     mmin = int(im.min())
@@ -104,7 +110,7 @@ def bg(im: ImArray, bgmax: float | None = None) -> tuple[
     return out[0][1], out[0][2]
 
 
-def ave(img: npt.NDArray[np.float_], bgmax: float) -> float:
+def ave(img: NDArray[np.float_], bgmax: float) -> float:
     """Mask out the bg and return objects average of a frame."""
     # MAYBE: Use bg2
     av, sd = bg(img, bgmax=bgmax)
@@ -154,9 +160,7 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
 
 def bg2(
     img: ImArray, step: float = 0.3, bgmax: float = 60.0
-) -> tuple[
-    float, float, npt.NDArray[np.signedinteger[Any]], npt.NDArray[np.floating[Any]]
-]:
+) -> tuple[float, float, NDArray[np.signedinteger[Any]], NDArray[np.floating[Any]]]:
     """Estimate image bg."""
     if bgmax is None:
         bgmax = _bgmax(img)
