@@ -392,10 +392,6 @@ def bg(  # noqa: C901
     return iqr[1], pixel_values, figures
 
 
-# TODO: add new bg/fg segmentation based on conditional probability but
-# working with dask arrays.
-
-
 def d_bg(
     d_im: dict[str, Im],
     downscale: tuple[int, int] | None = None,
