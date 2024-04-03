@@ -1,46 +1,20 @@
 """Functions to partition images into meaningful regions."""
 
-from collections import defaultdict
-from typing import Any, NewType, TypeVar, cast, overload
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import skimage
-import tifffile as tff  # type: ignore
-from dask.array.core import Array as DaskArray
-from dask.diagnostics.progress import ProgressBar
 from numpy.typing import NDArray
-from scipy import ndimage, optimize, signal, special, stats  # type: ignore
+from scipy import ndimage, optimize, signal, stats  # type: ignore
 
-from nima import utils
+from nima import nima, utils
+
+from .types import ImArray
 
 # TODO: add new bg/fg segmentation based on conditional probability but
 # working with dask arrays. Try being clean: define function only for NDArray
 # then map dask to use it somehow.
-
-ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_])
-ImMask = NewType("ImMask", NDArray[np.bool_])
-
-
-def myhist(
-    im: ImArray,
-    bins: int = 60,
-    log: bool = False,
-    nf: bool = False,
-) -> None:
-    """Plot image intensity as histogram.
-
-    ..note:: Consider deprecation.
-
-    """
-    hist, bin_edges = np.histogram(im, bins=bins)
-    bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-    if nf:
-        plt.figure()
-    plt.plot(bin_centers, hist, lw=2)
-    if log:
-        plt.yscale("log")  # type: ignore
 
 
 def bg(  # noqa: C901
@@ -159,7 +133,7 @@ def bg(  # noqa: C901
         plt.colorbar(img0, ax=ax1, orientation="horizontal")  # type: ignore
         plt.title(kind + " " + str(title) + "\n" + str(iqr))
         f.add_subplot(122)
-        myhist(im[m], log=True)
+        nima.myhist(im[m], log=True)
         f.tight_layout()
         return f
 
@@ -174,7 +148,7 @@ def bg(  # noqa: C901
             plt.colorbar(img0, ax=ax2, orientation="horizontal")  # type: ignore
             # FIXME: this is horribly duplicating an axes
             f.add_subplot(132)
-            myhist(lim)
+            nima.myhist(lim)
             #
             # plot bg vs. perc
             ave, sd, median = ([], [], [])
@@ -228,10 +202,7 @@ def _bgmax(img: ImArray, step: int = 4) -> float:
 
 
 # fit the bg for clop3 experiments
-def bgnima(im: ImArray, bgmax: float | None = None) -> tuple[
-    float,
-    float,
-]:
+def bg0(im: ImArray, bgmax: float | None = None) -> tuple[float, float, list[float]]:
     """Estimate image bg.
 
     Parameters
@@ -243,7 +214,7 @@ def bgnima(im: ImArray, bgmax: float | None = None) -> tuple[
 
     Returns
     -------
-    tuple[float, float]
+    tuple[float, float, list[float]]
         Background and standard deviation values.
 
     Examples
@@ -289,7 +260,15 @@ def bgnima(im: ImArray, bgmax: float | None = None) -> tuple[
     )
     # pixel_values = im[im < bg + 1.67 * sd]
     pixel_values = im[mgeo]
-    return bg, sd, pixel_values
+    pixel_values = im[im < bg + 1 * sd]
+
+    fig = plt.figure(figsize=(8, 4))
+    ax1 = fig.add_subplot(1, 2, 1)
+    ax1.hist(pixel_values, bins=20)
+    ax2 = fig.add_subplot(1, 2, 2)
+    ax2.set_title("Probplot")
+    _, fit = stats.probplot(pixel_values, plot=ax2, rvalue=True)
+    return bg, sd, pixel_values  # fit, fig
 
 
 def bgnima2(
@@ -309,73 +288,3 @@ def bgnima2(
     ][0]
     delta = (pos_max - pos_delta) * step
     return pos_max * step + mmin, delta, x, density
-
-
-# TODO: Contradicting the use of NDArray only. To experiment into dask image...
-ImArray2 = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_], DaskArray)
-
-
-def bgnima2_dask(
-    img: ImArray, step: float = 0.3, bgmax: float = 60.0
-) -> tuple[float, float, np.ndarray, np.ndarray]:
-    def compute_bgmax(img: ImArray, bgmax=None) -> float:
-        if bgmax is not None:
-            return bgmax
-        else:
-            # Assuming _bgmax function is compatible with Dask arrays or is replaced with a suitable alternative
-            return float(img.max().compute())
-
-    def compute_kde_peaks(
-        values_under_bgmax: np.ndarray, mmin: float, mmax: float, step: float
-    ):
-        x = np.arange(mmin, mmax, step=step)
-        density = stats.gaussian_kde(values_under_bgmax)(x)
-        pos_max = signal.find_peaks(density, width=2, rel_height=0.1)[0][0]
-        v = density[pos_max] / 2
-        pos_delta = signal.find_peaks(
-            -np.absolute(density - v), width=2, rel_height=0.2
-        )[0][0]
-        delta = (pos_max - pos_delta) * step
-        return pos_max * step + mmin, delta, x, density
-
-    bgmax = compute_bgmax(img, bgmax)
-    values_under_bgmax = img[img < bgmax].compute()
-    mmin, mmax = values_under_bgmax.min(), values_under_bgmax.max()
-
-    pos_max, delta, x, density = compute_kde_peaks(values_under_bgmax, mmin, mmax, step)
-
-    return pos_max, delta, x, density
-
-
-def bgnima3_stack(
-    img_stack: ImArray, step: float = 0.3, bgmax: float = 60.0
-) -> list[tuple[float, float, np.ndarray, np.ndarray]]:
-    def compute_bgmax(img: ImArray, bgmax=None) -> float:
-        if bgmax is not None:
-            return bgmax
-        else:
-            return float(img.max().compute())
-
-    def compute_kde_peaks(
-        values_under_bgmax: np.ndarray, mmin: float, mmax: float, step: float
-    ):
-        x = np.arange(mmin, mmax, step=step)
-        density = stats.gaussian_kde(values_under_bgmax)(x)
-        pos_max = signal.find_peaks(density, width=2, rel_height=0.1)[0][0]
-        v = density[pos_max] / 2
-        pos_delta = signal.find_peaks(
-            -np.absolute(density - v), width=2, rel_height=0.2
-        )[0][0]
-        delta = (pos_max - pos_delta) * step
-        return pos_max * step + mmin, delta, x, density
-
-    results = []
-    for img in img_stack:
-        bgmax_val = compute_bgmax(img, bgmax)
-        values_under_bgmax = img[img < bgmax_val].compute()
-        mmin, mmax = float(values_under_bgmax.min()), float(values_under_bgmax.max())
-
-        result = compute_kde_peaks(values_under_bgmax, mmin, mmax, step)
-        results.append(result)
-
-    return results
