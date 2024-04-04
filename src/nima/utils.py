@@ -11,8 +11,8 @@ from dask.diagnostics.progress import ProgressBar
 from numpy.typing import NDArray
 from scipy import optimize, signal, special, stats  # type: ignore
 
-ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_])
-ImMask = NewType("ImMask", NDArray[np.bool_])
+from .segmentation import bg0
+from .types import ImArray, ImMask
 
 pbar = ProgressBar()  # type: ignore
 pbar.register()
@@ -115,7 +115,7 @@ def bg(
 def ave(img: NDArray[np.float_], bgmax: float) -> float:
     """Mask out the bg and return objects average of a frame."""
     # MAYBE: Use bg2
-    av, sd = bg(img, bgmax=bgmax)
+    av, sd, _, _ = iteratively_refine_background(img)
     av = min(av, 20)
     sd = min(sd, 10)
     mask = prob(img, float(av), sd) < 0.001

@@ -1,20 +1,39 @@
 """Functions to partition images into meaningful regions."""
 
-from typing import Any
+from typing import Any, cast, overload
 
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage
 from numpy.typing import NDArray
-from scipy import ndimage, optimize, signal, stats  # type: ignore
-
-from nima import nima, utils
+from scipy import ndimage, optimize, signal, special, stats  # type: ignore
+from skimage import filters, morphology
 
 from .types import ImArray
 
 # TODO: add new bg/fg segmentation based on conditional probability but
 # working with dask arrays. Try being clean: define function only for NDArray
 # then map dask to use it somehow.
+
+
+def myhist(
+    im: ImArray,
+    bins: int = 60,
+    log: bool = False,
+    nf: bool = False,
+) -> None:
+    """Plot image intensity as histogram.
+
+    ..note:: Consider deprecation.
+
+    """
+    hist, bin_edges = np.histogram(im, bins=bins)
+    bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+    if nf:
+        plt.figure()
+    plt.plot(bin_centers, hist, lw=2)
+    if log:
+        plt.yscale("log")  # type: ignore
 
 
 def bg(  # noqa: C901
@@ -84,9 +103,9 @@ def bg(  # noqa: C901
     elif kind == "entropy":
         im8 = skimage.util.img_as_ubyte(im)  # type: ignore
         if im.dtype == float:
-            lim = filters.rank.entropy(im8 / im8.max(), disk(radius))  # type: ignore
+            lim = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore
         else:
-            lim = filters.rank.entropy(im8, disk(radius))  # type: ignore
+            lim = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore
         lim_ = True
         title = radius, perc
         thr = (1 - perc) * lim.min() + perc * lim.max()
@@ -133,7 +152,7 @@ def bg(  # noqa: C901
         plt.colorbar(img0, ax=ax1, orientation="horizontal")  # type: ignore
         plt.title(kind + " " + str(title) + "\n" + str(iqr))
         f.add_subplot(122)
-        nima.myhist(im[m], log=True)
+        myhist(im[m], log=True)
         f.tight_layout()
         return f
 
@@ -148,7 +167,7 @@ def bg(  # noqa: C901
             plt.colorbar(img0, ax=ax2, orientation="horizontal")  # type: ignore
             # FIXME: this is horribly duplicating an axes
             f.add_subplot(132)
-            nima.myhist(lim)
+            myhist(lim)
             #
             # plot bg vs. perc
             ave, sd, median = ([], [], [])
@@ -201,90 +220,162 @@ def _bgmax(img: ImArray, step: int = 4) -> float:
         return mmin
 
 
-# fit the bg for clop3 experiments
-def bg0(im: ImArray, bgmax: float | None = None) -> tuple[float, float, list[float]]:
-    """Estimate image bg.
+@overload
+def prob(v: float, bg: float, sd: float) -> float: ...
+@overload
+def prob(v: ImArray, bg: float, sd: float) -> NDArray[np.float_]: ...
+
+
+def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float_]:
+    """Compute pixel probability of belonging to background."""
+    result = special.erfc((v - bg) / sd)
+    # Use typing.cast to explicitly inform mypy
+    if isinstance(v, float):
+        return cast(float, result)
+    else:
+        return cast(NDArray[np.float_], result)
+
+
+def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
+    """Estimate mean and standard deviation using a Gaussian fit.
+
+        The function fits a Gaussian distribution to a given array of values and estimates
+    the mean and standard deviation of the distribution. This process involves constructing
+    a histogram of the input values, fitting the Gaussian model to the histogram, and
+    optimizing the parameters of the Gaussian function to best match the data.
 
     Parameters
     ----------
-    im : ImArray
-        Single YX image.
-    bgmax: float | None
-        Maximum value for bg?.
+    vals : NDArray[np.float_]
+        A one-dimensional NumPy array containing the data values for which the Gaussian
+        distribution parameters (mean and standard deviation) are to be estimated.
 
     Returns
     -------
-    tuple[float, float, list[float]]
-        Background and standard deviation values.
+    mean : float
+        Estimated mean (mu) of the Gaussian distribution.
+    sd : float
+        Estimated standard deviation (sigma) of the Gaussian distribution.
 
     Examples
     --------
-    r = bg(np.ones([10, 10]))
-    plt.step(r[2], r[3])
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> data = rng.normal(loc=50, scale=5, size=1000)  # Generate sample data
+    >>> mean, sd = fit_gaussian(data)
+    >>> print(f"Estimated Mean: {mean}, Estimated Standard Deviation: {sd}")
 
     Notes
     -----
-    Faster than `nimg` by 2 order of magnitude.
+    The Gaussian fitting process involves constructing a histogram from the input
+    array and then fitting a Gaussian model to this histogram. The optimization is performed
+    using the least squares method to minimize the difference between the histogram of the data
+    and the Gaussian function defined as:
 
+        f(x) = amplitude * exp(-0.5 * ((x - mean) / sigma)^2) + offset
+
+    where amplitude, mean, sigma, and offset are parameters of the Gaussian function, with
+    'mean' and 'sigma' being the primary parameters of interest in this function.
+
+    This function relies on the `leastsq` optimization function from `scipy.optimize` and
+    the method `norm.fit` from `scipy.stats.distributions` to estimate initial parameters
+    for the optimization process.
     """
 
-    def fitfunc(
-        p: list[float], x: float | NDArray[np.float_]
-    ) -> float | NDArray[np.float_]:
-        return p[0] * np.exp(-0.5 * ((x - p[1]) / p[2]) ** 2) + p[3]
+    def gaussian_fit_func(
+        params: list[float], x: float | NDArray[np.float_]
+    ) -> NDArray[np.float_]:
+        amplitude, mean, sigma, offset = params
+        return amplitude * np.exp(-0.5 * ((x - mean) / sigma) ** 2) + offset
 
-    def errfunc(
-        p: list[float],
-        x: float | NDArray[np.float_],
-        y: float | NDArray[np.float_],
-    ) -> float | NDArray[np.float_]:
-        return y - fitfunc(p, x)
+    def fit_error_func(
+        params: list[float], x: NDArray[np.float_], y: NDArray[np.float_]
+    ) -> NDArray[np.float_]:
+        return y - gaussian_fit_func(params, x)
 
-    mmin = int(im.min())
-    mmax = int(im.max())
-    if bgmax is None:
-        # after 240315_IC/G550E-R1070W_VX809_FRK1.tf8: bgmax = (mmin + mmax) / 2
-        bgmax = im.mean()
-    vals = im[im < bgmax]
-    ydata, xdata = np.histogram(vals, bins=mmax - mmin, range=(mmin, mmax))
-    xdata = xdata[:-1] + 0.5
-    loc, scale = stats.distributions.norm.fit(vals)
-    init = [sum(ydata), loc, scale, min(ydata)]
-    fin = len(xdata) - 1
-    leastsq = optimize.leastsq
-    out = leastsq(errfunc, init, args=(xdata[:fin], ydata[:fin]))
-    bg, sd = out[0][1], out[0][2]
-    # mgeo = ndimage.gaussian_filter(utils.prob(im, bg, sd), 0.25) > 0.005
-    mgeo = (
-        ndimage.percentile_filter(utils.prob(im, bg, sd), percentile=1, size=2) > 0.005
-    )
-    # pixel_values = im[im < bg + 1.67 * sd]
-    pixel_values = im[mgeo]
-    pixel_values = im[im < bg + 1 * sd]
-
-    fig = plt.figure(figsize=(8, 4))
-    ax1 = fig.add_subplot(1, 2, 1)
-    ax1.hist(pixel_values, bins=20)
-    ax2 = fig.add_subplot(1, 2, 2)
-    ax2.set_title("Probplot")
-    _, fit = stats.probplot(pixel_values, plot=ax2, rvalue=True)
-    return bg, sd, pixel_values  # fit, fig
+    min_val, max_val = int(vals.min()), int(vals.max())
+    ydata, edges = np.histogram(vals, bins=max_val - min_val, range=(min_val, max_val))
+    xdata = edges[:-1] + 0.5
+    initial_guess = [ydata.sum(), *stats.distributions.norm.fit(vals), ydata.min()]
+    optimized_params = optimize.leastsq(
+        fit_error_func, initial_guess, args=(xdata[:-1], ydata[:-1])
+    )[0]
+    mean, sd = optimized_params[1], optimized_params[2]
+    return mean, sd
 
 
-def bgnima2(
-    img: ImArray, step: float = 0.2, bgmax: float = 60.0
-) -> tuple[float, float, NDArray[np.signedinteger[Any]], NDArray[np.floating[Any]]]:
-    """Estimate image bg."""
-    bgmax = _bgmax(img) if bgmax is None else bgmax
-    values_under_bgmax = img[img < bgmax]
-    mmin, mmax = values_under_bgmax.min(), values_under_bgmax.max()
-    x = np.arange(mmin, mmax, step=step)
-    density = stats.gaussian_kde(values_under_bgmax)(x)
-    # MAYBE: plot x, density
-    pos_max = signal.find_peaks(density, width=2, rel_height=0.1)[0][0]
-    v = density[pos_max] / 2
-    pos_delta = signal.find_peaks(-np.absolute(density - v), width=2, rel_height=0.2)[
-        0
-    ][0]
-    delta = (pos_max - pos_delta) * step
-    return pos_max * step + mmin, delta, x, density
+# fit the bg for clop3 experiments
+def iteratively_refine_background(
+    frame: NDArray[np.float_], bgmax: None | np.float_ = None, probplot: bool = False
+) -> tuple[float, float, None | tuple[float, float, float], None | plt.Figure]:
+    """Iteratively refines the background estimate of an image frame using Gaussian fitting.
+
+    This function takes a single image frame, performs an initial estimate of the background
+    using the median value, and then iteratively refines this estimate by applying a Gaussian
+    fit on values beneath this background level. The process is repeated until convergence is
+    achieved, enhancing the accuracy of the background estimate.
+
+    Parameters
+    ----------
+    frame : NDArray[np.float_]
+        The image frame for which the background estimate needs to be refined.
+    bgmax : None | np.float_, optional
+        Maximum value used from `frame` for background estimation. Defaults to
+        None, using the mean of all pixels.
+    probplot : bool, optional
+        If True, generates a Q-Q plot to assess Gaussian fit. Default is False.
+
+    Returns
+    -------
+    bg_final : float
+        The refined background estimate after convergence.
+    sd_final : float
+        The standard deviation of the Gaussian fit corresponding to the final
+        background estimate.
+    probplot_fit : None | tuple[float, float, float]
+        Tuple containing probplot parameters: slope, intercept, and R-value of
+        the probability plot (Q-Q plot) if `probplot` is True; otherwise, None.
+    probplot_fig : None | plt.Figure
+        The figure object of the probability plot if `probplot` is True;
+        otherwise, None.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy import ndimage
+    >>> frame = np.random.normal(loc=100, scale=10, size=(256, 256))
+    >>> bg_final, sd_final = iteratively_refine_background(frame)
+    >>> print(f"Refined Background: {bg_final}, Standard Deviation: {sd_final}")
+    """
+    # Initial background estimate using the median of the frame
+    bg_max = 1.5 * np.mean(frame) if bgmax is None else bgmax
+    vals_below_bg_max = frame[frame < bg_max]
+    bg_initial, sd_initial = fit_gaussian(vals_below_bg_max)
+    # Iterative refinement
+    bg_final = bg_initial
+    for i in range(100):  # Maximum of 100 iterations for refinement
+        # Filtering using the current background estimate
+        prob_frame = prob(frame, bg_final, sd_initial)
+        mask = ndimage.percentile_filter(prob_frame, percentile=1, size=2) > 0.005
+        filtered_frame = frame[mask]
+        bg_updated, sd_updated = fit_gaussian(filtered_frame)
+        if np.isclose(bg_updated, bg_final, atol=1e-6):  # Tolerance for convergence
+            break
+        bg_final = bg_updated
+    # Return also a probability plot
+    if probplot:
+        fig = plt.figure(figsize=(12, 4))
+        ax1 = fig.add_subplot(131)
+        ax1.hist(vals_below_bg_max, bins=20)
+        ax2 = fig.add_subplot(132)
+        ax2.set_title("Probplot")
+        _, fit = stats.probplot(vals_below_bg_max, plot=ax2, rvalue=True)
+        ax3 = fig.add_subplot(133)
+        masked = frame * mask
+        img0 = ax3.imshow(masked)
+        plt.colorbar(img0, ax=ax3, orientation="horizontal")  # type: ignore
+        fig.tight_layout()
+    else:
+        fit, fig = None, None
+    return bg_final, sd_updated, fit, fig
