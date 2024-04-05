@@ -5,6 +5,7 @@ from typing import Any, cast, overload
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage
+from dask.diagnostics.progress import ProgressBar
 from numpy.typing import NDArray
 from scipy import ndimage, optimize, signal, special, stats  # type: ignore
 from skimage import filters, morphology
@@ -201,23 +202,24 @@ def bg(  # noqa: C901
     return iqr[1], pixel_values, figures
 
 
-def _bgmax(img: ImArray, step: int = 4) -> float:
+def _bgmax(img: ImArray, bins: int = 50, densityplot: bool = False) -> float:
     thr = skimage.filters.threshold_mean(img)  # type: ignore
     vals = img[img < thr / 1]
-    mmin: float = vals.min()
-    mmax = vals.max()
-    density = stats.gaussian_kde(vals)(
-        np.linspace(mmin, mmax, num=((mmax - mmin) // step))
-    )
-    # fail with G550E_CFTR_DMSO_1
-    peaks_indices = signal.find_peaks(-density, width=2, rel_height=0.1)[0]
-    if peaks_indices.size > 0:
-        first_peak_val = peaks_indices[0]
-        result = mmin + (first_peak_val * step)
-        return float(result)
+    mmin, mmax = vals.min(), vals.max()
+    x = np.linspace(mmin, mmax, num=bins)
+    density = stats.gaussian_kde(vals)(x)
+    if densityplot:
+        plt.plot(x[: bins // 2], density[: bins // 2])
+        plt.grid()
+    step = x[1] - x[0]
+    # # TODO: check does not fail with G550E_CFTR_DMSO_1
+    peaks = signal.find_peaks(density, width=2, rel_height=0.5)
+    if peaks[0].any():
+        result = peaks[0][0] + peaks[1]["widths"][0]
+        return float(result * step)
     else:
         # Handle the case where no peaks are found
-        return mmin
+        return float((mmax / 2 + np.median(img)) / 2)
 
 
 @overload
@@ -345,7 +347,7 @@ def iteratively_refine_background(
     >>> import numpy as np
     >>> from scipy import ndimage
     >>> frame = np.random.normal(loc=100, scale=10, size=(256, 256))
-    >>> bg_final, sd_final = iteratively_refine_background(frame)
+    >>> bg_final, sd_final, _, _ = iteratively_refine_background(frame)
     >>> print(f"Refined Background: {bg_final}, Standard Deviation: {sd_final}")
     """
     # Initial background estimate using the median of the frame
@@ -354,20 +356,32 @@ def iteratively_refine_background(
     bg_initial, sd_initial = fit_gaussian(vals_below_bg_max)
     # Iterative refinement
     bg_final = bg_initial
-    for i in range(100):  # Maximum of 100 iterations for refinement
-        # Filtering using the current background estimate
-        prob_frame = prob(frame, bg_final, sd_initial)
-        mask = ndimage.percentile_filter(prob_frame, percentile=1, size=2) > 0.005
-        filtered_frame = frame[mask]
-        bg_updated, sd_updated = fit_gaussian(filtered_frame)
-        if np.isclose(bg_updated, bg_final, atol=1e-6):  # Tolerance for convergence
-            break
-        bg_final = bg_updated
+    with ProgressBar():  # type: ignore
+        for i in range(100):  # Maximum of 100 iterations for refinement
+            # Filtering using the current background estimate
+            prob_frame = prob(frame, bg_final, sd_initial)
+            mask = ndimage.percentile_filter(prob_frame, percentile=1, size=2) > 0.005
+            filtered_frame = frame[mask]
+            bg_updated, sd_updated = fit_gaussian(filtered_frame)
+            if np.isclose(bg_updated, bg_final, atol=1e-6):  # Tolerance for convergence
+                break
+            bg_final = bg_updated
     # Return also a probability plot
     if probplot:
         fig = plt.figure(figsize=(12, 4))
         ax1 = fig.add_subplot(131)
-        ax1.hist(vals_below_bg_max, bins=20)
+        # Generate the Gaussian distribution
+        xmin, xmax = vals_below_bg_max.min(), vals_below_bg_max.max()
+        x = np.linspace(xmin, xmax, 100)
+        p = stats.norm.pdf(x, bg_updated, sd_updated)
+        # ax1.hist(vals_below_bg_max, bins=20)
+        ax1.hist(vals_below_bg_max, bins=20, density=True, alpha=0.6, color="g")  # type: ignore
+        # Plot the Gaussian fit
+        ax1.plot(x, p, "r", linewidth=2)  # type: ignore
+        # Set the title and labels
+        ax1.set_title("Histogram with Gaussian Fit")
+        ax1.set_xlabel("Value")
+        ax1.set_ylabel("Frequency")
         ax2 = fig.add_subplot(132)
         ax2.set_title("Probplot")
         _, fit = stats.probplot(vals_below_bg_max, plot=ax2, rvalue=True)

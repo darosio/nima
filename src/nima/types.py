@@ -1,3 +1,12 @@
+"""Type definitions used throughout the clophfit package.
+
+It defines the following types:
+
+- ImArray: for float or int images.
+
+- ImMask: for bool image masks.
+"""
+
 from typing import NewType, TypeVar
 
 import numpy as np
