@@ -4,9 +4,8 @@ from pathlib import Path
 
 import numpy as np
 import tifffile as tff  # type: ignore
-from numpy.testing import assert_array_equal
-
 from nima import nima
+from numpy.testing import assert_array_equal
 
 data_fp = "./tests/data/1b_c16_15.tif"
 

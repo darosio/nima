@@ -28,50 +28,50 @@ AXES_LENGTH_2D = 2
 
 @click.command()
 @click.version_option()
-# fmt: off
 @click.option("--silent", is_flag=True,
-              help="Suppress output; verbose=0.")
+              help="Suppress output; verbose=0.")  # fmt: skip
 @click.option("-o", "--output", default="nima", type=click.Path(writable=True, path_type=Path), # noqa: E501
-              help="Output directory path [default: ./nima/].")
+              help="Output directory path [default: ./nima/].")  # fmt: skip
 @click.option("--hotpixels", is_flag=True, default=False,
-              help="Apply median filter (rad=0.5) to remove hot pixels.")
+              help="Apply median filter (rad=0.5) to remove hot pixels.")  # fmt: skip
 @click.option("-f", "--flat", "flat_f", type=str, default="",
-              help="Path to flat image for shading correction.")
+              help="Path to flat image for shading correction.")  # fmt: skip
 @click.option("-d", "--dark", "dark_f", type=str, default="",
-              help="Path to dark image for shading correction.")
-@click.option("--bg-method", type=click.Choice(["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False), default="li_adaptive", # noqa: E501
-              help="Background estimation algorithm [default: li_adaptive].")
+              help="Path to dark image for shading correction.")  # fmt: skip
+@click.option("--bg-method",
+              type=click.Choice(["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False),  # noqa: E501
+              default="li_adaptive",
+              help="Background estimation algorithm [default: li_adaptive].")  # fmt: skip # noqa: E501
 @click.option("--bg-downscale", type=(int, int),
-              help="Binning Y X.")
+              help="Binning Y X.")  # fmt: skip
 @click.option("--bg-radius", type=float,
-              help="Radius for entropy or arcsinh methods [default: 10].")
+              help="Radius for entropy or arcsinh methods [default: 10].")  # fmt: skip
 @click.option("--bg-adaptive-radius", type=float,
-              help="Radius for adaptive methods [default: X/2].")
+              help="Radius for adaptive methods [default: X/2].")  # fmt: skip
 @click.option("--bg-percentile", type=float,
-              help="Percentile for entropy or arcsinh methods [default: 10].")
+              help="Percentile for entropy or arcsinh methods [default: 10].")  # fmt: skip # noqa: E501
 @click.option("--bg-percentile-filter", type=float,
-              help="Percentile filter for arcsinh method [default: 80].")
+              help="Percentile filter for arcsinh method [default: 80].")  # fmt: skip
 @click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen", # noqa: E501
-              help="Segmentation algorithm [default: yen].")
+              help="Segmentation algorithm [default: yen].")  # fmt: skip
 @click.option("--min-size", type=float,
-              help="Minimum size of labeled objects [default: 2000].")
+              help="Minimum size of labeled objects [default: 2000].")  # fmt: skip
 @click.option("--clear-border", is_flag=True,
-              help="Remove labels touching image borders.")
+              help="Remove labels touching image borders.")  # fmt: skip
 @click.option("--wiener", is_flag=True,
-              help="Apply Wiener filter before segmentation.")
+              help="Apply Wiener filter before segmentation.")  # fmt: skip
 @click.option("--watershed", is_flag=True,
-              help="Apply watershed binary mask (to label cells).")
+              help="Apply watershed binary mask (to label cells).")  # fmt: skip
 @click.option("--randomwalk", is_flag=True,
-              help="Apply randomwalk binary mask (to label cells).")
+              help="Apply randomwalk binary mask (to label cells).")  # fmt: skip
 @click.option("--image-ratios/--no-image-ratios", default=True,
-              help="Compute ratio images? [default: True].")
+              help="Compute ratio images? [default: True].")  # fmt: skip
 @click.option("--ratio-median-radii", type=str,
-              help="Median filter ratio images with radii [default: (7, 3)].")
+              help="Median filter ratio images with radii [default: (7, 3)].")  # fmt: skip # noqa: E501
 @click.option("--channels-cl", type=(str, str), default=("C", "R"),
-              help="Channels for Cl ratio [default: C/R].")
+              help="Channels for Cl ratio [default: C/R].")  # fmt: skip
 @click.option("--channels-ph", type=(str, str), default=("G", "C"),
-              help="Channels for pH ratio [default: G/C].")
-# fmt: on
+              help="Channels for pH ratio [default: G/C].")  # fmt: skip
 @click.argument("tiffstk", type=click.Path(path_type=Path))
 @click.argument("channels", type=str, nargs=-1)
 def main(  # noqa: C901"
@@ -231,10 +231,8 @@ def main(  # noqa: C901"
 @click.group()
 @click.pass_context
 @click.version_option()
-# fmt: off
 @click.option("-o", "--output", type=click.Path(writable=True, path_type=Path),
-              help="Output path [default: *.tif, *.png].")
-# fmt: on
+              help="Output path [default: *.tif, *.png].")  # fmt: skip
 def bima(ctx: click.Context, output: Path) -> None:
     """Compute bias, dark and flat."""
     ctx.ensure_object(dict)
@@ -298,12 +296,10 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
 @bima.command()
 @click.pass_context
-# fmt: off
 @click.option("--bias", type=click.Path(path_type=Path),
-              help="File path to the bias stack (Light Off - Long acquisition time).")
+              help="File path to the bias stack (Light Off - Long acquisition time).")  # fmt: skip # noqa: E501
 @click.option("--time", type=float,
-              help="Acquisition time.")
-# fmt: on
+              help="Acquisition time.")  # fmt: skip
 @click.argument("fpath", type=click.Path(path_type=Path))
 def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
     """Compute DARK.
@@ -337,10 +333,8 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
 
 @bima.command()
 @click.pass_context
-# fmt: off
 @click.option("--bias", type=click.Path(path_type=Path),
-              help="Path to the bias stack (Light Off - 0 acquisition time).")
-# fmt: on
+              help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
 @click.argument("globpath", type=str)
 def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
     """Compute the flat field from a collection of (.tif) files.
@@ -374,10 +368,8 @@ def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
 
 @bima.command()
 @click.pass_context
-# fmt: off
 @click.option("--bias", type=click.Path(path_type=Path),
-              help="Path to the bias stack (Light Off - 0 acquisition time).")
-# fmt: on
+              help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
 @click.argument("fpath", type=click.Path(path_type=Path))
 def flat(ctx: click.Context, fpath: Path, bias: Path) -> None:
     """Flat from (.tf8) file stack.

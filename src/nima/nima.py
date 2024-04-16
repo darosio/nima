@@ -866,9 +866,7 @@ def plt_img_profile(
         ax.yaxis.set_label_position("left")  # type: ignore
         ax.set_ylabel("Y")
         ax_py.plot(im.mean(axis=1), range(im.shape[0]), lw=4, alpha=0.5)  # type: ignore
-        ax_py.plot(
-            im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), alpha=0.7, c="k"
-        )  # type: ignore
+        ax_py.plot(im[:, xmin:xmax].mean(axis=1), range(im.shape[0]), alpha=0.7, c="k")  # type: ignore
         axh.hist(  # type: ignore
             im.ravel(),
             bins=max(int(im.max() - im.min()), 25),
@@ -928,9 +926,7 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> plt.Figure:
     )
     ax2.plot(img.mean(axis=1), range(img.shape[0]))
     axh = fig.add_subplot(gs[2, 2])
-    axh.hist(
-        img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True
-    )  # type: ignore
+    axh.hist(img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True)  # type: ignore
     if title:
         kw = {"weight": "bold", "ha": "left"}
         fig.suptitle(title, fontsize=12, **kw)  # type: ignore

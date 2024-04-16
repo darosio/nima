@@ -56,7 +56,9 @@ def _bgmax(img: ImArray, step: int = 4) -> float:
 
 
 # fit the bg for clop3 experiments
-def bg(im: ImArray, bgmax: float | None = None) -> tuple[
+def bg(
+    im: ImArray, bgmax: float | None = None
+) -> tuple[
     float,
     float,
 ]:
@@ -207,7 +209,7 @@ def mask_all_channels(im: ImArray, thresholds: tuple[float]) -> ImMask:
     >>> fp = "tests/data/1b_c16_15.tif"
     >>> ir = AICSImage(fp, reader=reader)
     >>> dd = ir.dask_data
-    >>> mask_all_channels(dd[0,:,0], [19,17,22]).compute().sum()
+    >>> mask_all_channels(dd[0, :, 0], [19, 17, 22]).compute().sum()
     262144
     """
     if len(thresholds) != im.shape[0]:
