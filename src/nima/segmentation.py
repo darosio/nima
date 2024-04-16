@@ -241,16 +241,18 @@ def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float_]
 def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
     """Estimate mean and standard deviation using a Gaussian fit.
 
-        The function fits a Gaussian distribution to a given array of values and estimates
-    the mean and standard deviation of the distribution. This process involves constructing
-    a histogram of the input values, fitting the Gaussian model to the histogram, and
-    optimizing the parameters of the Gaussian function to best match the data.
+    The function fits a Gaussian distribution to a given array of values and
+    estimates the mean and standard deviation of the distribution. This process
+    involves constructing a histogram of the input values, fitting the Gaussian
+    model to the histogram, and optimizing the parameters of the Gaussian
+    function to best match the data.
 
     Parameters
     ----------
     vals : NDArray[np.float_]
-        A one-dimensional NumPy array containing the data values for which the Gaussian
-        distribution parameters (mean and standard deviation) are to be estimated.
+        A one-dimensional NumPy array containing the data values for which the
+        Gaussian distribution parameters (mean and standard deviation) are to be
+        estimated.
 
     Returns
     -------
@@ -270,19 +272,21 @@ def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
 
     Notes
     -----
-    The Gaussian fitting process involves constructing a histogram from the input
-    array and then fitting a Gaussian model to this histogram. The optimization is performed
-    using the least squares method to minimize the difference between the histogram of the data
-    and the Gaussian function defined as:
+    The Gaussian fitting process involves constructing a histogram from the
+    input array and then fitting a Gaussian model to this histogram. The
+    optimization is performed using the least squares method to minimize the
+    difference between the histogram of the data and the Gaussian function
+    defined as:
 
         f(x) = amplitude * exp(-0.5 * ((x - mean) / sigma)^2) + offset
 
-    where amplitude, mean, sigma, and offset are parameters of the Gaussian function, with
-    'mean' and 'sigma' being the primary parameters of interest in this function.
+    where amplitude, mean, sigma, and offset are parameters of the Gaussian
+    function, with 'mean' and 'sigma' being the primary parameters of interest
+    in this function.
 
-    This function relies on the `leastsq` optimization function from `scipy.optimize` and
-    the method `norm.fit` from `scipy.stats.distributions` to estimate initial parameters
-    for the optimization process.
+    This function relies on the `leastsq` optimization function from
+    `scipy.optimize` and the method `norm.fit` from `scipy.stats.distributions`
+    to estimate initial parameters for the optimization process.
     """
 
     def gaussian_fit_func(
@@ -311,12 +315,13 @@ def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
 def iteratively_refine_background(
     frame: NDArray[np.float_], bgmax: None | np.float_ = None, probplot: bool = False
 ) -> tuple[float, float, None | tuple[float, float, float], None | plt.Figure]:
-    """Iteratively refines the background estimate of an image frame using Gaussian fitting.
+    """Refine iteratively background estimate of an image frame using Gaussian fitting.
 
-    This function takes a single image frame, performs an initial estimate of the background
-    using the median value, and then iteratively refines this estimate by applying a Gaussian
-    fit on values beneath this background level. The process is repeated until convergence is
-    achieved, enhancing the accuracy of the background estimate.
+    This function takes a single image frame, performs an initial estimate of
+    the background using the median value, and then iteratively refines this
+    estimate by applying a Gaussian fit on values beneath this background level.
+    The process is repeated until convergence is achieved, enhancing the
+    accuracy of the background estimate.
 
     Parameters
     ----------
@@ -357,7 +362,7 @@ def iteratively_refine_background(
     # Iterative refinement
     bg_final = bg_initial
     with ProgressBar():  # type: ignore
-        for i in range(100):  # Maximum of 100 iterations for refinement
+        for _i in range(100):  # Maximum of 100 iterations for refinement
             # Filtering using the current background estimate
             prob_frame = prob(frame, bg_final, sd_initial)
             mask = ndimage.percentile_filter(prob_frame, percentile=1, size=2) > 0.005
@@ -374,7 +379,6 @@ def iteratively_refine_background(
         xmin, xmax = vals_below_bg_max.min(), vals_below_bg_max.max()
         x = np.linspace(xmin, xmax, 100)
         p = stats.norm.pdf(x, bg_updated, sd_updated)
-        # ax1.hist(vals_below_bg_max, bins=20)
         ax1.hist(vals_below_bg_max, bins=20, density=True, alpha=0.6, color="g")  # type: ignore
         # Plot the Gaussian fit
         ax1.plot(x, p, "r", linewidth=2)  # type: ignore
