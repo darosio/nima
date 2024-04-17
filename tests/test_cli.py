@@ -62,8 +62,7 @@ class TestNima:
     @pytest.mark.parametrize("f", ["bg.csv", "label1.csv", "label2.csv", "label3.csv"])
     def test_csv(self, result_folder: ResultFolder, f: str) -> None:
         """It checks csv tables."""
-        fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
-        # # TODO: why Path is needed?
+        fp_expected = TESTS_PATH / "data" / "output" / result_folder[1][0] / f
         fp_result = result_folder[0] / result_folder[1][0] / f
         expected = pd.read_csv(fp_expected)
         result = pd.read_csv(fp_result)
@@ -82,11 +81,10 @@ class TestNima:
     )
     def test_tif(self, result_folder: ResultFolder, f: str) -> None:
         """It checks tif files: r_Cl, r_pH of segmented cells."""
-        fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
+        fp_expected = TESTS_PATH / "data" / "output" / result_folder[1][0] / f
         fp_result = result_folder[0] / result_folder[1][0] / f
         expected = skimage.io.imread(fp_expected)  # type: ignore
-        # FIXME: for utf8 encoding?
-        result = skimage.io.imread(str(fp_result))  # type: ignore
+        result = skimage.io.imread(fp_result)  # type: ignore
         assert np.sum(result - expected) == pytest.approx(0, 2.3e-06)
 
     @pytest.mark.parametrize(("f", "tol"), [("_dim.png", 8.001), ("_meas.png", 20)])
@@ -101,7 +99,7 @@ class TestNima:
     )
     def test_pdf(self, result_folder: ResultFolder, f: str) -> None:
         """It checks pdf files: saved bg estimation."""
-        fp_expected = Path("tests/data/output/") / result_folder[1][0] / f
+        fp_expected = TESTS_PATH / "data" / "output" / result_folder[1][0] / f
         fp_result = result_folder[0] / result_folder[1][0] / f
         _assert_image_comparison(fp_expected, fp_result, 13, "pdf")
 
@@ -116,11 +114,11 @@ def test_bias_mflat(tmp_path: Path) -> None:
     result = runner.invoke(bima, ["-o", f"{tmpflt.resolve()}", "mflat", filename])
     assert str(3) in result.output
     test = tff.imread(tmpraw)
-    expect = np.array(tff.imread(Path("tests") / "data" / "output" / "test_flat.tif"))
+    expect = np.array(tff.imread(TESTS_PATH / "data" / "output" / "test_flat.tif"))
     np.testing.assert_allclose(np.array(test), expect)
     test = np.array(tff.imread(tmpflt))
     expect = np.array(
-        tff.imread(Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif")
+        tff.imread(TESTS_PATH / "data" / "output" / "test_flat_gaussnorm.tif")
     )
     np.testing.assert_allclose(test, expect)
     assert tmpflt.with_suffix(".png").exists()
