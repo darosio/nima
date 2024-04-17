@@ -1,58 +1,16 @@
 """Utils for simple ratio imaging calculation."""
 
 from collections import defaultdict
-from typing import Any, NewType, TypeVar, cast, overload
+from typing import Any
 
 import numpy as np
 import pandas as pd
-import skimage
 import tifffile as tff  # type: ignore
-from dask.diagnostics.progress import ProgressBar
 from numpy.typing import NDArray
-from scipy import optimize, signal, special, stats  # type: ignore
+from scipy import optimize, signal, stats  # type: ignore
 
-ImArray = TypeVar("ImArray", NDArray[np.float_], NDArray[np.int_])
-ImMask = NewType("ImMask", NDArray[np.bool_])
-
-pbar = ProgressBar()  # type: ignore
-pbar.register()
-
-
-@overload
-def prob(v: float, bg: float, sd: float) -> float: ...
-@overload
-def prob(v: NDArray[np.float_], bg: float, sd: float) -> NDArray[np.float_]: ...
-
-
-def prob(
-    v: float | NDArray[np.float_], bg: float, sd: float
-) -> float | NDArray[np.float_]:
-    """Compute pixel probability of belonging to background."""
-    result = special.erfc((v - bg) / sd)
-    # Use typing.cast to explicitly inform mypy
-    if isinstance(v, float):
-        return cast(float, result)
-    else:
-        return cast(NDArray[np.float_], result)
-
-
-def _bgmax(img: ImArray, step: int = 4) -> float:
-    thr = skimage.filters.threshold_mean(img)  # type: ignore
-    vals = img[img < thr / 1]
-    mmin: float = vals.min()
-    mmax = vals.max()
-    density = stats.gaussian_kde(vals)(
-        np.linspace(mmin, mmax, num=((mmax - mmin) // step))
-    )
-    # fail with G550E_CFTR_DMSO_1
-    peaks_indices = signal.find_peaks(-density, width=2, rel_height=0.1)[0]
-    if peaks_indices.size > 0:
-        first_peak_val = peaks_indices[0]
-        result = mmin + (first_peak_val * step)
-        return float(result)
-    else:
-        # Handle the case where no peaks are found
-        return mmin
+from .segmentation import _bgmax, iteratively_refine_background, prob
+from .types import ImArray, ImMask
 
 
 # fit the bg for clop3 experiments
@@ -114,8 +72,10 @@ def bg(
 
 def ave(img: NDArray[np.float_], bgmax: float) -> float:
     """Mask out the bg and return objects average of a frame."""
-    # MAYBE: Use bg2
-    av, sd = bg(img, bgmax=bgmax)
+    if bgmax:
+        # MAYBE: Use bg2
+        pass
+    av, sd, _, _ = iteratively_refine_background(img)
     av = min(av, 20)
     sd = min(sd, 10)
     mask = prob(img, float(av), sd) < 0.001

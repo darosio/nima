@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import tifffile as tff  # type: ignore
-from nima import nima
+from nima import nima, segmentation
 from numpy.testing import assert_array_equal
 
 data_fp = "./tests/data/1b_c16_15.tif"
@@ -49,38 +49,44 @@ class TestBg:
 
     def test_default(self) -> None:
         """Test default (arcsinh) method."""
-        assert nima.bg(self.im[3, 2])[0] == 286
+        assert segmentation.bg(self.im[3, 2])[0] == 286
 
     def test_arcsinh(self) -> None:
         """Test arcsinh method and arcsinh_perc, radius and perc arguments."""
-        assert nima.bg(self.im[3, 2], kind="arcsinh")[0] == 286
+        assert segmentation.bg(self.im[3, 2], kind="arcsinh")[0] == 286
         assert (
-            nima.bg(self.im[3, 2], kind="arcsinh", arcsinh_perc=50, radius=15)[0] == 287
-        )
-        assert (
-            nima.bg(self.im[3, 2], kind="arcsinh", arcsinh_perc=50, radius=15, perc=20)[
+            segmentation.bg(self.im[3, 2], kind="arcsinh", arcsinh_perc=50, radius=15)[
                 0
             ]
+            == 287
+        )
+        assert (
+            segmentation.bg(
+                self.im[3, 2], kind="arcsinh", arcsinh_perc=50, radius=15, perc=20
+            )[0]
             == 288
         )
 
     def test_entropy(self) -> None:
         """Test entropy method and radius argument."""
-        assert nima.bg(self.im[3, 2], kind="entropy")[0] == 297
-        assert nima.bg(self.im[3, 2], kind="entropy", radius=20)[0] == 293
+        assert segmentation.bg(self.im[3, 2], kind="entropy")[0] == 297
+        assert segmentation.bg(self.im[3, 2], kind="entropy", radius=20)[0] == 293
 
     def test_adaptive(self) -> None:
         """Test adaptive method and adaptive_radius argument."""
-        assert nima.bg(self.im[3, 2], kind="adaptive")[0] == 287
-        assert nima.bg(self.im[3, 2], kind="adaptive", adaptive_radius=101)[0] == 280
+        assert segmentation.bg(self.im[3, 2], kind="adaptive")[0] == 287
+        assert (
+            segmentation.bg(self.im[3, 2], kind="adaptive", adaptive_radius=101)[0]
+            == 280
+        )
 
     def test_li_adaptive(self) -> None:
         """Test li_arcsinh method."""
-        assert nima.bg(self.im[3, 2], kind="li_adaptive")[0] == 273
+        assert segmentation.bg(self.im[3, 2], kind="li_adaptive")[0] == 273
 
     def test_li_li(self) -> None:
         """Test li_li method."""
-        assert nima.bg(self.im[3, 2], kind="li_li")[0] == 288
+        assert segmentation.bg(self.im[3, 2], kind="li_li")[0] == 288
 
 
 def test_plot_img_profile() -> None:
