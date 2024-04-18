@@ -64,7 +64,7 @@ docs = [
   "Pygments <= 2.17.2",
   "Sphinx <= 7.3.4",
   "sphinx-click <= 5.1.0",
-  "sphinx_autodoc_typehints <= 2.0.1"
+  "sphinx_autodoc_typehints <= 2.1.0"
 ]
 tests = [
   "pytest <= 8.1.1",
