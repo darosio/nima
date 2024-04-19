@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import numpy as np
-import tifffile as tff  # type: ignore
+import tifffile as tff  # type: ignore[import-untyped]
 from nima import nima, segmentation
 from numpy.testing import assert_array_equal
 
@@ -98,9 +98,9 @@ def test_plot_img_profile() -> None:
     sample_flat_image = Path("tests") / "data" / "output" / "test_flat_gaussnorm.tif"
     img = np.array(tff.imread(sample_flat_image))
     f = nima.plt_img_profile(img)
-    _, y_plot = f.get_axes()[1].lines[0].get_xydata().T  # type: ignore
+    _, y_plot = f.get_axes()[1].lines[0].get_xydata().T  # type: ignore[union-attr]
     ydata = np.array([1.00000001, 0.99999999, 1.00000002, 1.0, 0.99999999])
     np.testing.assert_allclose(y_plot, ydata)
-    _, y_plot = f.get_axes()[1].lines[1].get_xydata().T  # type: ignore
+    _, y_plot = f.get_axes()[1].lines[1].get_xydata().T  # type: ignore[union-attr]
     ydata = np.array([1.0, 0.99999997, 1.0, 0.99999998, 0.99999997])
     np.testing.assert_allclose(y_plot, ydata)

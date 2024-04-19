@@ -6,8 +6,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import skimage
 from dask.diagnostics.progress import ProgressBar
+from matplotlib.figure import Figure
 from numpy.typing import NDArray
-from scipy import ndimage, optimize, signal, special, stats  # type: ignore
+from scipy import (  # type: ignore[import-untyped]
+    ndimage,
+    optimize,
+    signal,
+    special,
+    stats,
+)
 from skimage import filters, morphology
 
 from .types import ImArray
@@ -34,7 +41,7 @@ def myhist(
         plt.figure()
     plt.plot(bin_centers, hist, lw=2)
     if log:
-        plt.yscale("log")  # type: ignore
+        plt.yscale("log")
 
 
 def bg(  # noqa: C901
@@ -44,7 +51,7 @@ def bg(  # noqa: C901
     radius: int | None = 10,
     adaptive_radius: int | None = None,
     arcsinh_perc: int | None = 80,
-) -> tuple[float, NDArray[np.int_] | NDArray[np.float_], list[plt.Figure]]:
+) -> tuple[float, NDArray[np.int_] | NDArray[np.float_], list[Figure]]:
     """Bg segmentation.
 
     Return median, whole vector, figures (in a [list])
@@ -74,7 +81,7 @@ def bg(  # noqa: C901
         Median of the bg masked pixels.
     pixel_values : NDArray[np.int_] | NDArray[np.float_]
         Values of all bg masked pixels.
-    figs : list[plt.Figure]
+    figs : list[Figure]
         List of fig(s). Only entropy and arcsinh methods have 2 elements.
 
     Raises
@@ -102,11 +109,11 @@ def bg(  # noqa: C901
         thr = (1 - perc) * lim.min() + perc * lim.max()
         m = lim < thr
     elif kind == "entropy":
-        im8 = skimage.util.img_as_ubyte(im)  # type: ignore
+        im8 = skimage.util.img_as_ubyte(im)  # type: ignore[no-untyped-call]
         if im.dtype == float:
-            lim = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore
+            lim = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore[no-untyped-call]
         else:
-            lim = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore
+            lim = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore[no-untyped-call]
         lim_ = True
         title = radius, perc
         thr = (1 - perc) * lim.min() + perc * lim.max()
@@ -114,43 +121,43 @@ def bg(  # noqa: C901
     elif kind == "adaptive":
         lim_ = False
         title = adaptive_radius
-        f = im > filters.threshold_local(im, adaptive_radius)  # type: ignore
+        f = im > filters.threshold_local(im, adaptive_radius)  # type: ignore[no-untyped-call]
         m = ~f
     elif kind == "li_adaptive":
         lim_ = False
         title = adaptive_radius
-        li = filters.threshold_li(im.copy())  # type: ignore
+        li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
         m = im < li
         # # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
         imm = im * m
-        f = imm > filters.threshold_local(imm, adaptive_radius)  # type: ignore
+        f = imm > filters.threshold_local(imm, adaptive_radius)  # type: ignore[no-untyped-call]
         m = ~f * m
     elif kind == "li_li":
         lim_ = False
         title = None
-        li = filters.threshold_li(im.copy())  # type: ignore
+        li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
         m = im < li
         # # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
         imm = im * m
         # To avoid zeros generated after first thesholding, clipping to the
         # min value of original image is needed before second thesholding.
-        thr2 = filters.threshold_li(imm.clip(np.min(im)))  # type: ignore
+        thr2 = filters.threshold_li(imm.clip(np.min(im)))  # type: ignore[no-untyped-call]
         m = im < thr2
         # # FIXME: in case mm = skimage.morphology.binary_closing(mm)
     elif kind == "inverse_local_yen":
         title = None
-        f = filters.threshold_local(1 / im)  # type: ignore
-        m = f > filters.threshold_yen(f)  # type: ignore
+        f = filters.threshold_local(1 / im)  # type: ignore[no-untyped-call]
+        m = f > filters.threshold_yen(f)  # type: ignore[no-untyped-call]
     pixel_values = im[m]
     iqr = np.percentile(pixel_values, [25, 50, 75])
 
-    def plot() -> plt.Figure:
+    def plot() -> Figure:
         f = plt.figure(figsize=(9, 5))
         ax1 = f.add_subplot(121)
         masked = im * m
-        cmap = plt.cm.inferno  # type: ignore
+        cmap = plt.cm.inferno  # type: ignore[attr-defined]
         img0 = ax1.imshow(masked, cmap=cmap)
-        plt.colorbar(img0, ax=ax1, orientation="horizontal")  # type: ignore
+        plt.colorbar(img0, ax=ax1, orientation="horizontal")
         plt.title(kind + " " + str(title) + "\n" + str(iqr))
         f.add_subplot(122)
         myhist(im[m], log=True)
@@ -161,11 +168,11 @@ def bg(  # noqa: C901
     figures = [f1]
     if lim_:
 
-        def plot_lim() -> plt.Figure:
+        def plot_lim() -> Figure:
             f = plt.figure(figsize=(9, 4))
-            ax1, ax2, host = f.subplots(nrows=1, ncols=3)  # type: ignore
+            ax1, ax2, host = f.subplots(nrows=1, ncols=3)  # type: ignore[misc]
             img0 = ax1.imshow(lim)
-            plt.colorbar(img0, ax=ax2, orientation="horizontal")  # type: ignore
+            plt.colorbar(img0, ax=ax2, orientation="horizontal")
             # FIXME: this is horribly duplicating an axes
             f.add_subplot(132)
             myhist(lim)
@@ -203,7 +210,7 @@ def bg(  # noqa: C901
 
 
 def _bgmax(img: ImArray, bins: int = 50, densityplot: bool = False) -> float:
-    thr = skimage.filters.threshold_mean(img)  # type: ignore
+    thr = skimage.filters.threshold_mean(img)  # type: ignore[no-untyped-call]
     vals = img[img < thr / 1]
     mmin, mmax = vals.min(), vals.max()
     x = np.linspace(mmin, mmax, num=bins)
@@ -314,7 +321,7 @@ def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
 # fit the bg for clop3 experiments
 def iteratively_refine_background(
     frame: NDArray[np.float_], bgmax: None | np.float_ = None, probplot: bool = False
-) -> tuple[float, float, None | tuple[float, float, float], None | plt.Figure]:
+) -> tuple[float, float, None | tuple[float, float, float], None | Figure]:
     """Refine iteratively background estimate of an image frame using Gaussian fitting.
 
     This function takes a single image frame, performs an initial estimate of
@@ -343,7 +350,7 @@ def iteratively_refine_background(
     probplot_fit : None | tuple[float, float, float]
         Tuple containing probplot parameters: slope, intercept, and R-value of
         the probability plot (Q-Q plot) if `probplot` is True; otherwise, None.
-    probplot_fig : None | plt.Figure
+    probplot_fig : None | Figure
         The figure object of the probability plot if `probplot` is True;
         otherwise, None.
 
@@ -361,7 +368,7 @@ def iteratively_refine_background(
     bg_initial, sd_initial = fit_gaussian(vals_below_bg_max)
     # Iterative refinement
     bg_final = bg_initial
-    with ProgressBar():  # type: ignore
+    with ProgressBar():  # type: ignore[no-untyped-call]
         for _i in range(100):  # Maximum of 100 iterations for refinement
             # Filtering using the current background estimate
             prob_frame = prob(frame, bg_final, sd_initial)
@@ -379,9 +386,9 @@ def iteratively_refine_background(
         xmin, xmax = vals_below_bg_max.min(), vals_below_bg_max.max()
         x = np.linspace(xmin, xmax, 100)
         p = stats.norm.pdf(x, bg_updated, sd_updated)
-        ax1.hist(vals_below_bg_max, bins=20, density=True, alpha=0.6, color="g")  # type: ignore
+        ax1.hist(vals_below_bg_max, bins=20, density=True, alpha=0.6, color="g")
         # Plot the Gaussian fit
-        ax1.plot(x, p, "r", linewidth=2)  # type: ignore
+        ax1.plot(x, p, "r", linewidth=2)
         # Set the title and labels
         ax1.set_title("Histogram with Gaussian Fit")
         ax1.set_xlabel("Value")
@@ -392,7 +399,7 @@ def iteratively_refine_background(
         ax3 = fig.add_subplot(133)
         masked = frame * mask
         img0 = ax3.imshow(masked)
-        plt.colorbar(img0, ax=ax3, orientation="horizontal")  # type: ignore
+        plt.colorbar(img0, ax=ax3, orientation="horizontal")
         fig.tight_layout()
     else:
         fit, fig = None, None

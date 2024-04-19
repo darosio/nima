@@ -11,12 +11,12 @@ import dask.array as da
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
-import sigfig  # type: ignore
-import tifffile  # type: ignore
+import sigfig  # type: ignore[import-untyped]
+import tifffile  # type: ignore[import-untyped]
 from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client, progress
 from matplotlib.backends import backend_pdf
-from scipy import ndimage  # type: ignore
+from scipy import ndimage  # type: ignore[import-untyped]
 
 from nima import nima
 from nima.nima import ImArray
@@ -180,13 +180,13 @@ def main(  # noqa: C901"
     if not bname.exists():
         bname.mkdir()
     for ch, llf in ff.items():
-        pp = backend_pdf.PdfPages(  # type: ignore
+        pp = backend_pdf.PdfPages(  # type: ignore[no-untyped-call]
             bname / Path("bg-" + ch + "-" + bg_method).with_suffix(".pdf")
         )
         for lf in llf:
             for f_i in lf:  # e.g. entropy output 2 figs
-                pp.savefig(f_i)  # type: ignore
-        pp.close()  # type: ignore
+                pp.savefig(f_i)  # type: ignore[no-untyped-call]
+        pp.close()  # type: ignore[no-untyped-call]
     column_order = ["C", "G", "R"]  # FIXME must be equal anyway in testing
     bgs[column_order].to_csv(bname / "bg.csv")
     # TODO: plt.close('all') or control mpl warning
@@ -197,7 +197,7 @@ def main(  # noqa: C901"
     # show all channels and labels only.
     d = {ch: d_im_bg[ch] for ch in channels}
     d["labels"] = d_im_bg["labels"]
-    f = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore
+    f = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore[attr-defined]
     f.savefig(bname.with_name(bname.name + "_dim.png"))
     # meas csv
     for k, df in meas.items():
@@ -275,7 +275,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
         hpix.to_csv(output.with_suffix(".csv"), index=False)
         # FIXME hpix.y is a pd.Series[int]; it could be cast into NDArray[int]
         # TODO: if any of x y is out of the border ignore them
-        nima.correct_hotpixel(err, hpix.y, hpix.x)  # type: ignore
+        nima.correct_hotpixel(err, hpix.y, hpix.x)  # type: ignore[arg-type]
     p25, p50, p75 = np.percentile(err.ravel(), [25, 50, 75])
     err_str = sigfig.round(p50, p75 - p25)
     click.secho("Estimated read noise: " + err_str)
@@ -352,10 +352,10 @@ def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
     axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
     click.secho(axes_n_shape, fg="green")
     store = image_sequence.aszarr()
-    Client()  # type: ignore
-    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
+    Client()  # type: ignore[no-untyped-call, unused-awaitable]
+    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore[attr-defined, no-untyped-call]
     fp = f.persist()
-    progress(fp)  # type: ignore
+    progress(fp)  # type: ignore[no-untyped-call]
     tprojection = fp.compute()
     if ctx.obj["output"]:
         output = ctx.obj["output"]
@@ -384,8 +384,8 @@ def flat(ctx: click.Context, fpath: Path, bias: Path) -> None:
 
     """
     store = tifffile.imread(fpath, aszarr=True)
-    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore
-    with ProgressBar():  # type: ignore
+    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore[attr-defined, no-untyped-call]
+    with ProgressBar():  # type: ignore[no-untyped-call]
         tprojection = f.compute()
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
     bias_frame = np.array(tifffile.imread(bias))

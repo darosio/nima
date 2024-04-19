@@ -5,9 +5,9 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-import tifffile as tff  # type: ignore
+import tifffile as tff  # type: ignore[import-untyped]
 from numpy.typing import NDArray
-from scipy import optimize, signal, stats  # type: ignore
+from scipy import optimize, signal, stats  # type: ignore[import-untyped]
 
 from .segmentation import _bgmax, iteratively_refine_background, prob
 from .types import ImArray, ImMask
@@ -80,7 +80,7 @@ def ave(img: NDArray[np.float_], bgmax: float) -> float:
     sd = min(sd, 10)
     mask = prob(img, float(av), sd) < 0.001
     # MAYBE: plot the mask
-    return np.ma.masked_array(img, ~mask).mean() - av  # type: ignore
+    return np.ma.masked_array(img, ~mask).mean() - av  # type: ignore[no-untyped-call, no-any-return]
 
 
 def channel_mean(img: ImArray) -> pd.DataFrame:

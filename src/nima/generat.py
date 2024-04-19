@@ -45,7 +45,7 @@ def gen_object(
         + ellipsis * (x_idx - x_obj) * (y_idx - y_obj)
         < radius**2
     ).astype(np.bool_)
-    return mask  # type: ignore
+    return mask  # type: ignore[no-any-return]
 
 
 def gen_objs(
@@ -64,7 +64,7 @@ def gen_objs(
         for _ in range(num_objs)
     ]
     img = np.sum(objs, axis=0)
-    return img  # type: ignore
+    return img  # type: ignore[no-any-return]
 
 
 def gen_frame(
@@ -89,4 +89,4 @@ def gen_frame(
         flat = gen_flat(nrows, ncols)
     noise = np.random.normal(0, noise_sd, size=(nrows, ncols))
     img = bias + flat * (sky + objs) + dark + noise
-    return img.astype("uint16")  # type: ignore
+    return img.astype("uint16")
