@@ -112,7 +112,7 @@ def main(  # noqa: C901"
     1. Representation of image channels and segmentation saved as `BN_dim.png`.
     2. Plot of ratios and channel intensities for each label and background vs.
        time saved as `BN_meas.png`.
-    3. Table of background values saved as `*/bg.csv`.
+    3. Table of background values saved as `f_name/bg.csv`.
     4. Representation of background image and histogram at all time points for
        each channel saved as `BN/bg-[C1,C2,⋯]-method.pdf`.
     5. For each label: Table of ratios and measured properties saved as
