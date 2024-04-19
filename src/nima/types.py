@@ -8,7 +8,6 @@ It defines the following types:
 """
 
 # TODO: Remove typeguard
-# TODO: update to python 3.12
 from typing import NewType, TypeVar
 
 import numpy as np

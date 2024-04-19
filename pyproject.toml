@@ -12,6 +12,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
   "Programming Language :: Unix Shell",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
@@ -35,7 +36,7 @@ keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
 license = "BSD-3-Clause"
 name = "nima"
 readme = "README.md"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10"
 version = "0.9.1"
 
 [project.optional-dependencies]
@@ -206,7 +207,7 @@ features = ["tests"]
 template = "tests"
 
 [[tool.hatch.envs.tests.matrix]]
-python = ["3.11", "3.10"]  # reverse order to ensure the presence in older python of module included in newer versions
+python = ["3.12", "3.11", "3.10"]  # reverse order to ensure the presence in older python of module included in newer versions
 
 [tool.hatch.envs.tests.scripts]
 all = ["test", "type", "xdoc", "cov"]
