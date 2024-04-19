@@ -7,7 +7,6 @@ It defines the following types:
 - ImMask: for bool image masks.
 """
 
-# TODO: Remove typeguard
 from typing import NewType, TypeVar
 
 import numpy as np
