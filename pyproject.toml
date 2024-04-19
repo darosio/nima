@@ -40,7 +40,7 @@ version = "0.9.1"
 
 [project.optional-dependencies]
 dev = [
-  "commitizen <= 3.22.0",
+  "commitizen <= 3.24.0",
   "pre-commit <= 3.7.0",
   "ipykernel <=6.29.4",
   "ruff <= 0.3.7",
