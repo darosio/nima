@@ -229,7 +229,9 @@ multi_line_output = 3
 profile = "black"
 
 [tool.mypy]
-plugins = "numpy.typing.mypy_plugin"
+# enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+enable_error_code = ["redundant-expr", "truthy-bool"]
+plugins = ["numpy.typing.mypy_plugin"]
 pretty = true
 show_column_numbers = true
 show_error_codes = true
@@ -239,10 +241,10 @@ warn_unreachable = true
 warn_unused_configs = true
 
 [tool.pylsp-mypy]
-dmypy = false
+dmypy = true
 enabled = true
 live_mode = true
-strict = true
+strict = false
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
