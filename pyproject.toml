@@ -52,6 +52,12 @@ dev = [
 ]
 docs = [
   "autodocsumm <= 0.2.12",
+  "nbsphinx <= 0.9.3",
+  "pydata-sphinx-theme <= 0.15.2",
+  "Pygments <= 2.17.2",
+  "Sphinx <= 7.3.6",
+  "sphinx-click <= 5.1.0",
+  "sphinx_autodoc_typehints <= 2.1.0",
   "statsmodels",
   "seaborn",
   "holoviews",
@@ -60,12 +66,8 @@ docs = [
   "impy-array",
   "bokeh",
   "selenium",
-  "nbsphinx <= 0.9.3",
-  "pydata-sphinx-theme <= 0.15.2",
-  "Pygments <= 2.17.2",
-  "Sphinx <= 7.3.6",
-  "sphinx-click <= 5.1.0",
-  "sphinx_autodoc_typehints <= 2.1.0"
+  "aicsimageio",
+  "napari"
 ]
 tests = [
   "pytest <= 8.1.1",

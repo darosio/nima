@@ -121,7 +121,7 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
 
 
 def bg2(
-    img: ImArray, step: float = 0.3, bgmax: float = 60.0
+    img: ImArray, step: float = 0.2, bgmax: None | float = None
 ) -> tuple[float, float, NDArray[np.signedinteger[Any]], NDArray[np.floating[Any]]]:
     """Estimate image bg."""
     if bgmax is None:

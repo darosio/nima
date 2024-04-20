@@ -373,6 +373,7 @@ def iteratively_refine_background(
             # Filtering using the current background estimate
             prob_frame = prob(frame, bg_final, sd_initial)
             mask = ndimage.percentile_filter(prob_frame, percentile=1, size=2) > 0.005
+            # FIXME: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > 0.1
             filtered_frame = frame[mask]
             bg_updated, sd_updated = fit_gaussian(filtered_frame)
             if np.isclose(bg_updated, bg_final, atol=1e-6):  # Tolerance for convergence
@@ -404,3 +405,39 @@ def iteratively_refine_background(
     else:
         fit, fig = None, None
     return bg_final, sd_updated, fit, fig
+
+
+def geometric_mean_filter(image: ImArray, kernel_size: float) -> ImArray:
+    """Apply a geometric mean filter to an image.
+
+    It uses a neighborhood defined by kernel_size.
+
+    Parameters
+    ----------
+    image : ImArray
+        The input image to be filtered.
+    kernel_size : float
+        The diameter of the neighborhood used for the filter, which defines the
+        size of the disk-shaped kernel.
+
+    Returns
+    -------
+    geometric_mean_image : ImArray
+        The image after applying the geometric mean filter, having the same
+        shape as the input image.
+    """
+    # Ensure the image is in float format to avoid issues with log(0)
+    image = image.astype(np.float64)
+    # Avoid log(0) by replacing zero with a very small number
+    image[image == 0] = np.finfo(np.float64).eps
+    # Logarithm of the image
+    log_image = np.log(image)
+    # Create a disk-shaped kernel
+    kernel = skimage.morphology.disk(kernel_size).astype(float)  # type: ignore[no-untyped-call]
+    n = np.sum(kernel)  # Total weight, or number of ones in the kernel
+    print(n)
+    # Apply convolution with the kernel on the logged image
+    log_sum_image = ndimage.convolve(log_image, kernel, mode="constant", cval=0) / n
+    # Exponential to invert the logarithm
+    geometric_mean_image = np.exp(log_sum_image)
+    return geometric_mean_image  # type: ignore[no-any-return]
