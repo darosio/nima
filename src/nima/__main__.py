@@ -107,7 +107,7 @@ def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
 def main(  # noqa: C901"
     silent: bool | None,
     output: Path,
-    hotpixels: bool,
+    hotpixels: bool,  # noqa: FBT001
     flat_f: str,
     dark_f: str,
     bg_method: str,
@@ -122,7 +122,7 @@ def main(  # noqa: C901"
     wiener: bool | None,
     watershed: bool | None,
     randomwalk: bool | None,
-    image_ratios: bool,
+    image_ratios: bool,  # noqa: FBT001
     ratio_median_radii: str | None,
     channels_cl: tuple[str, str],
     channels_ph: tuple[str, str],

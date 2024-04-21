@@ -161,6 +161,7 @@ def d_shading(
     d_im: dict[str, ImArray],
     dark: dict[str, ImArray] | NDArray[np.float_],
     flat: dict[str, ImArray] | NDArray[np.float_],
+    *,
     clip: bool = True,
 ) -> dict[str, ImArray]:
     """Shading correction on d_im.
@@ -213,6 +214,7 @@ def d_bg(
     d_im: dict[str, Im],
     downscale: tuple[int, int] | None = None,
     kind: str = "li_adaptive",
+    *,
     clip: bool = True,
 ) -> tuple[
     dict[str, Im],
@@ -275,6 +277,7 @@ def d_mask_label(
     min_size: int | None = 640,
     channels: Sequence[str] = ("C", "G", "R"),
     threshold_method: str | None = "yen",
+    *,
     wiener: bool = False,
     watershed: bool = False,
     clear_border: bool = False,
@@ -429,8 +432,9 @@ def d_meas_props(
     channels: Sequence[str] = ("C", "G", "R"),
     channels_cl: tuple[str, str] = ("C", "R"),
     channels_ph: tuple[str, str] = ("G", "C"),
-    ratios_from_image: bool = True,
     radii: tuple[int, int] | None = None,
+    *,
+    ratios_from_image: bool = True,
 ) -> tuple[dict[np.int32, pd.DataFrame], dict[str, list[list[Any]]]]:
     """Calculate pH and cl ratios and labelprops.
 
@@ -444,10 +448,10 @@ def d_meas_props(
         Numerator and denominator channels for cl ratio (default=('C', 'R')).
     channels_ph : tuple[str, str], optional
         Numerator and denominator channels for pH ratio (default=('G', 'C')).
-    ratios_from_image : bool, optional
-        Boolean for executing d_ratio i.e. compute ratio images (default=True).
     radii : tuple[int, int] | None, optional
         Radii of the optional median average performed on ratio images (default=None).
+    ratios_from_image : bool, optional
+        Boolean for executing d_ratio i.e. compute ratio images (default=True).
 
     Returns
     -------

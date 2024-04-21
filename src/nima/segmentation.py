@@ -27,6 +27,7 @@ from .types import ImArray
 def myhist(
     im: ImArray,
     bins: int = 60,
+    *,
     log: bool = False,
     nf: bool = False,
 ) -> None:
@@ -210,7 +211,7 @@ def bg(  # noqa: C901
     return iqr[1], pixel_values, figures
 
 
-def _bgmax(img: ImArray, bins: int = 50, densityplot: bool = False) -> float:
+def _bgmax(img: ImArray, bins: int = 50, *, densityplot: bool = False) -> float:
     thr = skimage.filters.threshold_mean(img)  # type: ignore[no-untyped-call]
     vals = img[img < thr / 1]
     mmin, mmax = vals.min(), vals.max()
@@ -321,7 +322,7 @@ def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
 
 # fit the bg for clop3 experiments
 def iteratively_refine_background(
-    frame: NDArray[np.float_], bgmax: None | np.float_ = None, probplot: bool = False
+    frame: NDArray[np.float_], bgmax: None | np.float_ = None, *, probplot: bool = False
 ) -> tuple[float, float, None | tuple[float, float, float], None | Figure]:
     """Refine iteratively background estimate of an image frame using Gaussian fitting.
 
