@@ -110,7 +110,8 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
                 )
                 raise TypeError(msg)
         else:
-            raise TypeError(f"Expected an ImArray, but received {type(img)}")
+            msg = f"Expected an ImArray, but received {type(img)}"
+            raise TypeError(msg)
     combined_df = pd.concat(r, ignore_index=True)
     if "YFP" in combined_df:
         combined_df["norm"] = combined_df["YFP"] / combined_df["YFP"][:5].mean()

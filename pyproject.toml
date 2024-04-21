@@ -270,17 +270,17 @@ select = [
   "D",  # pydocstyle
   "DTZ",  # dates
   "E",  # pycodestyle
-  # "TRY",  # exceptions
-  # "EM",  # exceptions
+  "TRY",  # exceptions
+  "EM",  # exceptions
   "ERA",  # eradicate
   "F",  # pyflakes
-  # # "FBT",    # boolean-trap
+  # "FBT",    # boolean-trap
   "I",  # isort
   "ICN",  # import conventions (opinionated)
   "ISC",  # implicit-str-concat
   "N",  # pep8-naming
   "PD",  # pandas-vet
-  # # "PGH",  # pygrep WAIT
+  "PGH",  # pygrep WAIT
   # "PL",  # pylint see PLR2004...
   "PT",  # pytest-style
   "PTH",  # use-pathlib
@@ -300,7 +300,7 @@ isort.split-on-trailing-comma = true
 mccabe.max-complexity = 12
 
 [tool.ruff.lint.per-file-ignores]
-"*.ipynb" = ["ANN001", "ANN002", "ANN003", "ANN201", "D103", "ERA", "ICN001", "PD901", "PD013", "E501", "F821"]
+"*.ipynb" = ["ANN001", "ANN002", "ANN003", "ANN201", "D103", "ERA", "ICN001", "PD901", "PD013", "E501", "F821", "PLR2004"]
 "tests/*" = ["PLR2004", "S101"]
 
 [tool.ruff.lint.pydocstyle]

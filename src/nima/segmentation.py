@@ -96,7 +96,8 @@ def bg(  # noqa: C901
             adaptive_radius += 1
     min_perc, max_perc = 0.0, 100.0
     if (perc < min_perc) or (perc > max_perc):
-        raise Exception("perc must be in [0, 100] range")
+        msg = "perc must be in [0, 100] range"
+        raise ValueError(msg)
     else:
         perc /= 100
     lim_ = False

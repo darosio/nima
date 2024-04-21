@@ -79,7 +79,8 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
     idx = axes.rfind("T")
     n_times = im.shape[idx] if idx >= 0 else 1
     if im.shape[axes.rfind("C")] % n_channels:
-        raise Exception("n_channel mismatch total length of tif sequence")
+        msg = "n_channel mismatch total length of tif sequence"
+        raise ValueError(msg)
     else:
         d_im = {}
         for i, ch in enumerate(channels):
@@ -144,14 +145,15 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
     """
     d_out = {}
     for k, im in d_im.items():
+        if im.ndim not in [AXES_LENGTH_2D, AXES_LENGTH_3D]:
+            msg = "Only for single image or stack (3D)."
+            raise ValueError(msg)
         disk = skimage.morphology.disk(1)  # type: ignore[no-untyped-call]
         if im.ndim == AXES_LENGTH_3D:
             sel = np.conj((np.zeros((3, 3)), disk, np.zeros((3, 3))))
             d_out[k] = ndimage.median_filter(im, footprint=sel)
         elif im.ndim == AXES_LENGTH_2D:
             d_out[k] = ndimage.median_filter(im, footprint=disk)
-        else:
-            raise Exception("Only for single image or stack (3D).")
     return d_out
 
 

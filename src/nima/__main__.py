@@ -26,6 +26,36 @@ from nima.nima import ImArray
 AXES_LENGTH_2D = 2
 
 
+def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
+    """Ensure that the given variable is a numpy.ndarray.
+
+    Parameters
+    ----------
+    var : Any
+        The variable to check.
+    var_name : str
+        The name of the variable (for error message).
+
+    Raises
+    ------
+    TypeError
+        If the variable is not a numpy.ndarray.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> ensure_ndarray(np.array([1, 2, 3]), "my_array")
+    >>> # No output, but no error is raised if 'my_array' is a numpy.ndarray.
+    >>> ensure_ndarray("not an array", "my_string")
+    Traceback (most recent call last):
+    ...
+    TypeError: Expected 'my_string' to be a numpy.ndarray
+    """
+    if not isinstance(var, np.ndarray):
+        msg = f"Expected '{var_name}' to be a numpy.ndarray"
+        raise TypeError(msg)
+
+
 @click.command()
 @click.version_option()
 @click.option("--silent", is_flag=True,
@@ -262,12 +292,10 @@ def bias(ctx: click.Context, fpath: Path) -> None:
             store = tifffile.imread(BytesIO(fo.read()))
     else:
         store = tifffile.imread(fpath)
-    if isinstance(store, np.ndarray):
-        click.secho("Bias image-stack shape: " + str(store.shape), fg="green")
-        bias = np.median(store, axis=0)
-        err = np.std(store, axis=0)
-    else:
-        raise TypeError("Expected store to be a numpy.ndarray")
+    ensure_ndarray(store, "store")
+    click.secho("Bias image-stack shape: " + str(store.shape), fg="green")
+    bias = np.median(store, axis=0)
+    err = np.std(store, axis=0)
     # hotpixels
     hpix = nima.hotpixels(bias)
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
@@ -315,8 +343,7 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
     """
     dark_thr = 4.5
     store = tifffile.imread(fpath)
-    if not isinstance(store, np.ndarray):
-        raise ValueError("Expected 'store' to be a numpy array.")
+    ensure_ndarray(store, "store")
     click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
     dark = np.median(store, axis=0)
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
