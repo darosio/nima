@@ -83,6 +83,7 @@ htmlcov/
 
 # MyPy cache
 .mypy_cache/
+.dmypy.json
 
 # Virtual environments
 .env/
