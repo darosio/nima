@@ -54,7 +54,7 @@ dev = [
   "ipython == 8.18.0",
   "pooch == 1.8.1",
   "urllib3 == 1.26.18",
-  "jupyterlab_server == 2.27.0"
+  "jupyterlab_server == 2.27.1"
 ]
 docs = [
   "autodocsumm <= 0.2.12",
