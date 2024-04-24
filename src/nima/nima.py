@@ -22,11 +22,11 @@ import skimage
 import skimage.feature
 import skimage.segmentation
 import skimage.transform
-import tifffile  # type: ignore[import-untyped]
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from scipy import ndimage, signal  # type: ignore[import-untyped]
+from tifffile import TiffFile  # type: ignore[import-untyped]
 
 from .segmentation import bg
 
@@ -40,7 +40,7 @@ AXES_LENGTH_2D = 2
 
 
 def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], int, int]:
-    """Read multichannel tif timelapse image.
+    """Read multichannel TIFF timelapse image.
 
     Parameters
     ----------
@@ -53,7 +53,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
     -------
     d_im : dict[str, ImArray]
         Dictionary of images. Each keyword represents a channel, named
-        according to channels string list.
+        according to `channels` string list.
     n_channels : int
         Number of channels.
     n_times : int
@@ -62,7 +62,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
     Raises
     ------
     Exception
-        When number of channels and total length of tif sequence does not match.
+        When number of channels and total length of TIFF sequence does not match.
 
     Examples
     --------
@@ -73,13 +73,13 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
 
     """
     n_channels = len(channels)
-    with tifffile.TiffFile(fp) as tif:
+    with TiffFile(fp) as tif:
         im = tif.asarray()
         axes = tif.series[0].axes
     idx = axes.rfind("T")
     n_times = im.shape[idx] if idx >= 0 else 1
     if im.shape[axes.rfind("C")] % n_channels:
-        msg = "n_channel mismatch total length of tif sequence"
+        msg = "n_channel mismatch total length of TIFF sequence"
         raise ValueError(msg)
     else:
         d_im = {}
@@ -106,19 +106,17 @@ def d_show(d_im: dict[str, ImArray], **kws: Any) -> Figure:  # noqa: ANN401
         step = np.ceil(n_times / max_rows).astype(int)
         rng = range(0, n_times, step)
         n_rows = len(rng)
-
-    f = plt.figure(figsize=(16, 16))
+    fig = plt.figure(figsize=(16, 16))
     for n, ch in enumerate(sorted(d_im.keys())):
         for i, r in enumerate(rng):
-            ax = f.add_subplot(n_rows, n_channels, i * n_channels + n + 1)
+            ax = fig.add_subplot(n_rows, n_channels, i * n_channels + n + 1)
             img0 = ax.imshow(d_im[ch][r], **kws)
             plt.colorbar(img0, ax=ax, orientation="vertical", pad=0.02, shrink=0.85)
             plt.xticks([])
-
             plt.yticks([])
-            plt.ylabel(ch + " @ t = " + str(r))
+            plt.ylabel(f"{ch} @ t = {r}")
     plt.subplots_adjust(wspace=0.2, hspace=0.02, top=0.9, bottom=0.1, left=0, right=1)
-    return f
+    return fig
 
 
 def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
