@@ -27,30 +27,7 @@ AXES_LENGTH_2D = 2
 
 
 def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
-    """Ensure that the given variable is a numpy.ndarray.
-
-    Parameters
-    ----------
-    var : Any
-        The variable to check.
-    var_name : str
-        The name of the variable (for error message).
-
-    Raises
-    ------
-    TypeError
-        If the variable is not a numpy.ndarray.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> ensure_ndarray(np.array([1, 2, 3]), "my_array")
-    >>> # No output, but no error is raised if 'my_array' is a numpy.ndarray.
-    >>> ensure_ndarray("not an array", "my_string")
-    Traceback (most recent call last):
-    ...
-    TypeError: Expected 'my_string' to be a numpy.ndarray
-    """
+    """Ensure that the given variable is a numpy.ndarray."""
     if not isinstance(var, np.ndarray):
         msg = f"Expected '{var_name}' to be a numpy.ndarray"
         raise TypeError(msg)
@@ -68,6 +45,7 @@ def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
               help="Path to flat image for shading correction.")  # fmt: skip
 @click.option("-d", "--dark", "dark_f", type=str, default="",
               help="Path to dark image for shading correction.")  # fmt: skip
+# Background estimation options
 @click.option("--bg-method",
               type=click.Choice(["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False),  # noqa: E501
               default="li_adaptive",
@@ -82,18 +60,19 @@ def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
               help="Percentile for entropy or arcsinh methods [default: 10].")  # fmt: skip # noqa: E501
 @click.option("--bg-percentile-filter", type=float,
               help="Percentile filter for arcsinh method [default: 80].")  # fmt: skip
+# Segmentation and measurement options
 @click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen", # noqa: E501
               help="Segmentation algorithm [default: yen].")  # fmt: skip
 @click.option("--min-size", type=float,
               help="Minimum size of labeled objects [default: 2000].")  # fmt: skip
 @click.option("--clear-border", is_flag=True,
-              help="Remove labels touching image borders.")  # fmt: skip
+              help="Remove labels touching image borders [default: 0].")  # fmt: skip
 @click.option("--wiener", is_flag=True,
-              help="Apply Wiener filter before segmentation.")  # fmt: skip
+              help="Apply Wiener filter before segmentation [default: 0].")  # fmt: skip
 @click.option("--watershed", is_flag=True,
-              help="Apply watershed binary mask (to label cells).")  # fmt: skip
+              help="Apply watershed binary mask (labeling) [default: 0].")  # fmt: skip
 @click.option("--randomwalk", is_flag=True,
-              help="Apply randomwalk binary mask (to label cells).")  # fmt: skip
+              help="Apply randomwalk binary mask (labeling) [default: 0].")  # fmt: skip
 @click.option("--image-ratios/--no-image-ratios", default=True,
               help="Compute ratio images? [default: True].")  # fmt: skip
 @click.option("--ratio-median-radii", type=str,
@@ -104,7 +83,7 @@ def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
               help="Channels for pH ratio [default: G/C].")  # fmt: skip
 @click.argument("tiffstk", type=click.Path(path_type=Path))
 @click.argument("channels", type=str, nargs=-1)
-def main(  # noqa: C901"
+def main(  # noqa: C901
     silent: bool | None,
     output: Path,
     hotpixels: bool,  # noqa: FBT001
@@ -163,24 +142,22 @@ def main(  # noqa: C901"
         dark, _, _ = nima.read_tiff(Path(dark_f), channels)
         flat, _, _ = nima.read_tiff(Path(flat_f), channels)
         d_im = nima.d_shading(d_im, dark, flat, clip=True)
-    kwargs_bg: dict[str, Any]
-    kwargs_bg = {"kind": bg_method}
-    if bg_downscale:
-        kwargs_bg["downscale"] = bg_downscale
-    if bg_radius:
-        kwargs_bg["radius"] = bg_radius
-    if bg_adaptive_radius:
-        kwargs_bg["adaptive_radius"] = bg_adaptive_radius
-    if bg_percentile:
-        kwargs_bg["perc"] = bg_percentile
-    if bg_percentile_filter:
-        kwargs_bg["arcsinh_perc"] = bg_percentile_filter
-    click.echo(kwargs_bg)
-    d_im_bg, bgs, ff, _bgv = nima.d_bg(d_im, **kwargs_bg)  # clip=True
-    print(bgs)
-
-    kwargs_mask_label: dict[str, Any]
-    kwargs_mask_label = {"channels": channels, "threshold_method": fg_method}
+    # Process background
+    kwargs_bg: dict[str, Any] = {"kind": bg_method}
+    optional_keys = {
+        "downscale": bg_downscale,
+        "radius": bg_radius,
+        "adaptive_radius": bg_adaptive_radius,
+        "perc": bg_percentile,
+        "arcsinh_perc": bg_percentile_filter,
+    }
+    kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
+    d_im_bg, bgs, ff, _bgv = nima.d_bg(d_im, **kwargs_bg)
+    # Segment and measure
+    kwargs_mask_label: dict[str, Any] = {
+        "channels": channels,
+        "threshold_method": fg_method,
+    }
     if min_size:
         kwargs_mask_label["min_size"] = min_size
     if clear_border:
