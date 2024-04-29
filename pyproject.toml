@@ -76,7 +76,7 @@ docs = [
   "napari"
 ]
 tests = [
-  "pytest <= 8.1.1",
+  "pytest <= 8.2.0",
   "coverage[toml] <= 7.5.0",
   "pandas-stubs <= 2.2.1.240316",
   "mypy <= 1.10.0",
