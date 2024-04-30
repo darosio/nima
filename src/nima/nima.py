@@ -269,7 +269,7 @@ def d_bg(
     return dd_cor, bgs, d_fig, d_bg_values
 
 
-def d_mask_label(  # noqa: C901
+def d_mask_label(  # noqa: PLR0913
     d_im: dict[str, ImArray],
     min_size: int | None = 640,
     channels: tuple[str, ...] = ("C", "G", "R"),
@@ -331,6 +331,7 @@ def d_mask_label(  # noqa: C901
     for ch in channels[1:]:
         ga *= d_im[ch]
     ga = np.power(ga, 1 / len(channels))
+
     if wiener:
         ga_wiener = np.zeros_like(d_im["G"])
         shape = (3, 3)  # for 3D (1, 4, 4)
@@ -354,39 +355,56 @@ def d_mask_label(  # noqa: C901
     d_im["mask"] = np.array(mask)
     labels, n_labels = ndimage.label(mask)
     # TODO if any timepoint mask is empty cluster labels
+    d_im["labels"] = labels
 
     if watershed:
-        # TODO: label can change from time to time, Need more robust here. may
-        # use props[0].label == 1
-        # TODO: Voronoi? depends critically on max_diameter.
-        distance = ndimage.distance_transform_edt(mask)
-        pr = measure.regionprops(  # type: ignore[no-untyped-call]
-            labels[0], intensity_image=d_im[channels[0]][0]
+        process_watershed(d_im, channels, randomwalk=randomwalk)
+
+
+def process_watershed(
+    d_im: dict[str, ImArray],
+    channels: tuple[str, ...],
+    *,
+    randomwalk: bool = False,
+) -> None:
+    """Apply watershed segmentation algorithm to a given image.
+
+    This function takes a pre-processed image `d_im`, a sequence of channels `channels`
+    to be used for the segmentation, a structuring element `ga_wiener`, a mask `mask`,
+    a time step `time`, and an optional `randomwalk` function or string to specify the
+    random walker method. If `labels` is not provided, it is initialized as an empty
+    numpy array.
+
+    """
+    # TODO: label can change from time to time, Need more robust here. may
+    # use props[0].label == 1
+    # TODO: Voronoi? depends critically on max_diameter.
+    distance = ndimage.distance_transform_edt(d_im["mask"][0])
+    pr = measure.regionprops(  # type: ignore[no-untyped-call]
+        d_im["labels"][0], intensity_image=d_im[channels[0]][0]
+    )
+    max_diameter = pr[0].equivalent_diameter
+    size = max_diameter * 2.20
+    for p in pr[1:]:
+        max_diameter = max(max_diameter, p.equivalent_diameter)
+    print(max_diameter)
+    for time, (d, lbl) in enumerate(zip(distance, d_im["labels"], strict=True)):
+        local_maxi = feature.peak_local_max(  # type: ignore[call-arg, no-untyped-call]
+            d,
+            labels=lbl,
+            footprint=np.ones((size, size)),
+            min_distance=size,
+            indices=False,
+            exclude_border=False,
         )
-        max_diameter = pr[0].equivalent_diameter
-        size = max_diameter * 2.20
-        for p in pr[1:]:
-            max_diameter = max(max_diameter, p.equivalent_diameter)
-        print(max_diameter)
-        # for time, (d, l) in enumerate(zip(ga_wiener, labels)):
-        for time, (d, lbl) in enumerate(zip(distance, labels, strict=True)):
-            local_maxi = feature.peak_local_max(  # type: ignore[call-arg, no-untyped-call]
-                d,
-                labels=lbl,
-                footprint=np.ones((size, size)),
-                min_distance=size,
-                indices=False,
-                exclude_border=False,
-            )
-            markers = measure.label(local_maxi)  # type: ignore[no-untyped-call]
-            print(np.unique(markers))
-            if randomwalk:
-                markers[~mask[time]] = -1
-                labels_ws = segmentation.random_walker(mask[time], markers)
-            else:
-                labels_ws = morphology.watershed(-d, markers, mask=lbl)  # type: ignore[attr-defined]
-            labels[time] = labels_ws
-    d_im["labels"] = labels
+        markers = measure.label(local_maxi)  # type: ignore[no-untyped-call]
+        print(np.unique(markers))
+        if randomwalk:
+            markers[~d_im["mask"][time]] = -1
+            labels_ws = segmentation.random_walker(d_im["mask"][time], markers)
+        else:
+            labels_ws = morphology.watershed(-d, markers, mask=lbl)  # type: ignore[attr-defined]
+    d_im["labels"][time] = labels_ws
 
 
 def d_ratio(
@@ -433,7 +451,7 @@ def d_ratio(
     d_im[name] = ratio
 
 
-def d_meas_props(
+def d_meas_props(  # noqa: PLR0913
     d_im: dict[str, Im],
     channels: Sequence[str] = ("C", "G", "R"),
     channels_cl: tuple[str, str] = ("C", "R"),
@@ -595,7 +613,7 @@ def d_plot_meas(
     return fig
 
 
-def plt_img_profile(
+def plt_img_profile(  # noqa: PLR0915
     img: ImArray,
     title: str | None = None,
     hpix: pd.DataFrame | None = None,
@@ -652,7 +670,7 @@ def plt_img_profile(
     # sigfig: ax_hist.set_title("err: " + str(sigfig.
     # sigfig: round(da.std(da.from_zarr(zim)).compute(), sigfigs=3)))
 
-    def img_hist(
+    def img_hist(  # noqa: PLR0913
         im: ImArray,
         ax: Axes,
         ax_px: Axes,

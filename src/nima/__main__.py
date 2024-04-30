@@ -94,7 +94,7 @@ def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
               help="Channels for pH ratio [default: G/C].")  # fmt: skip
 @click.argument("tiffstk", type=click.Path(path_type=Path))
 @click.argument("channels", type=str, nargs=-1)
-def main(
+def main(  # noqa: PLR0913
     verbose: int,
     silent: bool | None,
     output: Path,
@@ -196,7 +196,7 @@ def main(
     output_results(output, tiffstk, ff, meas, channels, d_im_bg, bg_method, bgs)
 
 
-def output_results(
+def output_results(  # noqa: PLR0913
     output_dir: Path,
     tiffstk: Path,
     ff: dict[str, list[list[Figure]]],

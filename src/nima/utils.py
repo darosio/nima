@@ -9,6 +9,8 @@ import tifffile as tff  # type: ignore[import-untyped]
 from numpy.typing import NDArray
 from scipy import optimize, signal, stats  # type: ignore[import-untyped]
 
+from nima.nima import AXES_LENGTH_4D
+
 from .segmentation import _bgmax, iteratively_refine_background, prob
 from .types import ImArray, ImMask
 
@@ -70,7 +72,7 @@ def bg(
     return out[0][1], out[0][2]
 
 
-def ave(img: NDArray[np.float_], bgmax: float) -> float:
+def ave(img: NDArray[np.float_], bgmax: float, prob_value: float = 0.001) -> float:
     """Mask out the bg and return objects average of a frame."""
     if bgmax:
         # MAYBE: Use bg2
@@ -78,7 +80,7 @@ def ave(img: NDArray[np.float_], bgmax: float) -> float:
     av, sd, _, _ = iteratively_refine_background(img)
     av = min(av, 20)
     sd = min(sd, 10)
-    mask = prob(img, float(av), sd) < 0.001
+    mask = prob(img, float(av), sd) < prob_value
     # MAYBE: plot the mask
     return np.ma.masked_array(img, ~mask).mean() - av  # type: ignore[no-untyped-call, no-any-return]
 
@@ -87,7 +89,7 @@ def channel_mean(img: ImArray) -> pd.DataFrame:
     """Average each channel frame by frame."""
     r = defaultdict(list)
     for t in range(img.shape[0]):
-        if img.ndim == 4:
+        if img.ndim == AXES_LENGTH_4D:
             for c in range(img.shape[1]):
                 r[str(c)].append(ave(img[t, c], bgmax=_bgmax(img[t, c])))
         else:
