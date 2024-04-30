@@ -1,5 +1,6 @@
 """Command-line interface."""
 
+import importlib.metadata
 import os
 import zipfile
 from io import BytesIO
@@ -15,15 +16,25 @@ import sigfig  # type: ignore[import-untyped]
 import tifffile  # type: ignore[import-untyped]
 from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client, progress
-from matplotlib.backends import backend_pdf
+from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.figure import Figure
 from scipy import ndimage  # type: ignore[import-untyped]
 
 from nima import nima
-from nima.nima import ImArray
+from nima.nima import Im, ImArray
 
-## flake8: noqa: E501
+__version__ = importlib.metadata.version("nima")
+__out_dir__ = f"nima-{__version__}"
+
 
 AXES_LENGTH_2D = 2
+
+
+class _VerbosityLevel(int):
+    SILENT = 0
+    LOW = 1
+    MEDIUM = 2
+    HIGH = 3
 
 
 def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
@@ -34,11 +45,11 @@ def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
 
 
 @click.command()
-@click.version_option()
-@click.option("--silent", is_flag=True,
-              help="Suppress output; verbose=0.")  # fmt: skip
-@click.option("-o", "--output", default="nima", type=click.Path(writable=True, path_type=Path), # noqa: E501
-              help="Output directory path [default: ./nima/].")  # fmt: skip
+@click.version_option(version=__version__, message="%(version)s")
+@click.option("--verbose", "-v", count=True, help="Verbosity of messages.")
+@click.option("--silent", "-s", is_flag=True, help="Suppress output; verbose=0.")
+@click.option("-o", "--output", default=__out_dir__, type=click.Path(writable=True, path_type=Path), # noqa: E501
+              help="Output directory path [default: ./nima-version/].")  # fmt: skip
 @click.option("--hotpixels", is_flag=True, default=False,
               help="Apply median filter (rad=0.5) to remove hot pixels.")  # fmt: skip
 @click.option("-f", "--flat", "flat_f", type=str, default="",
@@ -83,7 +94,8 @@ def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
               help="Channels for pH ratio [default: G/C].")  # fmt: skip
 @click.argument("tiffstk", type=click.Path(path_type=Path))
 @click.argument("channels", type=str, nargs=-1)
-def main(  # noqa: C901
+def main(
+    verbose: int,
     silent: bool | None,
     output: Path,
     hotpixels: bool,  # noqa: FBT001
@@ -129,12 +141,14 @@ def main(  # noqa: C901
     6. For each label: Ratio images saved as `BN/label[1,2,⋯]_r[cl,pH].tif`.
 
     """
-    click.echo(tiffstk)
+    verbose = 0 if silent else max(1, min(4, verbose))
     channels = ("G", "R", "C") if len(channels) == 0 else channels
-    click.echo(channels)
+    if verbose > _VerbosityLevel.SILENT:
+        click.echo(tiffstk)
+        click.echo(channels)
     d_im, _, t = nima.read_tiff(tiffstk, channels)
-    if not silent:
-        print("  Times: ", t)
+    if verbose > _VerbosityLevel.SILENT:
+        click.echo(f"  Times: {t}")
     if hotpixels:
         d_im = nima.d_median(d_im)
     if flat_f:
@@ -153,23 +167,22 @@ def main(  # noqa: C901
     }
     kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
     d_im_bg, bgs, ff, _bgv = nima.d_bg(d_im, **kwargs_bg)
-    # Segment and measure
+    # Segment
     kwargs_mask_label: dict[str, Any] = {
         "channels": channels,
         "threshold_method": fg_method,
     }
-    if min_size:
-        kwargs_mask_label["min_size"] = min_size
-    if clear_border:
-        kwargs_mask_label["clear_border"] = True
-    if wiener:
-        kwargs_mask_label["wiener"] = True
-    if watershed:
-        kwargs_mask_label["watershed"] = True
-    if randomwalk:
-        kwargs_mask_label["randomwalk"] = True
+    optional_keys = {
+        "min_size": min_size,
+        "clear_border": clear_border,
+        "wiener": wiener,
+        "watershed": watershed,
+        "randomwalk": randomwalk,
+    }
+    kwargs_mask_label.update({k: v for k, v in optional_keys.items() if v})
     click.secho(kwargs_mask_label)
     nima.d_mask_label(d_im_bg, **kwargs_mask_label)
+    # Measure
     kwargs_meas_props: dict[str, Any] = {"channels": channels}
     kwargs_meas_props["ratios_from_image"] = image_ratios
     if ratio_median_radii:
@@ -180,33 +193,44 @@ def main(  # noqa: C901
     meas, pr = nima.d_meas_props(
         d_im_bg, channels_cl=channels_cl, channels_ph=channels_ph, **kwargs_meas_props
     )
-    # output for bg
-    bname_str = tiffstk.with_suffix("").name
-    output.mkdir(exist_ok=True)
-    bname = output / bname_str
-    if not bname.exists():
-        bname.mkdir()
+    output_results(output, tiffstk, ff, meas, channels, d_im_bg, bg_method, bgs)
+
+
+def output_results(
+    output_dir: Path,
+    tiffstk: Path,
+    ff: dict[str, list[list[Figure]]],
+    meas: dict[np.int32, pd.DataFrame],
+    channels: tuple[str, ...],
+    d_im_bg: dict[str, Im],
+    bg_method: str,
+    bgs: pd.DataFrame,
+) -> None:
+    """Output results: csv tables and png images."""
+    output_dir.mkdir(exist_ok=True)
+    # Create file-named directory
+    bname = output_dir / tiffstk.with_suffix("").name
+    bname.mkdir(exist_ok=True)
+    # Create PDF files
     for ch, llf in ff.items():
-        pp = backend_pdf.PdfPages(  # type: ignore[no-untyped-call]
-            bname / Path("bg-" + ch + "-" + bg_method).with_suffix(".pdf")
-        )
-        for lf in llf:
-            for f_i in lf:  # e.g. entropy output 2 figs
-                pp.savefig(f_i)  # type: ignore[no-untyped-call]
-        pp.close()  # type: ignore[no-untyped-call]
+        pdf_file = bname / Path(f"bg-{ch}-{bg_method}.pdf")
+        with PdfPages(pdf_file) as pp:  # type: ignore[no-untyped-call]
+            for lf in llf:
+                for f_i in lf:
+                    pp.savefig(f_i)
+    # Create CSV file
     column_order = ["C", "G", "R"]  # FIXME must be equal anyway in testing
     bgs[column_order].to_csv(bname / "bg.csv")
     # TODO: plt.close('all') or control mpl warning
-    # output for fg (target)
+    # Create measurement plots
     f = nima.d_plot_meas(bgs, meas, channels=channels)
     f.savefig(bname.with_name(bname.name + "_meas.png"))
-    ##
-    # show all channels and labels only.
+    # Show all channels and labels
     d = {ch: d_im_bg[ch] for ch in channels}
     d["labels"] = d_im_bg["labels"]
-    f = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore[attr-defined]
-    f.savefig(bname.with_name(bname.name + "_dim.png"))
-    # meas csv
+    fig = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore[attr-defined]
+    fig.savefig(bname.with_name(bname.name + "_dim.png"))
+    # Create measurement CSV files
     for k, df in meas.items():
         column_order = [
             "C",
@@ -220,15 +244,16 @@ def main(  # noqa: C901
             "r_cl_median",
             "r_pH_median",
         ]
-        df[column_order].to_csv(bname / Path("label" + str(k)).with_suffix(".csv"))
-    # # XXX: labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
+        df[column_order].to_csv(bname / Path(f"label{k}.csv"))
+    # XXX: labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
+    # Create TIFF files
     objs = ndimage.find_objects(d_im_bg["labels"])
     for n, o in enumerate(objs):
-        name = bname / Path("label" + str(n + 1) + "_rcl").with_suffix(".tif")
+        name = bname / Path(f"label{n+1}_rcl.tif")
         tifffile.imwrite(
             name, d_im_bg["r_cl"][o], compression="lzma", photometric="minisblack"
         )
-        name = bname / Path("label" + str(n + 1) + "_rpH").with_suffix(".tif")
+        name = bname / Path(f"label{n+1}_rpH.tif")
         tifffile.imwrite(
             name, d_im_bg["r_pH"][o], compression="lzma", photometric="minisblack"
         )
