@@ -18,17 +18,16 @@ import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import skimage
-import skimage.feature
-import skimage.segmentation
-import skimage.transform
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from scipy import ndimage, signal  # type: ignore[import-untyped]
+from skimage import feature, filters, measure, morphology, segmentation, transform
 from tifffile import TiffFile  # type: ignore[import-untyped]
 
 from .segmentation import bg
+
+threshold_method_choices = ["yen", "li"]
 
 ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float_], NDArray[np.bool_])
 Im = TypeVar("Im", NDArray[np.int_], NDArray[np.float_])
@@ -146,7 +145,7 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
         if im.ndim not in [AXES_LENGTH_2D, AXES_LENGTH_3D]:
             msg = "Only for single image or stack (3D)."
             raise ValueError(msg)
-        disk = skimage.morphology.disk(1)  # type: ignore[no-untyped-call]
+        disk = morphology.disk(1)  # type: ignore[no-untyped-call]
         if im.ndim == AXES_LENGTH_3D:
             sel = np.conj((np.zeros((3, 3)), disk, np.zeros((3, 3))))
             d_out[k] = ndimage.median_filter(im, footprint=sel)
@@ -256,7 +255,7 @@ def d_bg(
         for t, im in enumerate(d_im[k]):
             im_for_bg = im
             if downscale:
-                im_for_bg = skimage.transform.downscale_local_mean(im, downscale)  # type: ignore[no-untyped-call]
+                im_for_bg = transform.downscale_local_mean(im, downscale)  # type: ignore[no-untyped-call]
             med, v, ff = bg(im_for_bg, kind=kind, perc=10)
             d_bg[k].append(med)
             d_bg_values[k].append(v)
@@ -270,11 +269,11 @@ def d_bg(
     return dd_cor, bgs, d_fig, d_bg_values
 
 
-def d_mask_label(
+def d_mask_label(  # noqa: C901
     d_im: dict[str, ImArray],
     min_size: int | None = 640,
-    channels: Sequence[str] = ("C", "G", "R"),
-    threshold_method: str | None = "yen",
+    channels: tuple[str, ...] = ("C", "G", "R"),
+    threshold_method: str = "yen",
     *,
     wiener: bool = False,
     watershed: bool = False,
@@ -300,9 +299,9 @@ def d_mask_label(
         desc
     min_size : int | None, optional
         Objects smaller than min_size (default=640 pixels) are discarded from mask.
-    channels : Sequence[str], optional
+    channels : tuple[str, ...], optional
         List a name for each channel.
-    threshold_method : str | None, optional
+    threshold_method : str, optional
         Threshold method applied to the geometric average plane-by-plane (default=yen).
     wiener : bool, optional
         Boolean for wiener filter (default=False).
@@ -313,12 +312,21 @@ def d_mask_label(
     randomwalk :  bool, optional
         Use random_walker instead of watershed post-ndimage-EDT (default=False).
 
+    Raises
+    ------
+    ValueError
+        If threshold_method is not one of ['yen', 'li'].
+
     Notes
     -----
     Side effects:
         Add a 'label' key to the d_im.
 
     """
+    if threshold_method not in threshold_method_choices:
+        msg = f"threshold_method must be one of {threshold_method_choices}"
+        raise ValueError(msg)
+
     ga = d_im[channels[0]].copy()
     for ch in channels[1:]:
         ga *= d_im[ch]
@@ -331,17 +339,17 @@ def d_mask_label(
     else:
         ga_wiener = ga
     if threshold_method == "yen":
-        threshold_function = skimage.filters.threshold_yen
+        threshold_function = filters.threshold_yen
     elif threshold_method == "li":
-        threshold_function = skimage.filters.threshold_li  # type: ignore[assignment]
+        threshold_function = filters.threshold_li  # type: ignore[assignment]
     mask = []
     for _, im in enumerate(ga_wiener):
         m = im > threshold_function(im)  # type: ignore[no-untyped-call]
-        m = skimage.morphology.remove_small_objects(m, min_size=min_size)  # type: ignore[no-untyped-call]
-        m = skimage.morphology.closing(m)
+        m = morphology.remove_small_objects(m, min_size=min_size)  # type: ignore[no-untyped-call]
+        m = morphology.closing(m)
         # clear border always
         if clear_border:
-            m = skimage.segmentation.clear_border(m)  # type: ignore[no-untyped-call]
+            m = segmentation.clear_border(m)  # type: ignore[no-untyped-call]
         mask.append(m)
     d_im["mask"] = np.array(mask)
     labels, n_labels = ndimage.label(mask)
@@ -352,7 +360,7 @@ def d_mask_label(
         # use props[0].label == 1
         # TODO: Voronoi? depends critically on max_diameter.
         distance = ndimage.distance_transform_edt(mask)
-        pr = skimage.measure.regionprops(  # type: ignore[no-untyped-call]
+        pr = measure.regionprops(  # type: ignore[no-untyped-call]
             labels[0], intensity_image=d_im[channels[0]][0]
         )
         max_diameter = pr[0].equivalent_diameter
@@ -362,7 +370,7 @@ def d_mask_label(
         print(max_diameter)
         # for time, (d, l) in enumerate(zip(ga_wiener, labels)):
         for time, (d, lbl) in enumerate(zip(distance, labels, strict=True)):
-            local_maxi = skimage.feature.peak_local_max(  # type: ignore[call-arg, no-untyped-call]
+            local_maxi = feature.peak_local_max(  # type: ignore[call-arg, no-untyped-call]
                 d,
                 labels=lbl,
                 footprint=np.ones((size, size)),
@@ -370,13 +378,13 @@ def d_mask_label(
                 indices=False,
                 exclude_border=False,
             )
-            markers = skimage.measure.label(local_maxi)  # type: ignore[no-untyped-call]
+            markers = measure.label(local_maxi)  # type: ignore[no-untyped-call]
             print(np.unique(markers))
             if randomwalk:
                 markers[~mask[time]] = -1
-                labels_ws = skimage.segmentation.random_walker(mask[time], markers)
+                labels_ws = segmentation.random_walker(mask[time], markers)
             else:
-                labels_ws = skimage.morphology.watershed(-d, markers, mask=lbl)  # type: ignore[attr-defined]
+                labels_ws = morphology.watershed(-d, markers, mask=lbl)  # type: ignore[attr-defined]
             labels[time] = labels_ws
     d_im["labels"] = labels
 
@@ -467,7 +475,7 @@ def d_meas_props(
         pr[ch] = []
         for time, label_im in enumerate(d_im["labels"]):
             im = d_im[ch][time]
-            props = skimage.measure.regionprops(label_im, intensity_image=im)  # type: ignore[no-untyped-call]
+            props = measure.regionprops(label_im, intensity_image=im)  # type: ignore[no-untyped-call]
             pr[ch].append(props)
     meas = {}
     # labels are 3D and "0" is always label for background
