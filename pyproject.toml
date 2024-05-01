@@ -307,7 +307,7 @@ mccabe.max-complexity = 12
 
 [tool.ruff.lint.per-file-ignores]
 "*.ipynb" = ["ANN001", "ANN002", "ANN003", "ANN201", "D103", "ERA", "ICN001", "PD901", "PD013", "E501", "F821", "PLR2004", "FBT003"]
-"generat.py" = ["PLR0913", "PLR2004"]
+# "generat.py" = ["PLR0913", "PLR2004"]
 "segmentation.py" = ["PLR0913", "PLR2004", "PLR0912", "PLR0915"]
 "tests/*" = ["PLR2004", "S101"]
 

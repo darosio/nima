@@ -2,6 +2,7 @@
 
 import random
 import warnings
+from dataclasses import dataclass
 
 import numpy as np
 from numpy.typing import NDArray
@@ -34,7 +35,8 @@ def gen_flat(nrows: int = 128, ncols: int = 128) -> NDArray[np.float_]:
 def gen_object(
     nrows: int = 128, ncols: int = 128, min_radius: int = 6, max_radius: int = 12
 ) -> NDArray[np.bool_]:
-    """Mimic http://scipy-lectures.org/packages/scikit-image/index.html."""
+    """Generate a single ellipsoid object with random shape and position."""
+    # Inspired by http://scipy-lectures.org/packages/scikit-image/index.html.
     x_idx, y_idx = np.indices((nrows, ncols))
     x_obj, y_obj = np.random.randint(nrows), np.random.randint(ncols)
     radius = np.random.randint(min_radius, max_radius)
@@ -48,19 +50,32 @@ def gen_object(
     return mask  # type: ignore[no-any-return]
 
 
-def gen_objs(
-    max_fluor: float = 20,
-    max_n_obj: int = 8,
-    nrows: int = 128,
-    ncols: int = 128,
-    min_radius: int = 6,
-    max_radius: int = 12,
-) -> NDArray[np.float_]:
+@dataclass
+class ImageObjsParams:
+    """Parameters for an image frame."""
+
+    max_num_objects: int = 8
+    nrows: int = 128
+    ncols: int = 128
+    min_radius: int = 6
+    max_radius: int = 12
+    max_fluor: float = 20.0
+
+
+def gen_objs(params: ImageObjsParams | None = None) -> NDArray[np.float_]:
     """Generate a frame with ellipsoid objects; random n, shape, position and I."""
-    num_objs = random.randint(2, max_n_obj) if max_n_obj >= 3 else max_n_obj  # nosec
+    params = ImageObjsParams() if params is None else params
+    min_num_objects = 2
+    num_objs = (
+        random.randint(min_num_objects, params.max_num_objects)  # nosec "no-secure-random"
+        if params.max_num_objects > min_num_objects
+        else params.max_num_objects
+    )
     # MAYBE: convolve the obj to simulate lower peri-cellular profile
     objs = [
-        max_fluor * np.random.rand() * gen_object(nrows, ncols, min_radius, max_radius)
+        params.max_fluor
+        * np.random.rand()
+        * gen_object(params.nrows, params.ncols, params.min_radius, params.max_radius)
         for _ in range(num_objs)
     ]
     img = np.sum(objs, axis=0)
@@ -71,11 +86,10 @@ def gen_frame(
     objs: NDArray[np.float_],
     bias: NDArray[np.float_] | None = None,
     flat: NDArray[np.float_] | None = None,
-    dark: float = 0,
     sky: float = 2,
     noise_sd: float = 1,
 ) -> NDArray[np.float_]:  # pylint: disable=too-many-arguments
-    """Simulate an acquired frame [bias + noise + dark + flat * (sky + obj)]."""
+    """Simulate an acquired frame [bias + noise + flat * (sky + obj)]."""
     (nrows, ncols) = objs.shape
     if bias is None:
         bias = np.zeros_like(objs)
@@ -88,5 +102,5 @@ def gen_frame(
         warnings.warn("Shape mismatch. Generate Flat...", UserWarning, stacklevel=2)
         flat = gen_flat(nrows, ncols)
     noise = np.random.normal(0, noise_sd, size=(nrows, ncols))
-    img = bias + flat * (sky + objs) + dark + noise
+    img = bias + flat * (sky + objs) + noise
     return img.astype("uint16")

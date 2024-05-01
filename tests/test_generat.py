@@ -52,7 +52,7 @@ class TestFrame:
         self.bias = generat.gen_bias(ncols=6)
         self.flat = generat.gen_flat(ncols=4)
         np.random.seed(121)
-        self.objs = generat.gen_objs(ncols=64)
+        self.objs = generat.gen_objs(generat.ImageObjsParams(ncols=64))
         self.frame = generat.gen_frame(self.objs)
 
     def test_objs(self) -> None:
