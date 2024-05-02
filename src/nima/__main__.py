@@ -23,6 +23,8 @@ from scipy import ndimage  # type: ignore[import-untyped]
 from nima import nima
 from nima.nima import Im, ImArray
 
+from .segmentation import BgParams
+
 __version__ = importlib.metadata.version("nima")
 __out_dir__ = f"nima-{__version__}"
 
@@ -166,7 +168,10 @@ def main(  # noqa: PLR0913
         "arcsinh_perc": bg_percentile_filter,
     }
     kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
-    d_im_bg, bgs, ff, _bgv = nima.d_bg(d_im, **kwargs_bg)
+    d_im_bg, bgs, ff, _bgv = nima.d_bg(
+        d_im, BgParams(**kwargs_bg), downscale=bg_downscale
+    )
+    print(BgParams(**kwargs_bg))
     # Segment
     kwargs_mask_label: dict[str, Any] = {
         "channels": channels,

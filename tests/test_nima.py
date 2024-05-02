@@ -53,40 +53,80 @@ class TestBg:
 
     def test_arcsinh(self) -> None:
         """Test arcsinh method and arcsinh_perc, radius and perc arguments."""
-        assert segmentation.bg(self.im[3, 2], kind="arcsinh")[0] == 286
         assert (
-            segmentation.bg(self.im[3, 2], kind="arcsinh", arcsinh_perc=50, radius=15)[
-                0
-            ]
+            segmentation.bg(
+                self.im[3, 2], bg_params=segmentation.BgParams(kind="arcsinh")
+            )[0]
+            == 286
+        )
+        assert (
+            segmentation.bg(
+                self.im[3, 2],
+                bg_params=segmentation.BgParams(
+                    kind="arcsinh", arcsinh_perc=50, radius=15
+                ),
+            )[0]
             == 287
         )
         assert (
             segmentation.bg(
-                self.im[3, 2], kind="arcsinh", arcsinh_perc=50, radius=15, perc=20
+                self.im[3, 2],
+                bg_params=segmentation.BgParams(
+                    kind="arcsinh", arcsinh_perc=50, radius=15, perc=20
+                ),
             )[0]
             == 288
         )
 
     def test_entropy(self) -> None:
         """Test entropy method and radius argument."""
-        assert segmentation.bg(self.im[3, 2], kind="entropy")[0] == 297
-        assert segmentation.bg(self.im[3, 2], kind="entropy", radius=20)[0] == 293
+        assert (
+            segmentation.bg(
+                self.im[3, 2], bg_params=segmentation.BgParams(kind="entropy")
+            )[0]
+            == 297
+        )
+        assert (
+            segmentation.bg(
+                self.im[3, 2],
+                bg_params=segmentation.BgParams(kind="entropy", radius=20),
+            )[0]
+            == 293
+        )
 
     def test_adaptive(self) -> None:
         """Test adaptive method and adaptive_radius argument."""
-        assert segmentation.bg(self.im[3, 2], kind="adaptive")[0] == 287
         assert (
-            segmentation.bg(self.im[3, 2], kind="adaptive", adaptive_radius=101)[0]
+            segmentation.bg(
+                self.im[3, 2], bg_params=segmentation.BgParams(kind="adaptive")
+            )[0]
+            == 287
+        )
+        assert (
+            segmentation.bg(
+                self.im[3, 2],
+                bg_params=segmentation.BgParams(kind="adaptive", adaptive_radius=101),
+            )[0]
             == 280
         )
 
     def test_li_adaptive(self) -> None:
         """Test li_arcsinh method."""
-        assert segmentation.bg(self.im[3, 2], kind="li_adaptive")[0] == 273
+        assert (
+            segmentation.bg(
+                self.im[3, 2], bg_params=segmentation.BgParams(kind="li_adaptive")
+            )[0]
+            == 273
+        )
 
     def test_li_li(self) -> None:
         """Test li_li method."""
-        assert segmentation.bg(self.im[3, 2], kind="li_li")[0] == 288
+        assert (
+            segmentation.bg(
+                self.im[3, 2], bg_params=segmentation.BgParams(kind="li_li")
+            )[0]
+            == 288
+        )
 
 
 def test_plot_img_profile() -> None:

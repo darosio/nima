@@ -34,6 +34,47 @@ def _assert_image_comparison(
         raise ImageComparisonFailure(msg)
 
 
+class TestNimaOptions:
+    """It checks some command line option."""
+
+    @pytest.fixture(scope="module", params=rootnames)
+    def result_folder(
+        self, tmp_path_factory: pytest.TempPathFactory, request: pytest.FixtureRequest
+    ) -> ResultFolder:
+        """Fixture for creating results folder and opening a sub-process."""
+        tmpdir = tmp_path_factory.getbasetemp()
+        filename = (TESTS_PATH / "data" / request.param[0]).with_suffix(".tif")
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                str(filename),
+                "G",
+                "R",
+                "C",
+                "-o",
+                str(tmpdir),
+                "--bg-adaptive-radius",
+                "101",
+            ],
+        )
+        return tmpdir, request.param, result
+
+    def test_stdout(self, result_folder: ResultFolder) -> None:
+        """It outputs the correct value for 'Times'."""
+        out = result_folder[2].output
+        assert result_folder[2].return_value is None
+        assert result_folder[2].exit_code == 0
+        assert (
+            int(
+                next(
+                    line for line in out.splitlines() if "Times:" in str(line)
+                ).split()[1]
+            )
+            == result_folder[1][1]
+        )
+
+
 class TestNima:
     """It checks all output files."""
 

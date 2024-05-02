@@ -25,7 +25,7 @@ from scipy import ndimage, signal  # type: ignore[import-untyped]
 from skimage import feature, filters, measure, morphology, segmentation, transform
 from tifffile import TiffFile  # type: ignore[import-untyped]
 
-from .segmentation import bg
+from .segmentation import BgParams, bg
 
 threshold_method_choices = ["yen", "li"]
 
@@ -209,8 +209,8 @@ def d_shading(
 
 def d_bg(
     d_im: dict[str, Im],
+    bg_params: BgParams,
     downscale: tuple[int, int] | None = None,
-    kind: str = "li_adaptive",
     *,
     clip: bool = True,
 ) -> tuple[
@@ -225,10 +225,10 @@ def d_bg(
     ----------
     d_im : dict[str, Im]
         desc
+    bg_params : BgParams
+        An instance of BgParams containing the parameters for the segmentation.
     downscale : tuple[int, int] | None
         Tupla, x, y are downscale factors for rows, cols (default=None).
-    kind : str, optional
-        Bg method among {'li_adaptive', 'arcsinh', 'entropy', 'adaptive', 'li_li'}.
     clip : bool, optional
         Boolean (default=True) for clipping values >=0.
 
@@ -256,7 +256,7 @@ def d_bg(
             im_for_bg = im
             if downscale:
                 im_for_bg = transform.downscale_local_mean(im, downscale)  # type: ignore[no-untyped-call]
-            med, v, ff = bg(im_for_bg, kind=kind, perc=10)
+            med, v, ff = bg(im_for_bg, bg_params=bg_params)
             d_bg[k].append(med)
             d_bg_values[k].append(v)
             d_cor[k].append(d_im[k][t] - med)

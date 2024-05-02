@@ -1,6 +1,7 @@
 """Functions to partition images into meaningful regions."""
 
-from typing import Any, cast, overload
+from dataclasses import dataclass
+from typing import cast, overload
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,7 +18,7 @@ from scipy import (  # type: ignore[import-untyped]
 )
 from skimage import filters, morphology
 
-from .types import ImArray
+from .types import ImArray, ImMask
 
 # TODO: add new bg/fg segmentation based on conditional probability but
 # working with dask arrays. Try being clean: define function only for NDArray
@@ -45,168 +46,233 @@ def myhist(
         plt.yscale("log")
 
 
-def bg(  # noqa: C901
-    im: ImArray,
-    kind: str = "arcsinh",
-    perc: float = 10.0,
-    radius: int | None = 10,
-    adaptive_radius: int | None = None,
-    arcsinh_perc: int | None = 80,
-) -> tuple[float, NDArray[np.int_] | NDArray[np.float_], list[Figure]]:
-    """Bg segmentation.
+def _bg_plot(im: ImArray, m: ImMask, title: str, lim: ImArray | None) -> list[Figure]:
+    fig1 = plt.figure(figsize=(9, 5))
+    ax1 = fig1.add_subplot(121)
+    masked = im * m
+    cmap = plt.cm.inferno  # type: ignore[attr-defined]
+    img0 = ax1.imshow(masked, cmap=cmap)
+    plt.colorbar(img0, ax=ax1, orientation="horizontal")
+    plt.title(title)
+    fig1.add_subplot(122)
+    myhist(im[m], log=True)
+    fig1.tight_layout()
+    figures = [fig1]
+    if lim is not None:
+        fig2 = plt.figure(figsize=(9, 4))
+        ax1, ax2, host = fig2.subplots(nrows=1, ncols=3)  # type: ignore[misc]
+        img0 = ax1.imshow(lim)
+        plt.colorbar(img0, ax=ax2, orientation="horizontal")
+        # FIXME: this is horribly duplicating an axes
+        fig2.add_subplot(132)
+        myhist(lim)
+        #
+        # plot bg vs. perc
+        ave, sd, median = ([], [], [])
+        delta = lim.max() - lim.min()
+        delta /= 2
+        rng = np.linspace(lim.min() + delta / 20, lim.min() + delta, 20)
+        par = host.twiny()
+        # Second, show the right spine.
+        par.spines["bottom"].set_visible(True)
+        par.set_xlabel("perc")
+        par.set_xlim(0, 0.5)
+        par.grid()
+        host.set_xlim(lim.min(), lim.min() + delta)
+        p = np.linspace(0.025, 0.5, 20)
+        for t in rng:
+            m = lim < t
+            ave.append(im[m].mean())
+            sd.append(im[m].std() / 10)
+            median.append(np.median(im[m]))
+        host.plot(rng, median, "o")
+        par.errorbar(p, ave, sd)
+        fig2.tight_layout()
+        figures.append(fig2)
+    # Close all figures explicitly just before returning
+    for fig in figures:
+        plt.close(fig)
+    return figures
 
-    Return median, whole vector, figures (in a [list])
+
+@dataclass
+class BgParams:
+    """Parameters for `bg` segmentation methods.
+
+    Attributes
+    ----------
+    kind : str, optional
+        The segmentation method to use. Available options are 'arcsinh',
+        'entropy', 'adaptive', 'li_adaptive', 'li_li', and 'inverse_yen'.
+        The default is 'arcsinh'.
+    perc : float, optional
+        Percentage of max-min (default=10) for threshold `entropy` and `arcsinh`
+        methods. It gets automatically converted to a fraction of 1 in the
+        initialization process.
+    radius : int, optional
+        Radius (default=10) used in `entropy` and `arcsinh` (percentile_filter)
+        methods.
+    adaptive_radius : int | None, optional
+        Size for the `adaptive` filter of skimage (default is calculated as
+        half of the image size during usage).
+    arcsinh_perc : int, optional
+        Percentage (default=80) used in the percentile_filter (scipy) within
+        `arcsinh` method.
+
+    Raises
+    ------
+    ValueError
+        If `perc` is not within the [0, 100] range.
+    """
+
+    kind: str = "arcsinh"
+    perc: float = 10.0
+    radius: int = 10
+    adaptive_radius: int | None = None
+    arcsinh_perc: int = 80
+
+    def __post_init__(self) -> None:
+        """Perform validation and normalization on initialization.
+
+        Ensures that `perc` is within the valid range and converts it from
+        a percentage to a fraction for internal use.
+
+        Raises
+        ------
+        ValueError
+            If `perc` is not within the [0, 100] range.
+        """
+        min_perc, max_perc = 0.0, 100.0
+        if not (min_perc <= self.perc <= max_perc):
+            msg = "perc must be in [0, 100] range"
+            raise ValueError(msg)
+        self.perc /= 100
+
+
+# FIXME: arcsinh_perc: float
+def _bg_arcsinh(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]:
+    perc = bg_params.perc
+    radius = bg_params.radius
+    arcsinh_perc = bg_params.arcsinh_perc
+    lim = np.arcsinh(im)
+    lim = ndimage.percentile_filter(lim, arcsinh_perc, size=radius)
+    thr = (1 - perc) * lim.min() + perc * lim.max()
+    m = lim < thr
+    title = (
+        f"{bg_params.kind} radius={radius}, perc={perc}, arcsinh_perc={arcsinh_perc}"
+    )
+    return m, title, lim
+
+
+def _bg_entropy(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]:
+    perc = bg_params.perc
+    radius = bg_params.radius
+    im8 = skimage.util.img_as_ubyte(im)  # type: ignore[no-untyped-call]
+    # test lim = filters.rank.entropy(im8 / max(im8.max(), 1), morphology.disk(radius))
+    if im.dtype == float:
+        lim = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore[no-untyped-call]
+    else:
+        lim = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore[no-untyped-call]
+    thr = (1 - perc) * lim.min() + perc * lim.max()
+    m = lim < thr
+    title = f"{bg_params.kind} radius={radius}, perc={perc}"
+    return m, title, lim
+
+
+def _bg_adaptive(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
+    adaptive_radius = bg_params.adaptive_radius
+    f = im > filters.threshold_local(im, adaptive_radius)  # type: ignore[no-untyped-call]
+    m = ~f
+    title = f"{bg_params.kind} adaptive_radius={adaptive_radius}"
+    return m, title, None
+
+
+def _bg_li_adaptive(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
+    adaptive_radius = bg_params.adaptive_radius
+    li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
+    m = im < li
+    # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
+    imm = im * m
+    f = imm > filters.threshold_local(imm, adaptive_radius)  # type: ignore[no-untyped-call]
+    m = ~f * m
+    title = f"{bg_params.kind} {adaptive_radius}"
+    return m, title, None
+
+
+def _bg_li_li(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
+    li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
+    m = im < li
+    # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
+    imm = im * m
+    # To avoid zeros generated after first thesholding, clipping to the
+    # min value of original image is needed before second threshold.
+    thr2 = filters.threshold_li(imm.clip(np.min(im)))  # type: ignore[no-untyped-call]
+    m = im < thr2
+    # FIXME: in case mm = skimage.morphology.binary_closing(mm)
+    title = bg_params.kind + " " + ""
+    return m, title, None
+
+
+def _bg_inverse_yen(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
+    f = filters.threshold_local(1 / im)  # type: ignore[no-untyped-call]
+    m = f > filters.threshold_yen(f)  # type: ignore[no-untyped-call]
+    title = bg_params.kind + " " + ""
+    return m, title, None
+
+
+def bg(
+    im: ImArray, bg_params: BgParams | None = None
+) -> tuple[float, NDArray[np.int_] | NDArray[np.float_], list[Figure]]:
+    """Segment background from an image stack.
 
     Parameters
     ----------
     im: ImArray
         An image stack.
-    kind : str, optional
-        Method {'arcsinh', 'entropy', 'adaptive', 'li_adaptive', 'li_li'} used for the
-        segmentation.
-    perc : float, optional
-        Perc % of max-min (default=10) for thresholding *entropy* and *arcsinh*
-        methods.
-    radius : int | None, optional
-        Radius (default=10) used in *entropy* and *arcsinh* (percentile_filter)
-        methods.
-    adaptive_radius : int | None, optional
-        Size for the adaptive filter of skimage (default is im.shape[1]/2).
-    arcsinh_perc : int | None, optional
-        Perc (default=80) used in the percentile_filter (scipy) within
-        *arcsinh* method.
+    bg_params : BgParams | None, optional
+        An instance of BgParams containing the parameters for the segmentation.
+        If None, default values are used. Default is None.
 
     Returns
     -------
     median : float
-        Median of the bg masked pixels.
+        The median of all background-masked pixel values.
     pixel_values : NDArray[np.int_] | NDArray[np.float_]
-        Values of all bg masked pixels.
+        A flat array containing the values of all pixels considered to be
+        background.
     figs : list[Figure]
-        List of fig(s). Only entropy and arcsinh methods have 2 elements.
+        A list containing matplotlib Figure objects related to the segmentation
+        visualization. The actual contents depend on the `kind` parameter. For
+        'entropy' and 'arcsinh' methods, this list contains 2 elements.
 
     Raises
     ------
-    Exception
-        When % radius is out of bounds.
-
+    ValueError
+        If an unsupported segmentation method (kind) is specified.
     """
-    if adaptive_radius is None:
-        adaptive_radius = int(im.shape[1] / 2)
-        if adaptive_radius % 2 == 0:  # sk >0.12.0 check for even value
-            adaptive_radius += 1
-    min_perc, max_perc = 0.0, 100.0
-    if (perc < min_perc) or (perc > max_perc):
-        msg = "perc must be in [0, 100] range"
+    bg_params = bg_params if bg_params else BgParams()
+    if bg_params.adaptive_radius is None:
+        bg_params.adaptive_radius = int(im.shape[1] / 2)
+        if bg_params.adaptive_radius % 2 == 0:  # sk >0.12.0 check for even value
+            bg_params.adaptive_radius += 1
+
+    processing_functions = {
+        "arcsinh": _bg_arcsinh,
+        "entropy": _bg_entropy,
+        "adaptive": _bg_adaptive,
+        "li_adaptive": _bg_li_adaptive,
+        "li_li": _bg_li_li,
+        "inverse_yen": _bg_inverse_yen,
+    }
+    if bg_params.kind not in processing_functions:
+        msg = f"Invalid 'kind' parameter: {bg_params.kind}"
         raise ValueError(msg)
-    else:
-        perc /= 100
-    lim_ = False
-    m = np.ones_like(im)  # default value for m; instead of m = None
-    if kind == "arcsinh":
-        lim = np.arcsinh(im)
-        lim = ndimage.percentile_filter(lim, arcsinh_perc, size=radius)
-        lim_ = True
-        title: Any = radius, perc
-        thr = (1 - perc) * lim.min() + perc * lim.max()
-        m = lim < thr
-    elif kind == "entropy":
-        im8 = skimage.util.img_as_ubyte(im)  # type: ignore[no-untyped-call]
-        if im.dtype == float:
-            lim = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore[no-untyped-call]
-        else:
-            lim = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore[no-untyped-call]
-        lim_ = True
-        title = radius, perc
-        thr = (1 - perc) * lim.min() + perc * lim.max()
-        m = lim < thr
-    elif kind == "adaptive":
-        lim_ = False
-        title = adaptive_radius
-        f = im > filters.threshold_local(im, adaptive_radius)  # type: ignore[no-untyped-call]
-        m = ~f
-    elif kind == "li_adaptive":
-        lim_ = False
-        title = adaptive_radius
-        li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
-        m = im < li
-        # # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
-        imm = im * m
-        f = imm > filters.threshold_local(imm, adaptive_radius)  # type: ignore[no-untyped-call]
-        m = ~f * m
-    elif kind == "li_li":
-        lim_ = False
-        title = None
-        li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
-        m = im < li
-        # # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
-        imm = im * m
-        # To avoid zeros generated after first thesholding, clipping to the
-        # min value of original image is needed before second thesholding.
-        thr2 = filters.threshold_li(imm.clip(np.min(im)))  # type: ignore[no-untyped-call]
-        m = im < thr2
-        # # FIXME: in case mm = skimage.morphology.binary_closing(mm)
-    elif kind == "inverse_local_yen":
-        title = None
-        f = filters.threshold_local(1 / im)  # type: ignore[no-untyped-call]
-        m = f > filters.threshold_yen(f)  # type: ignore[no-untyped-call]
+
+    m, title, lim = processing_functions[bg_params.kind](im, bg_params)
     pixel_values = im[m]
     iqr = np.percentile(pixel_values, [25, 50, 75])
-
-    def plot() -> Figure:
-        f = plt.figure(figsize=(9, 5))
-        ax1 = f.add_subplot(121)
-        masked = im * m
-        cmap = plt.cm.inferno  # type: ignore[attr-defined]
-        img0 = ax1.imshow(masked, cmap=cmap)
-        plt.colorbar(img0, ax=ax1, orientation="horizontal")
-        plt.title(kind + " " + str(title) + "\n" + str(iqr))
-        f.add_subplot(122)
-        myhist(im[m], log=True)
-        f.tight_layout()
-        return f
-
-    f1 = plot()
-    figures = [f1]
-    if lim_:
-
-        def plot_lim() -> Figure:
-            f = plt.figure(figsize=(9, 4))
-            ax1, ax2, host = f.subplots(nrows=1, ncols=3)  # type: ignore[misc]
-            img0 = ax1.imshow(lim)
-            plt.colorbar(img0, ax=ax2, orientation="horizontal")
-            # FIXME: this is horribly duplicating an axes
-            f.add_subplot(132)
-            myhist(lim)
-            #
-            # plot bg vs. perc
-            ave, sd, median = ([], [], [])
-            delta = lim.max() - lim.min()
-            delta /= 2
-            rng = np.linspace(lim.min() + delta / 20, lim.min() + delta, 20)
-            par = host.twiny()
-            # Second, show the right spine.
-            par.spines["bottom"].set_visible(True)
-            par.set_xlabel("perc")
-            par.set_xlim(0, 0.5)
-            par.grid()
-            host.set_xlim(lim.min(), lim.min() + delta)
-            p = np.linspace(0.025, 0.5, 20)
-            for t in rng:
-                m = lim < t
-                ave.append(im[m].mean())
-                sd.append(im[m].std() / 10)
-                median.append(np.median(im[m]))
-            host.plot(rng, median, "o")
-            par.errorbar(p, ave, sd)
-            f.tight_layout()
-            return f
-
-        f2 = plot_lim()
-        figures.append(f2)
-    # Close all figures explicitly just before returning
-    for fig in figures:
-        plt.close(fig)
+    title = title + "\n" + str(iqr)
+    figures = _bg_plot(im, m, title, lim)
 
     return iqr[1], pixel_values, figures
 
@@ -364,6 +430,7 @@ def iteratively_refine_background(
     >>> bg_final, sd_final, _, _ = iteratively_refine_background(frame)
     >>> print(f"Refined Background: {bg_final}, Standard Deviation: {sd_final}")
     """
+    prob_threshold = 0.005
     # Initial background estimate using the median of the frame
     bg_max = 1.5 * np.mean(frame) if bgmax is None else bgmax
     vals_below_bg_max = frame[frame < bg_max]
@@ -374,7 +441,10 @@ def iteratively_refine_background(
         for _i in range(100):  # Maximum of 100 iterations for refinement
             # Filtering using the current background estimate
             prob_frame = prob(frame, bg_final, sd_initial)
-            mask = ndimage.percentile_filter(prob_frame, percentile=1, size=2) > 0.005
+            mask = (
+                ndimage.percentile_filter(prob_frame, percentile=1, size=2)
+                > prob_threshold
+            )
             # FIXME: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > 0.1
             filtered_frame = frame[mask]
             bg_updated, sd_updated = fit_gaussian(filtered_frame)
