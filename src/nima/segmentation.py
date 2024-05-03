@@ -107,7 +107,9 @@ class BgParams:
     perc: float = 10.0
     radius: int = 10
     adaptive_radius: int | None = None
-    arcsinh_perc: int = 80
+    arcsinh_perc: float = 80
+    erosion_disk: float = 0
+    clip: bool = False
 
     def __post_init__(self) -> None:
         """Perform validation and normalization on initialization.
@@ -127,7 +129,6 @@ class BgParams:
         self.perc /= 100
 
 
-# FIXME: arcsinh_perc: float
 def _bg_arcsinh(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]:
     perc = bg_params.perc
     radius = bg_params.radius
@@ -146,7 +147,6 @@ def _bg_entropy(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]
     perc = bg_params.perc
     radius = bg_params.radius
     im8 = skimage.util.img_as_ubyte(im)  # type: ignore[no-untyped-call]
-    # test lim = filters.rank.entropy(im8 / max(im8.max(), 1), morphology.disk(radius))
     if im.dtype == float:
         lim = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore[no-untyped-call]
     else:
@@ -167,26 +167,35 @@ def _bg_adaptive(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
 
 def _bg_li_adaptive(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
     adaptive_radius = bg_params.adaptive_radius
-    li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
+    li = filters.threshold_li(im)  # type: ignore[no-untyped-call]
     m = im < li
-    # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
+    if bg_params.erosion_disk:
+        m = skimage.morphology.binary_erosion(
+            m,
+            morphology.disk(bg_params.erosion_disk),  # type: ignore[no-untyped-call]
+        )
     imm = im * m
+    if bg_params.clip:
+        imm = imm.clip(np.min(im))
     f = imm > filters.threshold_local(imm, adaptive_radius)  # type: ignore[no-untyped-call]
     m = ~f * m
-    title = f"{bg_params.kind} {adaptive_radius}"
+    title = f"{bg_params.kind} adaptive_radius={adaptive_radius}"
     return m, title, None
 
 
 def _bg_li_li(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
     li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
     m = im < li
-    # FIXME: in case m = skimage.morphology.binary_erosion(m, disk(3))
+    if bg_params.erosion_disk:
+        m = skimage.morphology.binary_erosion(
+            m,
+            morphology.disk(bg_params.erosion_disk),  # type: ignore[no-untyped-call]
+        )
     imm = im * m
     # To avoid zeros generated after first thesholding, clipping to the
     # min value of original image is needed before second threshold.
     thr2 = filters.threshold_li(imm.clip(np.min(im)))  # type: ignore[no-untyped-call]
     m = im < thr2
-    # FIXME: in case mm = skimage.morphology.binary_closing(mm)
     title = bg_params.kind + " " + ""
     return m, title, None
 
@@ -423,7 +432,7 @@ def iteratively_refine_background(
                 ndimage.percentile_filter(prob_frame, percentile=1, size=2)
                 > prob_threshold
             )
-            # FIXME: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > 0.1
+            # TODO: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > 0.1
             filtered_frame = frame[mask]
             bg_updated, sd_updated = fit_gaussian(filtered_frame)
             if np.isclose(bg_updated, bg_final, atol=1e-6):  # Tolerance for convergence
@@ -454,6 +463,7 @@ def iteratively_refine_background(
         fig.tight_layout()
     else:
         fit, fig = None, None
+    # TODO: will define BgResult , np.percentile(filtered_frame, [25, 50, 75])
     return bg_final, sd_updated, fit, fig
 
 

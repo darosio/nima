@@ -21,9 +21,6 @@ rootnames = [("1b_c16_15", 4)]
 ResultFolder = tuple[Path, tuple[str, int], Result]
 
 
-# TODO: Untracked files (3) tests/data/output/1b_c16_15/bg-C-li_adaptive_pdf.png
-
-
 def _assert_image_comparison(
     fp_expected: Path, fp_result: Path, tol: float, suffix: str = ""
 ) -> None:
