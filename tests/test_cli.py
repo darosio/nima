@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pypdf
 import pytest
 import skimage.io
 import skimage.measure
@@ -139,13 +140,18 @@ class TestNima:
         _assert_image_comparison(fp_expected, fp_result, tol)
 
     @pytest.mark.parametrize(
-        "f", ["bg-C-li_adaptive.pdf", "bg-G-li_adaptive.pdf", "bg-R-li_adaptive.pdf"]
+        ("text", "filename"),
+        [
+            ("[262. 273. 284.]", "bg-C-li_adaptive.pdf"),
+            ("[423. 460. 528.]", "bg-G-li_adaptive.pdf"),
+            ("[237. 248. 264.]", "bg-R-li_adaptive.pdf"),
+        ],
     )
-    def test_pdf(self, result_folder: ResultFolder, f: str) -> None:
+    def test_pdf(self, result_folder: ResultFolder, text: str, filename: str) -> None:
         """It checks pdf files: saved bg estimation."""
-        fp_expected = TESTS_PATH / "data" / "output" / result_folder[1][0] / f
-        fp_result = result_folder[0] / result_folder[1][0] / f
-        _assert_image_comparison(fp_expected, fp_result, 13, "pdf")
+        fp_result = result_folder[0] / result_folder[1][0] / filename
+        page4 = pypdf.PdfReader(fp_result).pages[3]
+        assert text in page4.extract_text()
 
 
 def test_bias_mflat(tmp_path: Path) -> None:
