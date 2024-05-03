@@ -25,27 +25,6 @@ from .types import ImArray, ImMask
 # then map dask to use it somehow.
 
 
-def myhist(
-    im: ImArray,
-    bins: int = 60,
-    *,
-    log: bool = False,
-    nf: bool = False,
-) -> None:
-    """Plot image intensity as histogram.
-
-    ..note:: Consider deprecation.
-
-    """
-    hist, bin_edges = np.histogram(im, bins=bins)
-    bin_centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
-    if nf:
-        plt.figure()
-    plt.plot(bin_centers, hist, lw=2)
-    if log:
-        plt.yscale("log")
-
-
 def _bg_plot(im: ImArray, m: ImMask, title: str, lim: ImArray | None) -> list[Figure]:
     fig1 = plt.figure(figsize=(9, 5))
     ax1 = fig1.add_subplot(121)
@@ -55,7 +34,8 @@ def _bg_plot(im: ImArray, m: ImMask, title: str, lim: ImArray | None) -> list[Fi
     plt.colorbar(img0, ax=ax1, orientation="horizontal")
     plt.title(title)
     fig1.add_subplot(122)
-    myhist(im[m], log=True)
+    plt.hist(im[m].ravel(), bins=60, log=True, color="skyblue", edgecolor="black")
+    plt.title("Histogram of pixels considered to be background")
     fig1.tight_layout()
     figures = [fig1]
     if lim is not None:
@@ -63,10 +43,8 @@ def _bg_plot(im: ImArray, m: ImMask, title: str, lim: ImArray | None) -> list[Fi
         ax1, ax2, host = fig2.subplots(nrows=1, ncols=3)  # type: ignore[misc]
         img0 = ax1.imshow(lim)
         plt.colorbar(img0, ax=ax2, orientation="horizontal")
-        # FIXME: this is horribly duplicating an axes
-        fig2.add_subplot(132)
-        myhist(lim)
-        #
+        ax2.hist(lim.ravel(), bins=60, log=True, color="lightgray", edgecolor="black")
+        ax2.set_title("Histogram of Lim")
         # plot bg vs. perc
         ave, sd, median = ([], [], [])
         delta = lim.max() - lim.min()
