@@ -168,9 +168,7 @@ def main(  # noqa: PLR0913
         "arcsinh_perc": bg_percentile_filter,
     }
     kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
-    d_im_bg, bgs, ff, _bgv = nima.d_bg(
-        d_im, BgParams(**kwargs_bg), downscale=bg_downscale
-    )
+    d_im_bg, bgs, ff = nima.d_bg(d_im, BgParams(**kwargs_bg), downscale=bg_downscale)
     print(BgParams(**kwargs_bg))
     # Segment
     kwargs_mask_label: dict[str, Any] = {

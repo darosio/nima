@@ -49,14 +49,14 @@ class TestBg:
 
     def test_default(self) -> None:
         """Test default (arcsinh) method."""
-        assert segmentation.bg(self.im[3, 2])[0] == 286
+        assert segmentation.bg(self.im[3, 2]).iqr[1] == 286
 
     def test_arcsinh(self) -> None:
         """Test arcsinh method and arcsinh_perc, radius and perc arguments."""
         assert (
             segmentation.bg(
                 self.im[3, 2], bg_params=segmentation.BgParams(kind="arcsinh")
-            )[0]
+            ).iqr[1]
             == 286
         )
         assert (
@@ -65,7 +65,7 @@ class TestBg:
                 bg_params=segmentation.BgParams(
                     kind="arcsinh", arcsinh_perc=50, radius=15
                 ),
-            )[0]
+            ).iqr[1]
             == 287
         )
         assert (
@@ -74,7 +74,7 @@ class TestBg:
                 bg_params=segmentation.BgParams(
                     kind="arcsinh", arcsinh_perc=50, radius=15, perc=20
                 ),
-            )[0]
+            ).iqr[1]
             == 288
         )
 
@@ -83,14 +83,14 @@ class TestBg:
         assert (
             segmentation.bg(
                 self.im[3, 2], bg_params=segmentation.BgParams(kind="entropy")
-            )[0]
+            ).iqr[1]
             == 297
         )
         assert (
             segmentation.bg(
                 self.im[3, 2],
                 bg_params=segmentation.BgParams(kind="entropy", radius=20),
-            )[0]
+            ).iqr[1]
             == 293
         )
 
@@ -99,14 +99,14 @@ class TestBg:
         assert (
             segmentation.bg(
                 self.im[3, 2], bg_params=segmentation.BgParams(kind="adaptive")
-            )[0]
+            ).iqr[1]
             == 287
         )
         assert (
             segmentation.bg(
                 self.im[3, 2],
                 bg_params=segmentation.BgParams(kind="adaptive", adaptive_radius=101),
-            )[0]
+            ).iqr[1]
             == 280
         )
 
@@ -115,7 +115,7 @@ class TestBg:
         assert (
             segmentation.bg(
                 self.im[3, 2], bg_params=segmentation.BgParams(kind="li_adaptive")
-            )[0]
+            ).iqr[1]
             == 273
         )
 
@@ -124,7 +124,7 @@ class TestBg:
         assert (
             segmentation.bg(
                 self.im[3, 2], bg_params=segmentation.BgParams(kind="li_li")
-            )[0]
+            ).iqr[1]
             == 288
         )
 

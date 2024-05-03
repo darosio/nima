@@ -213,12 +213,7 @@ def d_bg(
     downscale: tuple[int, int] | None = None,
     *,
     clip: bool = True,
-) -> tuple[
-    dict[str, Im],
-    pd.DataFrame,
-    dict[str, list[list[Figure]]],
-    dict[str, list[NDArray[np.int_] | NDArray[np.float_]]],
-]:
+) -> tuple[dict[str, Im], pd.DataFrame, dict[str, list[list[Figure]]]]:
     """Bg segmentation for d_im.
 
     Parameters
@@ -241,13 +236,9 @@ def d_bg(
         points.
     figs : dict[str, list[list[Figure]]]
         List of (list ?) of figures.
-    d_bg_values : dict[str, list[NDArray[np.int_] | NDArray[np.float_]]]
-        Background values keys are channels containing a list (for each time
-        point) of list of values.
 
     """
     d_bg = defaultdict(list)
-    d_bg_values = defaultdict(list)
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
     dd_cor: dict[str, Im] = {}
@@ -256,17 +247,18 @@ def d_bg(
             im_for_bg = im
             if downscale:
                 im_for_bg = transform.downscale_local_mean(im, downscale)  # type: ignore[no-untyped-call]
-            med, v, ff = bg(im_for_bg, bg_params=bg_params)
+            bg_result = bg(im_for_bg, bg_params=bg_params)
+            med = bg_result.iqr[1]
+            if bg_result.figures:
+                d_fig[k].append(bg_result.figures)
             d_bg[k].append(med)
-            d_bg_values[k].append(v)
             d_cor[k].append(d_im[k][t] - med)
-            d_fig[k].append(ff)
         dd_cor[k] = np.array(d_cor[k])
     if clip:
         for k in d_cor:
             dd_cor[k] = dd_cor[k].clip(0)
     bgs = pd.DataFrame({k: np.array(v) for k, v in d_bg.items()})
-    return dd_cor, bgs, d_fig, d_bg_values
+    return dd_cor, bgs, d_fig
 
 
 def d_mask_label(  # noqa: PLR0913

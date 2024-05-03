@@ -77,7 +77,11 @@ def ave(img: NDArray[np.float_], bgmax: float, prob_value: float = 0.001) -> flo
     if bgmax:
         # MAYBE: Use bg2
         pass
-    av, sd, _, _ = iteratively_refine_background(img)
+    bg_result = iteratively_refine_background(img)
+    (
+        av,
+        sd,
+    ) = bg_result.bg, bg_result.sd
     av = min(av, 20)
     sd = min(sd, 10)
     mask = prob(img, float(av), sd) < prob_value

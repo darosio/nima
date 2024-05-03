@@ -247,7 +247,7 @@ warn_unused_configs = true
 [tool.pylsp-mypy]
 dmypy = true
 enabled = true
-live_mode = true
+live_mode = false
 strict = false
 
 [tool.ruff]

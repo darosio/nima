@@ -129,6 +129,16 @@ class BgParams:
         self.perc /= 100
 
 
+@dataclass
+class BgResult:
+    """Group result of a frame bg estimation."""
+
+    bg: float
+    sd: float
+    iqr: tuple[float, float, float]
+    figures: list[Figure] | None
+
+
 def _bg_arcsinh(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]:
     perc = bg_params.perc
     radius = bg_params.radius
@@ -207,9 +217,8 @@ def _bg_inverse_yen(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None
     return m, title, None
 
 
-def bg(
-    im: ImArray, bg_params: BgParams | None = None
-) -> tuple[float, NDArray[np.int_] | NDArray[np.float_], list[Figure]]:
+# def bg(im: ImArray, bg_params: BgParams | None = None) -> tuple[float, list[Figure]]:
+def bg(im: ImArray, bg_params: BgParams | None = None) -> BgResult:
     """Segment background from an image stack.
 
     Parameters
@@ -222,15 +231,11 @@ def bg(
 
     Returns
     -------
-    median : float
-        The median of all background-masked pixel values.
-    pixel_values : NDArray[np.int_] | NDArray[np.float_]
-        A flat array containing the values of all pixels considered to be
-        background.
-    figs : list[Figure]
-        A list containing matplotlib Figure objects related to the segmentation
-        visualization. The actual contents depend on the `kind` parameter. For
-        'entropy' and 'arcsinh' methods, this list contains 2 elements.
+    BgResult
+        Comprise the values for bg, sd and iqr, and a list of matplotlib Figure
+        objects related to the segmentation visualization. The actual contents
+        depend on the `kind` parameter. For 'entropy' and 'arcsinh' methods,
+        this list contains 2 elements.
 
     Raises
     ------
@@ -260,8 +265,8 @@ def bg(
     iqr = np.percentile(pixel_values, [25, 50, 75])
     title = title + "\n" + str(iqr)
     figures = _bg_plot(im, m, title, lim)
-
-    return iqr[1], pixel_values, figures
+    bg, sd = fit_gaussian(pixel_values)
+    return BgResult(bg, sd, iqr, figures)
 
 
 def _bgmax(img: ImArray, bins: int = 50, *, densityplot: bool = False) -> float:
@@ -300,7 +305,7 @@ def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float_]
         return cast(NDArray[np.float_], result)
 
 
-def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
+def fit_gaussian(vals: NDArray[np.float_ | np.int_]) -> tuple[float, float]:
     """Estimate mean and standard deviation using a Gaussian fit.
 
     The function fits a Gaussian distribution to a given array of values and
@@ -311,7 +316,7 @@ def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
 
     Parameters
     ----------
-    vals : NDArray[np.float_]
+    vals : NDArray[np.float_ | np.int_]
         A one-dimensional NumPy array containing the data values for which the
         Gaussian distribution parameters (mean and standard deviation) are to be
         estimated.
@@ -376,7 +381,7 @@ def fit_gaussian(vals: NDArray[np.float_]) -> tuple[float, float]:
 # fit the bg for clop3 experiments
 def iteratively_refine_background(
     frame: NDArray[np.float_], bgmax: None | np.float_ = None, *, probplot: bool = False
-) -> tuple[float, float, None | tuple[float, float, float], None | Figure]:
+) -> BgResult:
     """Refine iteratively background estimate of an image frame using Gaussian fitting.
 
     This function takes a single image frame, performs an initial estimate of
@@ -397,25 +402,17 @@ def iteratively_refine_background(
 
     Returns
     -------
-    bg_final : float
-        The refined background estimate after convergence.
-    sd_final : float
-        The standard deviation of the Gaussian fit corresponding to the final
-        background estimate.
-    probplot_fit : None | tuple[float, float, float]
-        Tuple containing probplot parameters: slope, intercept, and R-value of
-        the probability plot (Q-Q plot) if `probplot` is True; otherwise, None.
-    probplot_fig : None | Figure
-        The figure object of the probability plot if `probplot` is True;
-        otherwise, None.
+    BgResult
+        Comprise the values for bg, sd and iqr, and the figure object of the
+        probability plot if `probplot` is True; otherwise, None.
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy import ndimage
     >>> frame = np.random.normal(loc=100, scale=10, size=(256, 256))
-    >>> bg_final, sd_final, _, _ = iteratively_refine_background(frame)
-    >>> print(f"Refined Background: {bg_final}, Standard Deviation: {sd_final}")
+    >>> bg_result = iteratively_refine_background(frame)
+    >>> print(f"Refined Background: {bg_result.bg}, Standard Deviation: {bg_result.sd}")
     """
     prob_threshold = 0.005
     # Initial background estimate using the median of the frame
@@ -455,16 +452,18 @@ def iteratively_refine_background(
         ax1.set_ylabel("Frequency")
         ax2 = fig.add_subplot(132)
         ax2.set_title("Probplot")
-        _, fit = stats.probplot(vals_below_bg_max, plot=ax2, rvalue=True)
+        stats.probplot(vals_below_bg_max, plot=ax2, rvalue=True)
         ax3 = fig.add_subplot(133)
-        masked = frame * mask
+        masked = (frame * mask).clip(np.min(frame))
         img0 = ax3.imshow(masked)
         plt.colorbar(img0, ax=ax3, orientation="horizontal")
         fig.tight_layout()
+        figs = [fig]
     else:
-        fit, fig = None, None
-    # TODO: will define BgResult , np.percentile(filtered_frame, [25, 50, 75])
-    return bg_final, sd_updated, fit, fig
+        figs = None
+    iqr = np.percentile(filtered_frame, [25, 50, 75])
+    # TODO: return None|list[Figure] not sequence of fig or none
+    return BgResult(bg_updated, sd_updated, iqr, figs)
 
 
 def geometric_mean_filter(image: ImArray, kernel_size: float) -> ImArray:
