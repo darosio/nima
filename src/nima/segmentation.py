@@ -418,52 +418,58 @@ def iteratively_refine_background(
     # Initial background estimate using the median of the frame
     bg_max = 1.5 * np.mean(frame) if bgmax is None else bgmax
     vals_below_bg_max = frame[frame < bg_max]
-    bg_initial, sd_initial = fit_gaussian(vals_below_bg_max)
+    # `fit_gaussian` is 40% faster than scipy
+    # and its first guess is closer to the final result
+    bg_initial, sd_ = fit_gaussian(vals_below_bg_max)
     # Iterative refinement
-    bg_final = bg_initial
+    bg_break = bg_initial
     with ProgressBar():  # type: ignore[no-untyped-call]
         for _i in range(100):  # Maximum of 100 iterations for refinement
             # Filtering using the current background estimate
-            prob_frame = prob(frame, bg_final, sd_initial)
+            prob_frame = prob(frame, bg_break, sd_)
             mask = (
                 ndimage.percentile_filter(prob_frame, percentile=1, size=2)
                 > prob_threshold
             )
             # TODO: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > 0.1
             filtered_frame = frame[mask]
-            bg_updated, sd_updated = fit_gaussian(filtered_frame)
-            if np.isclose(bg_updated, bg_final, atol=1e-6):  # Tolerance for convergence
+            bg_updated, sd_ = fit_gaussian(filtered_frame)
+            if np.isclose(bg_updated, bg_break, atol=1e-6):  # Tolerance for convergence
                 break
-            bg_final = bg_updated
+            bg_break = bg_updated
     # Return also a probability plot
     if probplot:
         fig = plt.figure(figsize=(12, 4))
         ax1 = fig.add_subplot(131)
         # Generate the Gaussian distribution
-        xmin, xmax = vals_below_bg_max.min(), vals_below_bg_max.max()
+        xmin, xmax = filtered_frame.min(), filtered_frame.max()
         x = np.linspace(xmin, xmax, 100)
-        p = stats.norm.pdf(x, bg_updated, sd_updated)
-        ax1.hist(vals_below_bg_max, bins=20, density=True, alpha=0.6, color="g")
+        p = stats.norm.pdf(x, bg_updated, sd_)
+        bs, ss = stats.distributions.norm.fit(filtered_frame)
+        print(bs, ss)
+        ps = stats.norm.pdf(x, bs, ss)
+        ax1.hist(filtered_frame, bins=20, density=True, alpha=0.6, color="g")
         # Plot the Gaussian fit
         ax1.plot(x, p, "r", linewidth=2)
+        ax1.plot(x, ps, "r-", linewidth=1)
         # Set the title and labels
         ax1.set_title("Histogram with Gaussian Fit")
         ax1.set_xlabel("Value")
         ax1.set_ylabel("Frequency")
         ax2 = fig.add_subplot(132)
         ax2.set_title("Probplot")
-        stats.probplot(vals_below_bg_max, plot=ax2, rvalue=True)
+        stats.probplot(filtered_frame, plot=ax2, rvalue=True)
         ax3 = fig.add_subplot(133)
         masked = (frame * mask).clip(np.min(frame))
         img0 = ax3.imshow(masked)
         plt.colorbar(img0, ax=ax3, orientation="horizontal")
         fig.tight_layout()
         figs = [fig]
+        print(xmax)
     else:
         figs = None
     iqr = np.percentile(filtered_frame, [25, 50, 75])
-    # TODO: return None|list[Figure] not sequence of fig or none
-    return BgResult(bg_updated, sd_updated, iqr, figs)
+    return BgResult(bg_updated, sd_, iqr, figs)
 
 
 def geometric_mean_filter(image: ImArray, kernel_size: float) -> ImArray:
