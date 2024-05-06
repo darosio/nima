@@ -445,7 +445,7 @@ def iteratively_refine_background(
         xmin, xmax = filtered_frame.min(), filtered_frame.max()
         x = np.linspace(xmin, xmax, 100)
         p = stats.norm.pdf(x, bg_updated, sd_)
-        bs, ss = stats.distributions.norm.fit(filtered_frame)
+        bs, ss = stats.distributions.norm.fit(filtered_frame, method="MLE")
         print(bs, ss)
         ps = stats.norm.pdf(x, bs, ss)
         ax1.hist(filtered_frame, bins=20, density=True, alpha=0.6, color="g")
