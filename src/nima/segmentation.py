@@ -265,7 +265,7 @@ def bg(im: ImArray, bg_params: BgParams | None = None) -> BgResult:
     iqr = np.percentile(pixel_values, [25, 50, 75])
     title = title + "\n" + str(iqr)
     figures = _bg_plot(im, m, title, lim)
-    bg, sd = fit_gaussian(pixel_values)
+    bg, sd = stats.distributions.norm.fit(pixel_values)
     return BgResult(bg, sd, iqr, figures)
 
 
@@ -297,7 +297,9 @@ def prob(v: ImArray, bg: float, sd: float) -> NDArray[np.float_]: ...
 
 def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float_]:
     """Compute pixel probability of belonging to background."""
-    result = special.erfc((v - bg) / sd)
+    # Using np.sqrt(2) for normalization
+    result = special.erfc((v - bg) / (np.sqrt(2) * sd))
+    result = np.minimum(1, result)
     # Use typing.cast to explicitly inform mypy
     if isinstance(v, float):
         return cast(float, result)
@@ -431,9 +433,10 @@ def iteratively_refine_background(
                 ndimage.percentile_filter(prob_frame, percentile=1, size=2)
                 > prob_threshold
             )
-            # TODO: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > 0.1
+            # TODO: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > .1
+            # TODO: mask = prob_frame > prob_threshold
             filtered_frame = frame[mask]
-            bg_updated, sd_ = fit_gaussian(filtered_frame)
+            bg_updated, sd_ = stats.distributions.norm.fit(filtered_frame, method="MM")
             if np.isclose(bg_updated, bg_break, atol=1e-6):  # Tolerance for convergence
                 break
             bg_break = bg_updated

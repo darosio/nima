@@ -103,4 +103,4 @@ def gen_frame(
         flat = gen_flat(nrows, ncols)
     noise = np.random.normal(0, noise_sd, size=(nrows, ncols))
     img = bias + flat * (sky + objs) + noise
-    return img.astype("uint16")
+    return img.clip(0).astype("uint16")
