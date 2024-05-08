@@ -58,7 +58,7 @@ dev = [
 ]
 docs = [
   "autodocsumm <= 0.2.12",
-  "nbsphinx <= 0.9.3",
+  "nbsphinx <= 0.9.4",
   "pydata-sphinx-theme <= 0.15.2",
   "Pygments <= 2.18.0",
   "Sphinx <= 7.3.7",
