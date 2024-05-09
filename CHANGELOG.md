@@ -1,5 +1,114 @@
 # Changelog
 
+## v0.10.0 (2024-05-10)
+
+### Feat
+
+- Add geometri mean filter
+
+### Fix
+
+- gen_frame.clip(0) revealed fit_gaussian unstable with large sd
+- iteratively_refine_background
+- Improve BgParams with optional clip and erosion
+- slow env create
+- **docs**: Warning for main docstr with \*
+
+### Docs
+
+- Compare methods for bg estimation
+- Fix an import in usage
+
+### Style
+
+- NDArray
+
+### Test
+
+- Test PDF output without reference files
+
+### Build
+
+- **deps**: update zarr requirement from <=2.17.2 to <=2.18.0 (#572)
+- **deps**: update nbsphinx requirement from <=0.9.3 to <=0.9.4 (#571)
+- **pre-commit**: update hooks (#570)
+- **deps**: update dask[distributed] requirement (#569)
+- **deps**: update ruff requirement from <=0.4.2 to <=0.4.3 (#568)
+- **deps**: update coverage[toml] requirement from <=7.5.0 to <=7.5.1 (#567)
+- **deps**: update tifffile requirement from <=2024.4.24 to <=2024.5.3 (#566)
+- **deps**: update pygments requirement from <=2.17.2 to <=2.18.0 (#565)
+- **deps**: bump hatch from 1.9.7 to 1.10.0 in /.github/workflows (#564)
+- **deps**: bump codecov/codecov-action from 4.3.0 to 4.3.1 (#563)
+- **deps**: update commitizen requirement from <=3.24.0 to <=3.25.0 (#562)
+- **pre-commit**: update hooks (#561)
+- **deps**: update pytest requirement from <=8.1.1 to <=8.2.0 (#559)
+- **deps**: update ruff requirement from <=0.4.1 to <=0.4.2 (#558)
+- **deps**: update tifffile requirement from <=2024.4.18 to <=2024.4.24 (#557)
+- **deps**: update mypy requirement from <=1.9.0 to <=1.10.0 (#556)
+- **deps**: bump hatch from 1.9.4 to 1.9.7 in /.github/workflows (#555)
+- **deps**: bump jupyterlab-server from 2.27.0 to 2.27.1 (#554)
+- **deps**: update coverage[toml] requirement from <=7.4.4 to <=7.5.0 (#552)
+- **deps**: bump questionary from 2.0.0 to 2.0.1 (#550)
+- Pin few indirect deps to speed up pip
+- **deps**: update jupyterlab-server requirement (#548)
+- **deps**: update urllib3 requirement from <=1.26.18 to <=2.2.1 (#547)
+- **deps**: update ipython requirement from <=8.18.0 to <=8.23.0 (#546)
+- **deps**: update scikit-image requirement from <=0.23.1 to <=0.23.2 (#544)
+- **deps**: update pyarrow requirement from <=15.0.2 to <=16.0.0 (#543)
+- **deps**: update ruff requirement from <=0.4.0 to <=0.4.1 (#542)
+- **deps**: update sphinx requirement from <=7.3.6 to <=7.3.7 (#541)
+- **deps**: update dask[distributed] requirement (#540)
+- Move aicsimageio into deps
+- Drop types-setuptools
+- Drop typeguard test
+- Update to py3.12
+- Correct mypy configuration
+- **deps**: update ruff requirement from <=0.3.7 to <=0.4.0 (#539)
+- **deps**: update tifffile requirement from <=2024.2.12 to <=2024.4.18 (#538)
+- **deps**: update commitizen requirement from <=3.22.0 to <=3.24.0 (#537)
+- **deps**: update sphinx requirement from <=7.3.4 to <=7.3.6 (#536)
+- **deps**: update sphinx-autodoc-typehints requirement (#535)
+- **deps**: update sphinx requirement from <=7.2.6 to <=7.3.4 (#533)
+- **deps**: bump codecov/codecov-action from 4.2.0 to 4.3.0 (#524)
+- **deps**: update types-setuptools requirement (#532)
+- **deps**: update ruff requirement from <=0.3.6 to <=0.3.7 (#530)
+- **deps**: update commitizen requirement from <=3.21.3 to <=3.22.0 (#529)
+- **deps**: update ruff requirement from <=0.3.5 to <=0.3.6 (#528)
+- **deps-dev**: update pandas requirement from <=2.2.1 to <=2.2.2 (#527)
+- **deps-dev**: update sphinx-autodoc-typehints requirement (#526)
+- **deps-dev**: update scikit-image requirement (#525)
+- **deps-dev**: update zarr requirement from <=2.17.1 to <=2.17.2 (#522)
+- **deps-dev**: update dask[distributed] requirement (#521)
+- **deps**: bump codecov/codecov-action from 4.1.1 to 4.2.0 (#520)
+- **deps-dev**: update matplotlib requirement from <=3.8.3 to <=3.8.4 (#519)
+- **deps-dev**: update scipy requirement from <=1.12.0 to <=1.13.0 (#518)
+- **deps-dev**: update ruff requirement from <=0.3.4 to <=0.3.5 (#517)
+- **deps-dev**: update dask[distributed] requirement (#516)
+- **deps-dev**: update commitizen requirement from <=3.20.0 to <=3.21.3 (#514)
+- **deps**: bump actions/configure-pages from 4 to 5 (#513)
+
+### Refactor
+
+- Add BgResult grouping dataclass
+- Drop myhist()
+- bg introducing BgParams
+- generat for pylint
+- To include pylint rule extract watershed function
+- skimage import in nima; d_mask_label
+- main cli
+- read_tiff
+- boolean traps
+- exceptions
+- Drop data-science-types
+- **test**: Use consistently TESTS_PATH
+- Add segmentation module
+- **build**: From black to ruff format
+
+### chore
+
+- Modify pre-commit update message
+- update pre-commit hooks (#545)
+
 ## v0.9.1 (2024-03-28)
 
 ### Fix

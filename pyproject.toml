@@ -39,7 +39,7 @@ license = "BSD-3-Clause"
 name = "nima"
 readme = "README.md"
 requires-python = ">=3.10"
-version = "0.9.1"
+version = "0.10.0"
 
 [project.optional-dependencies]
 dev = [
@@ -111,7 +111,7 @@ skip = 'src/nima/__main__.py'
 [tool.commitizen]
 name = "cz_customize"
 tag_format = "v$version"
-version = "0.9.1"
+version = "0.10.0"
 version_files = [
   "pyproject.toml:version",
   "docs/conf.py:release",
