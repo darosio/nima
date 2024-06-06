@@ -47,7 +47,7 @@ dev = [
   "questionary == 2.0.1",
   "pre-commit <= 3.7.1",
   "ipykernel <=6.29.4",
-  "ruff <= 0.4.7",
+  "ruff <= 0.4.8",
   "pylsp-mypy",
   "ruff-lsp",
   "jupyter <= 1.0.0",
