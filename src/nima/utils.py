@@ -177,7 +177,7 @@ def mask_all_channels(im: ImArray, thresholds: tuple[float]) -> ImMask:
     >>> ir = AICSImage(fp, reader=reader)
     >>> dd = ir.dask_data
     >>> mask_all_channels(dd[0, :, 0], [19, 17, 22]).compute().sum()
-    262144
+    np.int64(262144)
     """
     if len(thresholds) != im.shape[0]:
         msg = "Length of thresholds must match the number of image dimensions."
