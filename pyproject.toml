@@ -267,6 +267,7 @@ ignore = [
   "S311"  # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
 select = [
+  "NPY201",
   "A",  # builtins
   "ANN",  # typing annotation
   "ARG",  # unused arguments

@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 
-def gen_bias(nrows: int = 128, ncols: int = 128) -> NDArray[np.float_]:
+def gen_bias(nrows: int = 128, ncols: int = 128) -> NDArray[np.float64]:
     """Generate a bias frame."""
     xvec = np.arange(ncols)
     yvec = 2 - (xvec**2 / 2.6 * (np.sin(xvec / 20) ** 2 + 0.1)) / 4000
@@ -16,7 +16,7 @@ def gen_bias(nrows: int = 128, ncols: int = 128) -> NDArray[np.float_]:
     return img
 
 
-def gen_flat(nrows: int = 128, ncols: int = 128) -> NDArray[np.float_]:
+def gen_flat(nrows: int = 128, ncols: int = 128) -> NDArray[np.float64]:
     """Generate a flat frame."""
     y_idx, x_idx = np.mgrid[:nrows, :ncols]
     img = np.empty((nrows, ncols), dtype=float)
@@ -62,7 +62,7 @@ class ImageObjsParams:
     max_fluor: float = 20.0
 
 
-def gen_objs(params: ImageObjsParams | None = None) -> NDArray[np.float_]:
+def gen_objs(params: ImageObjsParams | None = None) -> NDArray[np.float64]:
     """Generate a frame with ellipsoid objects; random n, shape, position and I."""
     params = ImageObjsParams() if params is None else params
     min_num_objects = 2
@@ -83,12 +83,12 @@ def gen_objs(params: ImageObjsParams | None = None) -> NDArray[np.float_]:
 
 
 def gen_frame(
-    objs: NDArray[np.float_],
-    bias: NDArray[np.float_] | None = None,
-    flat: NDArray[np.float_] | None = None,
+    objs: NDArray[np.float64],
+    bias: NDArray[np.float64] | None = None,
+    flat: NDArray[np.float64] | None = None,
     sky: float = 2,
     noise_sd: float = 1,
-) -> NDArray[np.float_]:  # pylint: disable=too-many-arguments
+) -> NDArray[np.float64]:  # pylint: disable=too-many-arguments
     """Simulate an acquired frame [bias + noise + flat * (sky + obj)]."""
     (nrows, ncols) = objs.shape
     if bias is None:

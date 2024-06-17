@@ -42,10 +42,10 @@ def test_object_shape() -> None:
 class TestFrame:
     """Test simulation of an acquired frame."""
 
-    bias: NDArray[np.float_]
-    flat: NDArray[np.float_]
-    objs: NDArray[np.float_]
-    frame: NDArray[np.float_]
+    bias: NDArray[np.float64]
+    flat: NDArray[np.float64]
+    objs: NDArray[np.float64]
+    frame: NDArray[np.float64]
 
     def setup_class(self) -> None:
         """Read test data."""

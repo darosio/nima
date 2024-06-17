@@ -292,10 +292,10 @@ def _bgmax(img: ImArray, bins: int = 50, *, densityplot: bool = False) -> float:
 @overload
 def prob(v: float, bg: float, sd: float) -> float: ...
 @overload
-def prob(v: ImArray, bg: float, sd: float) -> NDArray[np.float_]: ...
+def prob(v: ImArray, bg: float, sd: float) -> NDArray[np.float64]: ...
 
 
-def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float_]:
+def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float64]:
     """Compute pixel probability of belonging to background."""
     # Using np.sqrt(2) for normalization
     result = special.erfc((v - bg) / (np.sqrt(2) * sd))
@@ -304,10 +304,10 @@ def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float_]
     if isinstance(v, float):
         return cast(float, result)
     else:
-        return cast(NDArray[np.float_], result)
+        return cast(NDArray[np.float64], result)
 
 
-def fit_gaussian(vals: NDArray[np.float_ | np.int_]) -> tuple[float, float]:
+def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:
     """Estimate mean and standard deviation using a Gaussian fit.
 
     The function fits a Gaussian distribution to a given array of values and
@@ -318,7 +318,7 @@ def fit_gaussian(vals: NDArray[np.float_ | np.int_]) -> tuple[float, float]:
 
     Parameters
     ----------
-    vals : NDArray[np.float_ | np.int_]
+    vals : NDArray[np.float64 | np.int_]
         A one-dimensional NumPy array containing the data values for which the
         Gaussian distribution parameters (mean and standard deviation) are to be
         estimated.
@@ -359,14 +359,14 @@ def fit_gaussian(vals: NDArray[np.float_ | np.int_]) -> tuple[float, float]:
     """
 
     def gaussian_fit_func(
-        params: list[float], x: float | NDArray[np.float_]
-    ) -> NDArray[np.float_]:
+        params: list[float], x: float | NDArray[np.float64]
+    ) -> NDArray[np.float64]:
         amplitude, mean, sigma, offset = params
         return amplitude * np.exp(-0.5 * ((x - mean) / sigma) ** 2) + offset
 
     def fit_error_func(
-        params: list[float], x: NDArray[np.float_], y: NDArray[np.float_]
-    ) -> NDArray[np.float_]:
+        params: list[float], x: NDArray[np.float64], y: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
         return y - gaussian_fit_func(params, x)
 
     min_val, max_val = int(vals.min()), int(vals.max())
@@ -382,7 +382,10 @@ def fit_gaussian(vals: NDArray[np.float_ | np.int_]) -> tuple[float, float]:
 
 # fit the bg for clop3 experiments
 def iteratively_refine_background(
-    frame: NDArray[np.float_], bgmax: None | np.float_ = None, *, probplot: bool = False
+    frame: NDArray[np.float64],
+    bgmax: None | np.float64 = None,
+    *,
+    probplot: bool = False,
 ) -> BgResult:
     """Refine iteratively background estimate of an image frame using Gaussian fitting.
 
@@ -394,9 +397,9 @@ def iteratively_refine_background(
 
     Parameters
     ----------
-    frame : NDArray[np.float_]
+    frame : NDArray[np.float64]
         The image frame for which the background estimate needs to be refined.
-    bgmax : None | np.float_, optional
+    bgmax : None | np.float64, optional
         Maximum value used from `frame` for background estimation. Defaults to
         None, using the mean of all pixels.
     probplot : bool, optional
