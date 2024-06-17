@@ -48,13 +48,13 @@ def bg(
     """
 
     def fitfunc(
-        p: list[float], x: float | NDArray[np.float_]
-    ) -> float | NDArray[np.float_]:
+        p: list[float], x: float | NDArray[np.float64]
+    ) -> float | NDArray[np.float64]:
         return p[0] * np.exp(-0.5 * ((x - p[1]) / p[2]) ** 2) + p[3]
 
     def errfunc(
-        p: list[float], x: float | NDArray[np.float_], y: float | NDArray[np.float_]
-    ) -> float | NDArray[np.float_]:
+        p: list[float], x: float | NDArray[np.float64], y: float | NDArray[np.float64]
+    ) -> float | NDArray[np.float64]:
         return y - fitfunc(p, x)
 
     mmin = int(im.min())
@@ -72,7 +72,7 @@ def bg(
     return out[0][1], out[0][2]
 
 
-def ave(img: NDArray[np.float_], bgmax: float, prob_value: float = 0.001) -> float:
+def ave(img: NDArray[np.float64], bgmax: float, prob_value: float = 0.001) -> float:
     """Mask out the bg and return objects average of a frame."""
     if bgmax:
         # MAYBE: Use bg2
@@ -107,7 +107,7 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
     for f in filelist:
         img = tff.imread(f)
         if isinstance(img, np.ndarray):
-            if img.dtype in (np.float_, np.int_):
+            if img.dtype in (np.float64, np.int_):
                 r.append(channel_mean(img))
             else:
                 msg = (
@@ -177,7 +177,7 @@ def mask_all_channels(im: ImArray, thresholds: tuple[float]) -> ImMask:
     >>> ir = AICSImage(fp, reader=reader)
     >>> dd = ir.dask_data
     >>> mask_all_channels(dd[0, :, 0], [19, 17, 22]).compute().sum()
-    262144
+    np.int64(262144)
     """
     if len(thresholds) != im.shape[0]:
         msg = "Length of thresholds must match the number of image dimensions."

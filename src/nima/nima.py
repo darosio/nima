@@ -29,8 +29,8 @@ from .segmentation import BgParams, bg
 
 threshold_method_choices = ["yen", "li"]
 
-ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float_], NDArray[np.bool_])
-Im = TypeVar("Im", NDArray[np.int_], NDArray[np.float_])
+ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float64], NDArray[np.bool_])
+Im = TypeVar("Im", NDArray[np.int_], NDArray[np.float64])
 # MAYBE: DIm eq TypeVar("DIm", Dict[str, Im])
 Kwargs = dict[str, str | int | float | bool | None]
 AXES_LENGTH_4D = 4
@@ -156,8 +156,8 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
 
 def d_shading(
     d_im: dict[str, ImArray],
-    dark: dict[str, ImArray] | NDArray[np.float_],
-    flat: dict[str, ImArray] | NDArray[np.float_],
+    dark: dict[str, ImArray] | NDArray[np.float64],
+    flat: dict[str, ImArray] | NDArray[np.float64],
     *,
     clip: bool = True,
 ) -> dict[str, ImArray]:
@@ -173,9 +173,9 @@ def d_shading(
     ----------
     d_im : dict[str, ImArray]
         Dictionary of images.
-    dark : dict[str, ImArray] | NDArray[np.float_]
+    dark : dict[str, ImArray] | NDArray[np.float64]
         Dark image (either a 2D image or 2D d_im).
-    flat : dict[str, ImArray] | NDArray[np.float_]
+    flat : dict[str, ImArray] | NDArray[np.float64]
         Flat image (either a 2D image or 2D d_im).
     clip : bool
         Boolean for clipping values >=0.

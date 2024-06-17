@@ -19,7 +19,7 @@ classifiers = [
   "Development Status :: 2 - Pre-Alpha"
 ]
 dependencies = [
-  "numpy <= 1.26.4",
+  "numpy <= 2.0.0",
   "pandas <= 2.2.2",
   "pyarrow <= 16.1.0",
   "scikit-image <= 0.23.2",
@@ -267,6 +267,7 @@ ignore = [
   "S311"  # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
 select = [
+  "NPY201",
   "A",  # builtins
   "ANN",  # typing annotation
   "ARG",  # unused arguments
