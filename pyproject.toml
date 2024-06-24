@@ -63,7 +63,7 @@ docs = [
   "Pygments <= 2.18.0",
   "Sphinx <= 7.3.7",
   "sphinx-click <= 6.0.0",
-  "sphinx_autodoc_typehints <= 2.2.0",
+  "sphinx_autodoc_typehints <= 2.2.2",
   "statsmodels",
   "seaborn",
   "holoviews",
