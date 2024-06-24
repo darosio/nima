@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-import tifffile as tff  # type: ignore[import-untyped]
+import tifffile as tff
 from numpy.typing import NDArray
 from scipy import optimize, signal, stats  # type: ignore[import-untyped]
 
@@ -115,9 +115,6 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
                     f"but received dtype {img.dtype}"
                 )
                 raise TypeError(msg)
-        else:
-            msg = f"Expected an ImArray, but received {type(img)}"
-            raise TypeError(msg)
     combined_df = pd.concat(r, ignore_index=True)
     if "YFP" in combined_df:
         combined_df["norm"] = combined_df["YFP"] / combined_df["YFP"][:5].mean()
@@ -171,12 +168,11 @@ def mask_all_channels(im: ImArray, thresholds: tuple[float]) -> ImMask:
 
     Examples
     --------
-    >>> from aicsimageio import AICSImage, readers
-    >>> reader = readers.tiff_reader.TiffReader
+    >>> import bioio_tifffile
     >>> fp = "tests/data/1b_c16_15.tif"
-    >>> ir = AICSImage(fp, reader=reader)
-    >>> dd = ir.dask_data
-    >>> mask_all_channels(dd[0, :, 0], [19, 17, 22]).compute().sum()
+    >>> rdr = bioio_tifffile.reader.Reader(fp)
+    >>> dd = rdr.dask_data
+    >>> mask_all_channels(dd[0, :], [19, 17, 22]).compute().sum()
     np.int64(262144)
     """
     if len(thresholds) != im.shape[0]:

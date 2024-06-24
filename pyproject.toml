@@ -19,19 +19,19 @@ classifiers = [
   "Development Status :: 2 - Pre-Alpha"
 ]
 dependencies = [
+  "bioio-tifffile <= 1.0.0",
+  "click <= 8.1.7",
+  "dask[distributed] <= 2024.6.2",
+  "matplotlib <= 3.9.0",
   "numpy <= 2.0.0",
   "pandas <= 2.2.2",
   "pyarrow <= 16.1.0",
+  "s3fs == 2023.6.0",
   "scikit-image <= 0.24.0",
-  "matplotlib <= 3.9.0",
-  "tifffile <= 2024.6.18",  # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
   "scipy <= 1.13.1",
-  "click <= 8.1.7",
-  "dask[distributed] <= 2024.6.2",
-  "zarr <= 2.18.2",
   "sigfig <= 1.3.3",
-  "aicsimageio == 4.14.0",
-  "s3fs == 2023.6.0"
+  "tifffile <= 2024.6.18",  # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
+  "zarr <= 2.18.2"
 ]
 description = "Numerical IMage Analyses."
 keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
@@ -44,45 +44,43 @@ version = "0.10.0"
 [project.optional-dependencies]
 dev = [
   "commitizen <= 3.27.0",
-  "questionary == 2.0.1",
-  "pre-commit <= 3.7.1",
   "ipykernel <=6.29.4",
-  "ruff <= 0.4.10",
-  "pylsp-mypy",
-  "ruff-lsp",
-  "jupyter <= 1.0.0",
   "ipython == 8.18.0",
+  "jupyter <= 1.0.0",
+  "jupyterlab_server == 2.27.2",
   "pooch == 1.8.2",
-  "urllib3 == 1.26.18",
-  "jupyterlab_server == 2.27.2"
+  "pre-commit <= 3.7.1",
+  "pylsp-mypy",
+  "questionary == 2.0.1",
+  "ruff <= 0.4.10",
+  "ruff-lsp",
+  "urllib3 == 1.26.18"
 ]
 docs = [
-  "autodocsumm <= 0.2.12",
-  "nbsphinx <= 0.9.4",
-  "pydata-sphinx-theme <= 0.15.3",
   "Pygments <= 2.18.0",
   "Sphinx <= 7.3.7",
-  "sphinx-click <= 6.0.0",
-  "sphinx_autodoc_typehints <= 2.2.2",
-  "statsmodels",
-  "seaborn",
+  "autodocsumm <= 0.2.12",
+  "bokeh",
+  "dask_image",
   "holoviews",
   "hvplot",
-  "dask_image",
   "impy-array",
-  "bokeh",
+  "nbsphinx <= 0.9.4",
+  "pydata-sphinx-theme <= 0.15.3",
+  "seaborn",
   "selenium",
-  "aicsimageio",
-  "napari"
+  "sphinx-click <= 6.0.0",
+  "sphinx_autodoc_typehints <= 2.2.2",
+  "statsmodels"
 ]
 tests = [
   "coverage[toml] <= 7.5.4",
   "mypy <= 1.10.0",
   "pandas-stubs <= 2.2.2.240603",
+  "pygments <= 2.17.2",  # color xdoctest
   "pypdf <= 4.2.0",
   "pytest <= 8.2.2",
-  "xdoctest <= 1.1.5",
-  "pygments <= 2.17.2"  # color xdoctest
+  "xdoctest <= 1.1.5"
 ]
 
 [project.scripts]

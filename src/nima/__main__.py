@@ -13,7 +13,7 @@ import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import sigfig  # type: ignore[import-untyped]
-import tifffile  # type: ignore[import-untyped]
+import tifffile
 from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client, progress
 from matplotlib.backends.backend_pdf import PdfPages

@@ -23,7 +23,7 @@ from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from scipy import ndimage, signal  # type: ignore[import-untyped]
 from skimage import feature, filters, measure, morphology, segmentation, transform
-from tifffile import TiffFile  # type: ignore[import-untyped]
+from tifffile import TiffFile
 
 from .segmentation import BgParams, bg
 
