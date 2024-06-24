@@ -1,5 +1,68 @@
 # Changelog
 
+## v0.10.1 (2024-06-24)
+
+### Build
+
+- **deps**: update sphinx-autodoc-typehints requirement (#632)
+- **deps**: update coverage[toml] requirement from <=7.5.3 to <=7.5.4 (#631)
+- **deps**: update ruff requirement from <=0.4.9 to <=0.4.10 (#630)
+- **deps**: update dask[distributed] requirement (#629)
+- **deps**: bump pip from 24.0 to 24.1 in /.github/workflows (#628)
+- **deps**: update dask[distributed] requirement (#627)
+- **deps**: update sphinx-autodoc-typehints requirement (#626)
+- **deps**: update tifffile requirement from <=2024.5.22 to <=2024.6.18 (#625)
+- **deps**: update scikit-image requirement from <=0.23.2 to <=0.24.0 (#624)
+- **pre-commit**: update hooks (#622)
+- **deps**: update dask[distributed] requirement (#621)
+- **deps**: update ruff requirement from <=0.4.8 to <=0.4.9 (#620)
+- **deps**: update numpy requirement from <=1.26.4 to <=2.0.0 (#619)
+- **deps**: bump codecov/codecov-action from 4.4.1 to 4.5.0 (#618)
+- **pre-commit**: update hooks (#617)
+- **deps**: update xdoctest requirement from <=1.1.4 to <=1.1.5 (#616)
+- **deps**: bump pooch from 1.8.1 to 1.8.2 (#615)
+- **deps**: update ruff requirement from <=0.4.7 to <=0.4.8 (#614)
+- **deps**: update pytest requirement from <=8.2.1 to <=8.2.2 (#613)
+- **deps**: update sphinx-autodoc-typehints requirement (#612)
+- **deps**: update pandas-stubs requirement (#610)
+- **pre-commit**: update hooks (#609)
+- **deps**: update ruff requirement from <=0.4.6 to <=0.4.7 (#607)
+- **deps**: update dask[distributed] requirement (#606)
+- **deps**: update xdoctest requirement from <=1.1.3 to <=1.1.4 (#605)
+- **deps**: bump hatch from 1.11.1 to 1.12.0 in /.github/workflows (#604)
+- **deps**: update pydata-sphinx-theme requirement (#603)
+- **deps**: update ruff requirement from <=0.4.5 to <=0.4.6 (#602)
+- **deps**: update coverage[toml] requirement from <=7.5.2 to <=7.5.3 (#601)
+- **pre-commit**: update hooks (#600)
+- **deps**: update zarr requirement from <=2.18.1 to <=2.18.2 (#599)
+- **deps**: update coverage[toml] requirement from <=7.5.1 to <=7.5.2 (#598)
+- **deps**: update tifffile requirement from <=2024.5.10 to <=2024.5.22 (#597)
+- **deps**: update scipy requirement from <=1.13.0 to <=1.13.1 (#596)
+- **deps**: bump hatch from 1.11.0 to 1.11.1 in /.github/workflows (#595)
+- **deps**: update commitizen requirement from <=3.26.1 to <=3.27.0 (#594)
+- **deps**: update ruff requirement from <=0.4.4 to <=0.4.5 (#593)
+- **deps**: bump jupyterlab-server from 2.27.1 to 2.27.2 (#592)
+- **pre-commit**: update hooks (#589)
+- **deps**: update commitizen requirement from <=3.25.0 to <=3.26.0 (#588)
+- **deps**: update dask[distributed] requirement (#587)
+- **deps**: update pytest requirement from <=8.2.0 to <=8.2.1 (#586)
+- **deps**: update zarr requirement from <=2.18.0 to <=2.18.1 (#585)
+- **deps**: update sphinx-click requirement from <=5.2.2 to <=6.0.0 (#583)
+- **deps**: update matplotlib requirement from <=3.8.4 to <=3.9.0 (#582)
+- **deps**: bump hatch from 1.10.0 to 1.11.0 in /.github/workflows (#581)
+- **deps**: bump codecov/codecov-action from 4.3.1 to 4.4.0 (#580)
+- **deps**: update pyarrow requirement from <=16.0.0 to <=16.1.0 (#579)
+- **deps**: update sphinx-click requirement from <=5.1.0 to <=5.2.2 (#578)
+- **deps**: update pandas-stubs requirement (#577)
+- **pre-commit**: update hooks (#576)
+- **deps**: update pre-commit requirement from <=3.7.0 to <=3.7.1 (#575)
+- **deps**: update tifffile requirement from <=2024.5.3 to <=2024.5.10 (#574)
+- **deps**: update ruff requirement from <=0.4.3 to <=0.4.4 (#573)
+
+### Refactor
+
+- Drop aicsimageio in favor of bioio-tifffile
+
 ## v0.10.0 (2024-05-10)
 
 ### Feat
