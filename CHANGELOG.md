@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.10.2 (2024-06-25)
+
+### Fix
+
+- bump script
+- Add class attribute docstring
+- Try to fix the hatch run bump script
+
+### Build
+
+- **deps**: update mypy requirement from <=1.10.0 to <=1.10.1 (#635)
+- **deps**: update scipy requirement from <=1.13.1 to <=1.14.0 (#634)
+- **pre-commit**: update hooks
+
 ## v0.10.1 (2024-06-24)
 
 ### Build
