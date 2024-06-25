@@ -101,7 +101,7 @@ repository = "https://github.com/darosio/nima/"
 skips = ["B101", "B603"]
 
 [tool.codespell]
-count = ''
+count = true
 ignore-words-list = 'generat'
 quiet-level = 3
 skip = 'src/nima/__main__.py'
@@ -243,10 +243,10 @@ warn_unreachable = true
 warn_unused_configs = true
 
 [tool.pylsp-mypy]
-dmypy = true
+dmypy = false
 enabled = true
-live_mode = false
-strict = false
+live_mode = true
+strict = true
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
@@ -301,7 +301,7 @@ select = [
 ]
 isort.combine-as-imports = true
 isort.force-single-line = false
-isort.known-first-party = ["nima_io"]
+isort.known-first-party = ["nima"]
 isort.split-on-trailing-comma = true
 mccabe.max-complexity = 12
 
