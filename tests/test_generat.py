@@ -2,8 +2,9 @@
 
 import numpy as np
 import pytest
-from nima import generat
 from numpy.typing import NDArray
+
+from nima import generat
 
 
 def test_bias() -> None:

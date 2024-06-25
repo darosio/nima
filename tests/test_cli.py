@@ -12,6 +12,7 @@ import tifffile as tff
 from click.testing import CliRunner, Result
 from matplotlib.testing.compare import compare_images
 from matplotlib.testing.exceptions import ImageComparisonFailure
+
 from nima.__main__ import bima, main
 
 # tests path
