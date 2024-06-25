@@ -50,15 +50,39 @@ def gen_object(
     return mask  # type: ignore[no-any-return]
 
 
+# MAYBE: Convert to comments like #: Attribute desc
 @dataclass
 class ImageObjsParams:
-    """Parameters for an image frame."""
+    """
+    Parameters for an image frame.
 
+    Attributes
+    ----------
+    max_num_objects : int, optional
+        Maximum number of objects to generate (default: 8).
+    nrows : int, optional
+        Number of rows in the image frame (default: 128).
+    ncols : int, optional
+        Number of columns in the image frame (default: 128).
+    min_radius : int, optional
+        Minimum radius of an object (default: 6).
+    max_radius : int, optional
+        Maximum radius of an object (default: 12).
+    max_fluor : float, optional
+        Maximum fluorescence intensity of an object (default: 20.0).
+    """
+
+    #: Maximum number of objects to generate
     max_num_objects: int = 8
+    #: Number of rows in the image frame
     nrows: int = 128
+    #: Number of columns in the image frame
     ncols: int = 128
+    #: Minimum radius of an object
     min_radius: int = 6
+    #: Maximum radius of an object
     max_radius: int = 12
+    #: Maximum fluorescence intensity of an object
     max_fluor: float = 20.0
 
 

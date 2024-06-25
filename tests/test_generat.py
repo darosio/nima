@@ -39,8 +39,22 @@ def test_object_shape() -> None:
     assert obj.shape == (12, 128)
 
 
+# TODO: Use fixture
 class TestFrame:
-    """Test simulation of an acquired frame."""
+    """
+    Test simulation of an acquired frame.
+
+    Attributes
+    ----------
+    bias : NDArray[np.float64]
+        The bias array for the frame.
+    flat : NDArray[np.float64]
+        The flat field array for the frame.
+    objs : NDArray[np.float64]
+        The objects array for the frame.
+    frame : NDArray[np.float64]
+        The final simulated frame.
+    """
 
     bias: NDArray[np.float64]
     flat: NDArray[np.float64]

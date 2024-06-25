@@ -32,7 +32,23 @@ __out_dir__ = f"nima-{__version__}"
 AXES_LENGTH_2D = 2
 
 
+# MAYBE: Remove docstring and silent pydoclint
 class _VerbosityLevel(int):
+    """Manage verbosity level.
+
+    Attributes
+    ----------
+    SILENT :
+        Silent level (0).
+    LOW :
+        Low verbosity level (1).
+    MEDIUM :
+        Medium verbosity level (2).
+    HIGH :
+        High verbosity level (3).
+
+    """
+
     SILENT = 0
     LOW = 1
     MEDIUM = 2

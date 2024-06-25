@@ -73,6 +73,7 @@ def _bg_plot(im: ImArray, m: ImMask, title: str, lim: ImArray | None) -> list[Fi
     return figures
 
 
+# MAYBE: Convert to comments like #: Attribute desc
 @dataclass
 class BgParams:
     """Parameters for `bg` segmentation methods.
@@ -93,9 +94,13 @@ class BgParams:
     adaptive_radius : int | None, optional
         Size for the `adaptive` filter of skimage (default is calculated as
         half of the image size during usage).
-    arcsinh_perc : int, optional
+    arcsinh_perc : float, optional
         Percentage (default=80) used in the percentile_filter (scipy) within
         `arcsinh` method.
+    erosion_disk : float, optional
+        Size of the erosion disk used during image processing (default: 0).
+    clip : bool, optional
+        Flag to enable or disable clipping (default: False).
 
     Raises
     ------
@@ -131,7 +136,21 @@ class BgParams:
 
 @dataclass
 class BgResult:
-    """Group result of a frame bg estimation."""
+    """Group result of a frame bg estimation.
+
+    Attributes
+    ----------
+    bg : float
+        Background value estimated from the frame.
+    sd : float
+        Standard deviation of the background estimation.
+    iqr : tuple[float, float, float]
+        Interquartile range (IQR) of the background estimation, consisting of
+        three float values.
+    figures : list[Figure] | None
+        List of matplotlib Figure objects representing visualizations related
+        to the background estimation, or None if no figures are provided.
+    """
 
     bg: float
     sd: float
