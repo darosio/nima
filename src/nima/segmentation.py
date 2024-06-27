@@ -435,7 +435,7 @@ def bg_refine_iteratively(
     >>> import numpy as np
     >>> from scipy import ndimage
     >>> frame = np.random.normal(loc=100, scale=10, size=(256, 256))
-    >>> bg_result = iteratively_refine_background(frame)
+    >>> bg_result = bg_refine_iteratively(frame)
     >>> print(f"Refined Background: {bg_result.bg}, Standard Deviation: {bg_result.sd}")
     """
     prob_threshold = 0.005
