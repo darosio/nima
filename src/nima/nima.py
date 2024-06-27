@@ -11,8 +11,10 @@ from collections.abc import Sequence
 from dataclasses import InitVar, dataclass, field
 from itertools import chain
 from pathlib import Path
+from pprint import pformat
 from typing import Any, TypeVar, cast
 
+import dask.array as da
 import matplotlib as mpl
 import matplotlib.cm
 import matplotlib.colors
@@ -20,6 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xmltodict  # type: ignore[import-untyped]
+from dask.array import Array  # type: ignore[attr-defined]
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
@@ -835,23 +838,31 @@ class Channel:
 
     Attributes
     ----------
-    wavelength : float | None
+    wavelength : int
         Illumination wavelength.
-    attenuation : float | None
+    attenuation : float
         Illumination attenuation.
-    gain : float | None
+    gain : float
         Detector gain.
-    binning : str | None
+    binning : str
         Detector binning.
-    filters : list[str] | None
+    filters : list[str]
         List of filters.
     """
 
-    wavelength: float | None
-    attenuation: float | None
-    gain: float | None
-    binning: str | None
-    filters: list[str] | None
+    wavelength: int
+    attenuation: float
+    gain: float
+    binning: str
+    filters: list[str]
+
+    def __repr__(self) -> str:
+        """Represent most relevant metadata."""
+        return (
+            f"Channel(λ={self.wavelength}, attenuation={self.attenuation}, "
+            f"gain={self.gain}, binning={self.binning}, "
+            f"filters hash={np.array([hash(f) for f in self.filters]).sum()})"
+        )
 
 
 @dataclass(eq=True)
@@ -875,6 +886,10 @@ class StagePosition:
     def __hash__(self) -> int:
         """Generate a hash value for the object based on its attributes."""
         return hash((self.x, self.y, self.z))
+
+    def __repr__(self) -> str:
+        """Represent most relevant metadata."""
+        return f"\t\tXYZ={pformat((self.x, self.y, self.z))}"
 
 
 @dataclass(eq=True)
@@ -908,27 +923,27 @@ class MultiplePositionsError(Exception):
 
 
 @dataclass
-class CoreMetadata:
+class Metadata:
     """Dataclass representing core metadata.
 
     Attributes
     ----------
     rdr : InitVar[TiffReader]
         TiffReader parameter to initialize class.
+    size_s : int
+        Number of series (size in the S dimension).
     size_x : list[int]
         List of sizes in the X dimension.
     size_y : list[int]
         List of sizes in the Y dimension.
-    size_c : list[int]
-        List of sizes in the C dimension.
     size_z : list[int]
         List of sizes in the Z dimension.
+    size_c : list[int]
+        List of sizes in the C dimension.
     size_t : list[int]
         List of sizes in the T dimension.
     bits : list[int]
         List of bits per pixel.
-    name : list[str]
-        List of names.
     objective : list[str]
         List of objectives.
     date : list[str | None]
@@ -937,78 +952,114 @@ class CoreMetadata:
         List of stage positions.
     voxel_size : list[VoxelSize]
         List of voxel sizes.
-    channels : list[Channel]
+    channels : list[list[Channel]]
         Channels settings.
     tcz_deltat : list[list[tuple[int, int, int, float]]]
         Delta time for each T C Z.
     """
 
     rdr: InitVar[TiffReader]
+    size_s: int = 1
     size_x: list[int] = field(default_factory=list)
     size_y: list[int] = field(default_factory=list)
-    size_c: list[int] = field(default_factory=list)
     size_z: list[int] = field(default_factory=list)
+    size_c: list[int] = field(default_factory=list)
     size_t: list[int] = field(default_factory=list)
     bits: list[int] = field(default_factory=list)
-    name: list[str] = field(default_factory=list)
     objective: list[str] = field(default_factory=list)
     date: list[str | None] = field(default_factory=list)
     stage_position: list[StagePosition] = field(default_factory=list)
     voxel_size: list[VoxelSize] = field(default_factory=list)
-    channels: list[Channel] = field(default_factory=list)
+    channels: list[list[Channel]] = field(default_factory=list)
     tcz_deltat: list[list[tuple[int, int, int, float]]] = field(default_factory=list)
+
+    def __repr__(self) -> str:
+        """Represent most relevant metadata."""
+        return (
+            f"Metadata(S={self.size_s}, T={self.size_t}, C={self.size_c}, "
+            f"Z={self.size_z}, X={self.size_x}, Y={self.size_y}\n"
+            f"         Bits={self.bits}, Obj={self.objective}, Date={self.date}\n"
+            f"         voxel size={pformat(self.voxel_size)}\n"
+            f"         stage=\n{pformat(self.stage_position)}\n"
+            f"         channels=\n{pformat(self.channels)})"
+        )
 
     def __post_init__(self, rdr: TiffReader) -> None:
         """Consolidate all core metadata."""
         mdd = xmltodict.parse(rdr.ome_metadata)
         mdd = mdd["OME"]
-        image = mdd["OME:Image"]
-        pixels = image["OME:Pixels"]
-        channels = pixels["OME:Channel"]
-        planes = pixels["OME:Plane"]
-
-        self.size_x.append(pixels["@SizeX"])
-        self.size_y.append(pixels["@SizeY"])
-        self.size_z.append(pixels["@SizeZ"])
-        self.size_c.append(pixels["@SizeC"])
-        self.size_t.append(pixels["@SizeT"])
-        self.bits.append(pixels["@SignificantBits"])
-        self.name.append(image["@ID"])
-        self.objective.append(image["OME:ObjectiveSettings"])
-        self.date.append(image["OME:AcquisitionDate"])
-        self.stage_position.append(self._get_stage_position(planes))
-        self.voxel_size.append(
-            VoxelSize(
-                float(pixels["@PhysicalSizeX"]),
-                float(pixels["@PhysicalSizeY"]),
-                float(pixels["@PhysicalSizeZ"]),
-            )
-        )
-        self.channels = [
-            Channel(
-                float(channel["OME:LightSourceSettings"]["@Wavelength"]),
-                float(channel["OME:LightSourceSettings"]["@Attenuation"]),
-                float(channel["OME:DetectorSettings"]["@Gain"]),
-                channel["OME:DetectorSettings"]["@Binning"],
-                [
-                    d["@ID"].removeprefix("Filter:")
-                    for d in channel["OME:LightPath"]["OME:ExcitationFilterRef"]
-                ],
-            )
-            for channel in channels
-        ]
-        self.tcz_deltat.append(
-            [
-                (
-                    int(plane["@TheT"]),
-                    int(plane["@TheC"]),
-                    int(plane["@TheZ"]),
-                    float(plane["@DeltaT"]),
+        images = mdd["OME:Image"]
+        if isinstance(images, dict):
+            images = [images]
+        self.size_s = len(images)
+        self.name = []  #
+        for image in images:
+            pixels = image["OME:Pixels"]
+            channels = pixels["OME:Channel"]
+            planes = pixels["OME:Plane"]
+            self.size_x.append(int(pixels["@SizeX"]))
+            self.size_y.append(int(pixels["@SizeY"]))
+            self.size_z.append(int(pixels["@SizeZ"]))
+            self.size_c.append(int(pixels["@SizeC"]))
+            self.size_t.append(int(pixels["@SizeT"]))
+            self.bits.append(int(pixels["@SignificantBits"]))
+            self.name.append(image["@ID"])
+            self.objective.append(image["OME:ObjectiveSettings"]["@ID"])
+            self.date.append(image["OME:AcquisitionDate"])
+            self.stage_position.append(self._get_stage_position(planes))
+            self.voxel_size.append(
+                VoxelSize(
+                    float(pixels["@PhysicalSizeX"]),
+                    float(pixels["@PhysicalSizeY"]),
+                    float(pixels["@PhysicalSizeZ"]),
                 )
-                for plane in planes
-            ]
-        )
+            )
+            self.channels.append(
+                [
+                    Channel(
+                        int(channel["OME:LightSourceSettings"]["@Wavelength"]),
+                        float(channel["OME:LightSourceSettings"]["@Attenuation"]),
+                        float(channel["OME:DetectorSettings"]["@Gain"]),
+                        channel["OME:DetectorSettings"]["@Binning"],
+                        [
+                            d["@ID"].removeprefix("Filter:")
+                            for d in channel["OME:LightPath"]["OME:ExcitationFilterRef"]
+                        ],
+                    )
+                    for channel in channels
+                ]
+            )
+            self.tcz_deltat.append(
+                [
+                    (
+                        int(plane["@TheT"]),
+                        int(plane["@TheC"]),
+                        int(plane["@TheZ"]),
+                        float(plane["@DeltaT"]),
+                    )
+                    for plane in planes
+                ]
+            )
         self.ome = mdd
+        for attribute in [
+            "size_x",
+            "size_y",
+            "size_z",
+            "size_c",
+            "size_t",
+            "bits",
+            "name",
+            "objective",
+            "date",
+            "stage_position",
+            "voxel_size",
+        ]:
+            if len(set(getattr(self, attribute))) == 1:
+                setattr(self, attribute, list(set(getattr(self, attribute))))
+        for channel in self.channels[1:]:
+            if channel != self.channels[0]:
+                break
+            self.channels = [channel]
 
     def _get_stage_position(self, planes: list[dict[str, str]]) -> StagePosition:
         """Retrieve the stage positions from the given pixels."""
@@ -1029,3 +1080,15 @@ class CoreMetadata:
         else:
             raise_multiple_positions_error("Multiple positions within a series.")
         return stage_position
+
+
+def read_tiffmd(fp: Path, channels: Sequence[str]) -> tuple[Array, Metadata]:
+    """Read multichannel TIFF timelapse image."""
+    n_channels = len(channels)
+    rdr = TiffReader(fp)
+    dim = da.from_zarr(rdr.aszarr())  # type:ignore[attr-defined, no-untyped-call]
+    md = Metadata(rdr)
+    if md.size_c[0] % n_channels:
+        msg = "n_channel mismatch total length of TIFF sequence"
+        raise ValueError(msg)
+    return dim, md

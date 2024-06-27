@@ -400,7 +400,7 @@ def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:
 
 
 # fit the bg for clop3 experiments
-def iteratively_refine_background(
+def bg_refine_iteratively(
     frame: NDArray[np.float64],
     bgmax: None | np.float64 = None,
     *,
