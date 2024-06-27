@@ -942,6 +942,8 @@ class Metadata:
         List of sizes in the C dimension.
     size_t : list[int]
         List of sizes in the T dimension.
+    dimension_order : list[str]
+        List of dimension order for each pixels.
     bits : list[int]
         List of bits per pixel.
     objective : list[str]
@@ -965,6 +967,7 @@ class Metadata:
     size_z: list[int] = field(default_factory=list)
     size_c: list[int] = field(default_factory=list)
     size_t: list[int] = field(default_factory=list)
+    dimension_order: list[str] = field(default_factory=list)
     bits: list[int] = field(default_factory=list)
     objective: list[str] = field(default_factory=list)
     date: list[str | None] = field(default_factory=list)
@@ -977,8 +980,9 @@ class Metadata:
         """Represent most relevant metadata."""
         return (
             f"Metadata(S={self.size_s}, T={self.size_t}, C={self.size_c}, "
-            f"Z={self.size_z}, X={self.size_x}, Y={self.size_y}\n"
-            f"         Bits={self.bits}, Obj={self.objective}, Date={self.date}\n"
+            f"Z={self.size_z}, Y={self.size_y}, X={self.size_x}, "
+            f"order={self.dimension_order}\n"
+            f"         Bits={self.bits}, Obj={self.objective}\n"
             f"         voxel size={pformat(self.voxel_size)}\n"
             f"         stage=\n{pformat(self.stage_position)}\n"
             f"         channels=\n{pformat(self.channels)})"
@@ -1002,6 +1006,7 @@ class Metadata:
             self.size_z.append(int(pixels["@SizeZ"]))
             self.size_c.append(int(pixels["@SizeC"]))
             self.size_t.append(int(pixels["@SizeT"]))
+            self.dimension_order.append(pixels["@DimensionOrder"])
             self.bits.append(int(pixels["@SignificantBits"]))
             self.name.append(image["@ID"])
             self.objective.append(image["OME:ObjectiveSettings"]["@ID"])
@@ -1047,6 +1052,7 @@ class Metadata:
             "size_z",
             "size_c",
             "size_t",
+            "dimension_order",
             "bits",
             "name",
             "objective",
@@ -1091,4 +1097,4 @@ def read_tiffmd(fp: Path, channels: Sequence[str]) -> tuple[Array, Metadata]:
     if md.size_c[0] % n_channels:
         msg = "n_channel mismatch total length of TIFF sequence"
         raise ValueError(msg)
-    return dim, md
+    return dim.astype(np.int32), md
