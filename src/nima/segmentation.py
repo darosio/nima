@@ -303,9 +303,8 @@ def _bgmax(img: ImArray, bins: int = 50, *, densityplot: bool = False) -> float:
     if peaks[0].any():
         result = peaks[0][0] + peaks[1]["widths"][0]
         return float(result * step)
-    else:
-        # Handle the case where no peaks are found
-        return float((mmax / 2 + np.median(img)) / 2)
+    # Handle the case where no peaks are found
+    return float((mmax / 2 + np.median(img)) / 2)
 
 
 @overload
@@ -322,8 +321,7 @@ def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float64
     # Use typing.cast to explicitly inform mypy
     if isinstance(v, float):
         return cast(float, result)
-    else:
-        return cast(NDArray[np.float64], result)
+    return cast(NDArray[np.float64], result)
 
 
 def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:
@@ -529,5 +527,4 @@ def geometric_mean_filter(image: ImArray, kernel_size: float) -> ImArray:
     # Apply convolution with the kernel on the logged image
     log_sum_image = ndimage.convolve(log_image, kernel, mode="constant", cval=0) / n
     # Exponential to invert the logarithm
-    geometric_mean_image = np.exp(log_sum_image)
-    return geometric_mean_image  # type: ignore[no-any-return]
+    return np.exp(log_sum_image)  # type: ignore[no-any-return]

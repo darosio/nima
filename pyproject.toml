@@ -267,11 +267,11 @@ ignore = [
   "S311"  # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
 select = [
-  "NPY201",
   "A",  # builtins
   "ANN",  # typing annotation
   "ARG",  # unused arguments
   "B",  # bugbear
+  "BLE",  # blind-except
   "C",
   "C4",  # comprehensions
   "C90",  # mccabe
@@ -283,20 +283,33 @@ select = [
   "ERA",  # eradicate
   "F",  # pyflakes
   "FBT",  # boolean-trap
+  "FLY",  # flyntp
+  "FURB",  # refurbishing and modernizing
   "I",  # isort
   "ICN",  # import conventions (opinionated)
   "ISC",  # implicit-str-concat
   "N",  # pep8-naming
+  # "NPY",
+  "AIR",  # airflow
+  "PERF",  # pperformance anti pattern
   "PD",  # pandas-vet
   "PGH",  # pygrep WAIT
   "PL",  # pylint see PLR2004...
   "PT",  # pytest-style
   "PTH",  # use-pathlib
   "Q",  # quotes
+  "RET",  # Return
+  "RSE",  # Raise
   "RUF",  # Ruff
   "S",  # bandit XXX
+  "SLF",  # private self
+  "SLOT",  # __slot__
   "SIM",  # simplify
   "TID",  # tidy-imports
+  "TCH",  # TYPE_CHECKING
+  "TRY",  # tryceratops
+  # "TD",  # TODOs
+  # "FIX",  #
   "UP",  # pyupgrade
   "YTT",  # 2020
   "W"  # pycodestyle
@@ -308,7 +321,7 @@ isort.split-on-trailing-comma = true
 mccabe.max-complexity = 12
 
 [tool.ruff.lint.per-file-ignores]
-"*.ipynb" = ["ANN001", "ANN002", "ANN003", "ANN201", "D103", "ERA", "ICN001", "PD901", "PD013", "E501", "F821", "PLR2004", "FBT003"]
+"*.ipynb" = ["PERF", "ANN001", "ANN002", "ANN003", "ANN201", "BLE", "D103", "ERA", "ICN001", "PD901", "PD013", "E501", "F821", "PLR2004", "FBT003", "SLF"]
 "tests/*" = ["PLR2004", "S101"]
 
 [tool.ruff.lint.pydocstyle]

@@ -85,16 +85,15 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
     if im.shape[axes.rfind("C")] % n_channels:
         msg = "n_channel mismatch total length of TIFF sequence"
         raise ValueError(msg)
-    else:
-        d_im = {}
-        for i, ch in enumerate(channels):
-            # FIXME: must be 'TCYX' or 'ZCYX'
-            if len(axes) == AXES_LENGTH_4D:
-                d_im[ch] = im[:, i]  # im[i::n_channels]
-            elif len(axes) == AXES_LENGTH_3D:
-                d_im[ch] = im[np.newaxis, i]
-        print(d_im["G"].shape)
-        return d_im, n_channels, n_times
+    d_im = {}
+    for i, ch in enumerate(channels):
+        # FIXME: must be 'TCYX' or 'ZCYX'
+        if len(axes) == AXES_LENGTH_4D:
+            d_im[ch] = im[:, i]  # im[i::n_channels]
+        elif len(axes) == AXES_LENGTH_3D:
+            d_im[ch] = im[np.newaxis, i]
+    print(d_im["G"].shape)
+    return d_im, n_channels, n_times
 
 
 def d_show(d_im: dict[str, ImArray], **kws: Any) -> Figure:  # noqa: ANN401
@@ -801,8 +800,7 @@ def hotpixels(bias: ImArray, n_sd: int = 20) -> pd.DataFrame:
         n_hpix = m.sum()
     w = np.where(m)
     hpix_df = pd.DataFrame({"y": w[0], "x": w[1]})
-    hpix_df = hpix_df.assign(val=lambda row: bias[row.y, row.x])
-    return hpix_df
+    return hpix_df.assign(val=lambda row: bias[row.y, row.x])
 
 
 def correct_hotpixel(
@@ -948,7 +946,9 @@ class Metadata:
         List of bits per pixel.
     objective : list[str]
         List of objectives.
-    date : list[str | None]
+    name : list[str]
+        List of series names.
+    date : list[str]
         List of acquisition dates.
     stage_position : list[StagePosition]
         List of stage positions.
@@ -970,7 +970,8 @@ class Metadata:
     dimension_order: list[str] = field(default_factory=list)
     bits: list[int] = field(default_factory=list)
     objective: list[str] = field(default_factory=list)
-    date: list[str | None] = field(default_factory=list)
+    name: list[str] = field(default_factory=list)
+    date: list[str] = field(default_factory=list)
     stage_position: list[StagePosition] = field(default_factory=list)
     voxel_size: list[VoxelSize] = field(default_factory=list)
     channels: list[list[Channel]] = field(default_factory=list)
@@ -996,7 +997,6 @@ class Metadata:
         if isinstance(images, dict):
             images = [images]
         self.size_s = len(images)
-        self.name = []  #
         for image in images:
             pixels = image["OME:Pixels"]
             channels = pixels["OME:Channel"]

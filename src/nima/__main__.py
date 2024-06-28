@@ -469,7 +469,7 @@ def _output_flat(
     adjustment based on the specific requirements of the flat field correction.
 
     """
-    tifffile.imwrite(output.with_stem("-".join([output.stem, "raw"])), tprojection)
+    tifffile.imwrite(output.with_stem(f"{output.stem}-raw"), tprojection)
     if bias is None:
         flat = ndimage.gaussian_filter(tprojection, sigma=100)
     else:

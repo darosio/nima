@@ -12,8 +12,7 @@ def gen_bias(nrows: int = 128, ncols: int = 128) -> NDArray[np.float64]:
     """Generate a bias frame."""
     xvec = np.arange(ncols)
     yvec = 2 - (xvec**2 / 2.6 * (np.sin(xvec / 20) ** 2 + 0.1)) / 4000
-    img = np.tile(yvec * 2, (nrows, 1))
-    return img
+    return np.tile(yvec * 2, (nrows, 1))
 
 
 def gen_flat(nrows: int = 128, ncols: int = 128) -> NDArray[np.float64]:
@@ -41,13 +40,12 @@ def gen_object(
     x_obj, y_obj = np.random.randint(nrows), np.random.randint(ncols)
     radius = np.random.randint(min_radius, max_radius)
     ellipsis = np.random.rand() * 3.5 - 1.75
-    mask = (
+    return (  # type: ignore[no-any-return]
         (x_idx - x_obj) ** 2
         + (y_idx - y_obj) ** 2
         + ellipsis * (x_idx - x_obj) * (y_idx - y_obj)
         < radius**2
     ).astype(np.bool_)
-    return mask  # type: ignore[no-any-return]
 
 
 # MAYBE: Convert to comments like #: Attribute desc
@@ -102,8 +100,7 @@ def gen_objs(params: ImageObjsParams | None = None) -> NDArray[np.float64]:
         * gen_object(params.nrows, params.ncols, params.min_radius, params.max_radius)
         for _ in range(num_objs)
     ]
-    img = np.sum(objs, axis=0)
-    return img  # type: ignore[no-any-return]
+    return np.sum(objs, axis=0)  # type: ignore[no-any-return]
 
 
 def gen_frame(
