@@ -32,13 +32,19 @@ def gen_flat(nrows: int = 128, ncols: int = 128) -> NDArray[np.float64]:
 
 
 def gen_object(
-    nrows: int = 128, ncols: int = 128, min_radius: int = 6, max_radius: int = 12
+    nrows: int = 128,
+    ncols: int = 128,
+    min_radius: int = 6,
+    max_radius: int = 12,
+    rng: np.random.Generator | None = None,
 ) -> NDArray[np.bool_]:
     """Generate a single ellipsoid object with random shape and position."""
     # Inspired by http://scipy-lectures.org/packages/scikit-image/index.html.
     x_idx, y_idx = np.indices((nrows, ncols))
-    x_obj, y_obj = np.random.randint(nrows), np.random.randint(ncols)
-    radius = np.random.randint(min_radius, max_radius)
+    # x_obj, y_obj = np.random.randint(nrows), np.random.randint(ncols)
+    rng = rng if rng else np.random.default_rng()
+    x_obj, y_obj = rng.integers(0, nrows), rng.integers(0, ncols)
+    radius = rng.integers(min_radius, max_radius)
     ellipsis = np.random.rand() * 3.5 - 1.75
     return (  # type: ignore[no-any-return]
         (x_idx - x_obj) ** 2

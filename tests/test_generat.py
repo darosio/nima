@@ -28,8 +28,8 @@ def test_flat_shape() -> None:
 
 def test_object() -> None:
     """Test generation of a single cell object in a frame."""
-    np.random.seed(111)
-    obj = generat.gen_object(nrows=10, ncols=10, min_radius=2, max_radius=5)
+    rng = np.random.default_rng(1)
+    obj = generat.gen_object(nrows=10, ncols=10, min_radius=2, max_radius=5, rng=rng)
     assert obj[4, 4]
     assert not obj[8, 8]
 
@@ -72,8 +72,11 @@ class TestFrame:
 
     def test_objs(self) -> None:
         """Test generation of a frame with objects."""
-        np.random.seed(2)
-        assert generat.gen_objs()[25, 50] == 8.40735604174978
+        # np.random.seed(2)
+        rng = np.random.default_rng(2)
+        objs = generat.gen_objs(rng=rng)
+        assert objs[25, 50] == 8.40735604174978
+        # assert generat.gen_objs()[25, 50] == 8.40735604174978
 
     def test_frame(self) -> None:
         """Test simulation of an acquired frame."""
