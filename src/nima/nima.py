@@ -16,8 +16,6 @@ from typing import Any, TypeVar, cast
 
 import dask.array as da
 import matplotlib as mpl
-import matplotlib.cm
-import matplotlib.colors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -335,10 +333,10 @@ def d_mask_label(  # noqa: PLR0913
             ga_wiener[i] = signal.wiener(im, shape)
     else:
         ga_wiener = ga
-    if threshold_method == "yen":
-        threshold_function = filters.threshold_yen
-    elif threshold_method == "li":
-        threshold_function = filters.threshold_li  # type: ignore[assignment]
+    if threshold_method == "li":
+        threshold_function = filters.threshold_li
+    else:
+        threshold_function = filters.threshold_yen  # type: ignore[assignment]
     mask = []
     for _, im in enumerate(ga_wiener):
         m = im > threshold_function(im)  # type: ignore[no-untyped-call]
@@ -399,7 +397,7 @@ def process_watershed(
             markers[~d_im["mask"][time]] = -1
             labels_ws = segmentation.random_walker(d_im["mask"][time], markers)
         else:
-            labels_ws = morphology.watershed(-d, markers, mask=lbl)  # type: ignore[attr-defined]
+            labels_ws = segmentation.watershed(-d, markers, mask=lbl)  # type: ignore[no-untyped-call]
     d_im["labels"][time] = labels_ws
 
 
@@ -437,7 +435,7 @@ def d_ratio(
     """
     with np.errstate(divide="ignore", invalid="ignore"):
         # 0/0 and num/0 can both happen.
-        ratio = np.array(d_im[channels[0]] / d_im[channels[1]], dtype=(float))
+        ratio = np.array(d_im[channels[0]] / d_im[channels[1]], dtype=float)
     for i, r in enumerate(ratio):
         np.nan_to_num(r, copy=False, posinf=0, neginf=0)
         filtered_r = r
@@ -1081,10 +1079,10 @@ class Metadata:
             )
             for plane in planes
         }
-        if len(pos) == 1:
-            stage_position = next(iter(pos))
-        else:
+        stage_position = next(iter(pos)) if len(pos) == 1 else None
+        if stage_position is None:
             raise_multiple_positions_error("Multiple positions within a series.")
+            return StagePosition(None, None, None)
         return stage_position
 
 

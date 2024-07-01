@@ -9,13 +9,13 @@ from typing import Any
 
 import click
 import dask.array as da
-import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import sigfig  # type: ignore[import-untyped]
 import tifffile
 from dask.diagnostics.progress import ProgressBar
 from dask.distributed import Client, progress
+from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 from scipy import ndimage  # type: ignore[import-untyped]
@@ -171,9 +171,9 @@ def main(  # noqa: PLR0913
         d_im = nima.d_median(d_im)
     if flat_f:
         # XXX: this is imperfect: dark must be present of flat
-        dark, _, _ = nima.read_tiff(Path(dark_f), channels)
-        flat, _, _ = nima.read_tiff(Path(flat_f), channels)
-        d_im = nima.d_shading(d_im, dark, flat, clip=True)
+        dark_im, _, _ = nima.read_tiff(Path(dark_f), channels)
+        flat_im, _, _ = nima.read_tiff(Path(flat_f), channels)
+        d_im = nima.d_shading(d_im, dark_im, flat_im, clip=True)
     # Process background
     kwargs_bg: dict[str, Any] = {"kind": bg_method}
     optional_keys = {
@@ -209,7 +209,7 @@ def main(  # noqa: PLR0913
             int(r) for r in ratio_median_radii.split(",")
         )
     click.secho(kwargs_meas_props)
-    meas, pr = nima.d_meas_props(
+    meas, _ = nima.d_meas_props(
         d_im_bg, channels_cl=channels_cl, channels_ph=channels_ph, **kwargs_meas_props
     )
     output_results(output, tiffstk, ff, meas, channels, d_im_bg, bg_method, bgs)
@@ -247,7 +247,7 @@ def output_results(  # noqa: PLR0913
     # Show all channels and labels
     d = {ch: d_im_bg[ch] for ch in channels}
     d["labels"] = d_im_bg["labels"]
-    fig = nima.d_show(d, cmap=mpl.cm.inferno_r)  # type: ignore[attr-defined]
+    fig = nima.d_show(d, cmap=cm.inferno_r)  # type: ignore[attr-defined] # pylint: disable=no-member
     fig.savefig(bname.with_name(bname.name + "_dim.png"))
     # Create measurement CSV files
     for k, df in meas.items():
@@ -315,10 +315,10 @@ def bias(ctx: click.Context, fpath: Path) -> None:
         store = tifffile.imread(fpath)
     ensure_ndarray(store, "store")
     click.secho("Bias image-stack shape: " + str(store.shape), fg="green")
-    bias = np.median(store, axis=0)
+    bias_im = np.median(store, axis=0)
     err = np.std(store, axis=0)
     # hotpixels
-    hpix = nima.hotpixels(bias)
+    hpix = nima.hotpixels(bias_im)
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     if not hpix.empty:
         hpix.to_csv(output.with_suffix(".csv"), index=False)
@@ -328,29 +328,29 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     p25, p50, p75 = np.percentile(err.ravel(), [25, 50, 75])
     err_str = sigfig.round(p50, p75 - p25)
     click.secho("Estimated read noise: " + err_str)
-    tifffile.imwrite(output.with_suffix(".tiff"), bias)
+    tifffile.imwrite(output.with_suffix(".tiff"), bias_im)
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
-    if bias.ndim == AXES_LENGTH_2D:
-        plt_img_profiles(bias, title, output, hpix)
+    if bias_im.ndim == AXES_LENGTH_2D:
+        plt_img_profiles(bias_im, title, output, hpix)
         plt_img_profiles(
             err,
             "".join(("[", title[:9], "] $\\sigma_{read} = $", err_str)),
             output.with_suffix(".err.png"),
         )
     else:
-        for i in range(bias.shape[0]):
-            plt_img_profiles(bias[i], title, output.with_suffix(f".{i}.png"), hpix)
+        for i in range(bias_im.shape[0]):
+            plt_img_profiles(bias_im[i], title, output.with_suffix(f".{i}.png"), hpix)
 
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", type=click.Path(path_type=Path),
+@click.option("--bias", "bias_fp", type=click.Path(path_type=Path),
               help="File path to the bias stack (Light Off - Long acquisition time).")  # fmt: skip # noqa: E501
 @click.option("--time", type=float,
               help="Acquisition time.")  # fmt: skip
 @click.argument("fpath", type=click.Path(path_type=Path))
-def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
+def dark(ctx: click.Context, fpath: Path, bias_fp: Path, time: float) -> None:
     """Compute DARK.
 
     fpath : str
@@ -366,25 +366,25 @@ def dark(ctx: click.Context, fpath: Path, bias: Path, time: float) -> None:
     store = tifffile.imread(fpath)
     ensure_ndarray(store, "store")
     click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
-    dark = np.median(store, axis=0)
+    dark_im = np.median(store, axis=0)
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
-    if bias is not None:
-        bias_frame = np.array(tifffile.imread(bias))
-        dark = dark - bias_frame
+    if bias_fp is not None:
+        bias_im = np.array(tifffile.imread(bias_fp))
+        dark_im = dark_im - bias_im
     if time:
-        dark /= time
-    plt_img_profiles(dark, title, output)
-    print(np.where(dark > dark_thr))
+        dark_im /= time
+    plt_img_profiles(dark_im, title, output)
+    print(np.where(dark_im > dark_thr))
 
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", type=click.Path(path_type=Path),
+@click.option("--bias", "bias_fp", type=click.Path(path_type=Path),
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
 @click.argument("globpath", type=str)
-def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
+def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
     """Compute the flat field from a collection of (.tif) files.
 
     globpath : "glob expression"
@@ -410,16 +410,16 @@ def mflat(ctx: click.Context, globpath: str, bias: Path | None) -> None:
     else:
         output = Path(globpath).name.replace("*", "").replace("?", "")
         output = Path(output).with_suffix(".tiff")
-    bias_frame = None if bias is None else np.array(tifffile.imread(bias))
+    bias_frame = None if bias_fp is None else np.array(tifffile.imread(bias_fp))
     _output_flat(output, tprojection, bias_frame)
 
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", type=click.Path(path_type=Path),
+@click.option("--bias", "bias_fp", type=click.Path(path_type=Path),
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
 @click.argument("fpath", type=click.Path(path_type=Path))
-def flat(ctx: click.Context, fpath: Path, bias: Path) -> None:
+def flat(ctx: click.Context, fpath: Path, bias_fp: Path) -> None:
     """Flat from (.tf8) file stack.
 
     fpath : str
@@ -436,12 +436,12 @@ def flat(ctx: click.Context, fpath: Path, bias: Path) -> None:
     with ProgressBar():  # type: ignore[no-untyped-call]
         tprojection = f.compute()
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
-    bias_frame = np.array(tifffile.imread(bias))
+    bias_frame = np.array(tifffile.imread(bias_fp))
     _output_flat(output, tprojection, bias_frame)
 
 
 def _output_flat(
-    output: Path, tprojection: ImArray, bias: ImArray | None = None
+    output: Path, tprojection: ImArray, bias_im: ImArray | None = None
 ) -> None:
     """Help to generate and save output files from flat field calculations.
 
@@ -458,7 +458,7 @@ def _output_flat(
         Base path for generating output file names.
     tprojection : ImArray
         2D array representing the raw flat field image (mean of frames).
-    bias : ImArray | None
+    bias_im : ImArray | None
         2D array representing the bias frame for subtraction.
         If None (default), no bias subtraction is performed.
 
@@ -470,15 +470,17 @@ def _output_flat(
 
     """
     tifffile.imwrite(output.with_stem(f"{output.stem}-raw"), tprojection)
-    if bias is None:
-        flat = ndimage.gaussian_filter(tprojection, sigma=100)
+    if bias_im is None:
+        flat_im = ndimage.gaussian_filter(tprojection, sigma=100)
     else:
-        flat = ndimage.gaussian_filter(tprojection + 20 - bias, sigma=100)  # FIXME
+        flat_im = ndimage.gaussian_filter(
+            tprojection + 20 - bias_im, sigma=100
+        )  # FIXME
         # MAYBE: consider skimage.filters.gaussian and  cmap=plt.cm.Set2_r
-    flat /= flat.mean()
-    tifffile.imwrite(output, flat)
+    flat_im /= flat_im.mean()
+    tifffile.imwrite(output, flat_im)
     title = os.fspath(output.with_suffix("").name)
-    plt_img_profiles(flat, title, output)
+    plt_img_profiles(flat_im, title, output)
 
 
 @bima.command()
@@ -517,7 +519,3 @@ def plt_img_profiles(
             f.savefig(output.with_suffix(f".C{i}.png"), dpi=250, facecolor="w")
             f = nima.plt_img_profile_2(img[i], title=title)
             f.savefig(output.with_suffix(f".C{i}.2.png"), dpi=250, facecolor="w")
-
-
-if __name__ == "__main__":
-    main(prog_name="nima")  # pragma: no cover
