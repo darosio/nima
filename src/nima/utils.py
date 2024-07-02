@@ -11,7 +11,7 @@ from scipy import optimize, signal, stats  # type: ignore[import-untyped]
 
 from nima.nima import AXES_LENGTH_4D
 
-from .segmentation import _bgmax, bg_refine_iteratively, prob
+from .segmentation import _bgmax, calculate_bg_iteratively, prob
 from .types import ImArray, ImMask
 
 
@@ -77,7 +77,7 @@ def ave(img: NDArray[np.float64], bgmax: float, prob_value: float = 0.001) -> fl
     if bgmax:
         # MAYBE: Use bg2
         pass
-    bg_result = bg_refine_iteratively(img)
+    bg_result = calculate_bg_iteratively(img)
     (
         av,
         sd,

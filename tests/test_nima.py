@@ -3,131 +3,130 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 import tifffile as tff
 from numpy.testing import assert_array_equal
+from numpy.typing import NDArray
 
 from nima import nima, segmentation
 
 data_fp = "./tests/data/1b_c16_15.tif"
 
 
+@pytest.fixture(name="d_im")
+def d_im_setup() -> dict[str, NDArray[np.float64]]:
+    """Create a dict of images."""
+    return {"C": np.ones((5, 5, 5)) * 2, "C2": np.ones((5, 5, 5)) * 4}
+
+
+@pytest.fixture(name="d_flat")
+def d_flat_setup() -> dict[str, NDArray[np.float64]]:
+    """Create a dict of flat images."""
+    return {"C": np.ones((5, 5)) * 2, "C2": np.ones((5, 5)) * 3}
+
+
+@pytest.fixture(name="d_dark")
+def d_dark_setup() -> dict[str, NDArray[np.float64]]:
+    """Create a dict of bias images."""
+    return {"C": np.ones((5, 5)), "C2": np.ones((5, 5)) * 2}
+
+
+@pytest.fixture(name="dark")
+def dark_setup() -> NDArray[np.float64]:
+    """Create a dark image."""
+    return np.ones((5, 5))
+
+
+@pytest.fixture(name="flat")
+def flat_setup() -> NDArray[np.float64]:
+    """Create a flat image."""
+    return np.ones((5, 5)) * 2
+
+
 class TestDShading:
     """Test d_shading."""
 
-    def setup_class(self) -> None:
-        """Set up stack arrays."""
-        self.d_im = {"C": np.ones((5, 5, 5)) * 2, "C2": np.ones((5, 5, 5)) * 4}
-        self.dark = np.ones((5, 5))
-        self.flat = np.ones((5, 5)) * 2
-        self.d_flat = {"C": self.flat, "C2": np.ones((5, 5)) * 3}
-        self.d_dark = {"C": self.dark, "C2": np.ones((5, 5)) * 2}
-
-    def test_single_dark_and_single_flat(self) -> None:
-        """Using single dark and single flat images."""
-        d_cor = nima.d_shading(self.d_im, self.dark, self.flat, clip=True)
+    def test_single_dark_and_single_flat(
+        self,
+        d_im: dict[str, NDArray[np.float64]],
+        dark: NDArray[np.float64],
+        flat: NDArray[np.float64],
+    ) -> None:
+        """Test d_shading using single dark and single flat images."""
+        d_cor = nima.d_shading(d_im, dark, flat, clip=True)
         assert_array_equal(d_cor["C"], np.ones((5, 5, 5)) / 2)
         assert_array_equal(d_cor["C2"], np.ones((5, 5, 5)) * 1.5)
 
-    def test_single_dark_and_d_flat(self) -> None:
-        """Using single dark and a stack of flat images."""
-        d_cor = nima.d_shading(self.d_im, self.dark, self.d_flat, clip=True)
+    def test_single_dark_and_d_flat(
+        self,
+        d_im: dict[str, NDArray[np.float64]],
+        dark: NDArray[np.float64],
+        d_flat: dict[str, NDArray[np.float64]],
+    ) -> None:
+        """Test d_shading using single dark and a stack of flat images."""
+        d_cor = nima.d_shading(d_im, dark, d_flat, clip=True)
         assert_array_equal(d_cor["C"], np.ones((5, 5, 5)) / 2)
         assert_array_equal(d_cor["C2"], np.ones((5, 5, 5)))
 
-    def test_d_dark_and_d_flat(self) -> None:
-        """Using stacks of dark and flat images."""
-        d_cor = nima.d_shading(self.d_im, self.d_dark, self.d_flat, clip=True)
+    def test_d_dark_and_d_flat(
+        self,
+        d_im: dict[str, NDArray[np.float64]],
+        d_dark: dict[str, NDArray[np.float64]],
+        d_flat: dict[str, NDArray[np.float64]],
+    ) -> None:
+        """Test d_shading using stacks of dark and flat images."""
+        d_cor = nima.d_shading(d_im, d_dark, d_flat, clip=True)
         assert_array_equal(d_cor["C"], np.ones((5, 5, 5)) / 2)
         assert_array_equal(d_cor["C2"], np.ones((5, 5, 5)) * 2 / 3)
 
 
-class TestBg:
+@pytest.fixture(name="im")
+def im_setup() -> NDArray[np.int_] | NDArray[np.float64]:
+    """Create a dict of images."""
+    return np.array(tff.imread(data_fp))
+
+
+class TestCalculateBg:
     """Test bg methods."""
 
-    def setup_class(self) -> None:
-        """Read test data."""
-        self.im = np.array(tff.imread(data_fp))
-
-    def test_default(self) -> None:
+    def test_default(self, im: NDArray[np.int_] | NDArray[np.float64]) -> None:
         """Test default (arcsinh) method."""
-        assert segmentation.bg(self.im[3, 2]).iqr[1] == 286
+        assert segmentation.calculate_bg(im[3, 2]).iqr[1] == 286
 
-    def test_arcsinh(self) -> None:
+    def test_arcsinh(self, im: NDArray[np.int_] | NDArray[np.float64]) -> None:
         """Test arcsinh method and arcsinh_perc, radius and perc arguments."""
-        assert (
-            segmentation.bg(
-                self.im[3, 2], bg_params=segmentation.BgParams(kind="arcsinh")
-            ).iqr[1]
-            == 286
+        bg_params = segmentation.BgParams(kind="arcsinh")
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 286
+        bg_params = segmentation.BgParams(kind="arcsinh", arcsinh_perc=50, radius=15)
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 287
+        bg_params = segmentation.BgParams(
+            kind="arcsinh", arcsinh_perc=50, radius=15, perc=20
         )
-        assert (
-            segmentation.bg(
-                self.im[3, 2],
-                bg_params=segmentation.BgParams(
-                    kind="arcsinh", arcsinh_perc=50, radius=15
-                ),
-            ).iqr[1]
-            == 287
-        )
-        assert (
-            segmentation.bg(
-                self.im[3, 2],
-                bg_params=segmentation.BgParams(
-                    kind="arcsinh", arcsinh_perc=50, radius=15, perc=20
-                ),
-            ).iqr[1]
-            == 288
-        )
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 288
 
-    def test_entropy(self) -> None:
+    def test_entropy(self, im: NDArray[np.int_] | NDArray[np.float64]) -> None:
         """Test entropy method and radius argument."""
-        assert (
-            segmentation.bg(
-                self.im[3, 2], bg_params=segmentation.BgParams(kind="entropy")
-            ).iqr[1]
-            == 297
-        )
-        assert (
-            segmentation.bg(
-                self.im[3, 2],
-                bg_params=segmentation.BgParams(kind="entropy", radius=20),
-            ).iqr[1]
-            == 293
-        )
+        bg_params = segmentation.BgParams(kind="entropy")
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 297
+        bg_params = segmentation.BgParams(kind="entropy", radius=20)
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 293
 
-    def test_adaptive(self) -> None:
+    def test_adaptive(self, im: NDArray[np.int_] | NDArray[np.float64]) -> None:
         """Test adaptive method and adaptive_radius argument."""
-        assert (
-            segmentation.bg(
-                self.im[3, 2], bg_params=segmentation.BgParams(kind="adaptive")
-            ).iqr[1]
-            == 287
-        )
-        assert (
-            segmentation.bg(
-                self.im[3, 2],
-                bg_params=segmentation.BgParams(kind="adaptive", adaptive_radius=101),
-            ).iqr[1]
-            == 280
-        )
+        bg_params = segmentation.BgParams(kind="adaptive")
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 287
+        bg_params = segmentation.BgParams(kind="adaptive", adaptive_radius=101)
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 280
 
-    def test_li_adaptive(self) -> None:
+    def test_li_adaptive(self, im: NDArray[np.int_] | NDArray[np.float64]) -> None:
         """Test li_arcsinh method."""
-        assert (
-            segmentation.bg(
-                self.im[3, 2], bg_params=segmentation.BgParams(kind="li_adaptive")
-            ).iqr[1]
-            == 273
-        )
+        bg_params = segmentation.BgParams(kind="li_adaptive")
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 273
 
-    def test_li_li(self) -> None:
+    def test_li_li(self, im: NDArray[np.int_] | NDArray[np.float64]) -> None:
         """Test li_li method."""
-        assert (
-            segmentation.bg(
-                self.im[3, 2], bg_params=segmentation.BgParams(kind="li_li")
-            ).iqr[1]
-            == 288
-        )
+        bg_params = segmentation.BgParams(kind="li_li")
+        assert segmentation.calculate_bg(im[3, 2], bg_params).iqr[1] == 288
 
 
 def test_plot_img_profile() -> None:

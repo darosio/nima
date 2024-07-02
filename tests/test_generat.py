@@ -48,8 +48,8 @@ class FrameData:
         self.frame = generat.gen_frame(self.objs, seed=11)
 
 
-@pytest.fixture(scope="class")
-def frame_data() -> FrameData:
+@pytest.fixture(scope="class", name="frame_data")
+def frame_data_setup() -> FrameData:
     """Generate frame data."""
     return FrameData()
 

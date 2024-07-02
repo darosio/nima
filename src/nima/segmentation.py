@@ -29,7 +29,7 @@ def _bg_plot(im: ImArray, m: ImMask, title: str, lim: ImArray | None) -> list[Fi
     fig1 = plt.figure(figsize=(9, 5))
     ax1 = fig1.add_subplot(121)
     masked = im * m
-    cmap = plt.cm.inferno  # type: ignore[attr-defined]
+    cmap = plt.get_cmap("inferno")
     img0 = ax1.imshow(masked, cmap=cmap)
     plt.colorbar(img0, ax=ax1, orientation="horizontal")
     plt.title(title)
@@ -128,7 +128,7 @@ class BgParams:
             If `perc` is not within the [0, 100] range.
         """
         min_perc, max_perc = 0.0, 100.0
-        if not (min_perc <= self.perc <= max_perc):
+        if not min_perc <= self.perc <= max_perc:
             msg = "perc must be in [0, 100] range"
             raise ValueError(msg)
         self.perc /= 100
@@ -237,7 +237,7 @@ def _bg_inverse_yen(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None
 
 
 # def bg(im: ImArray, bg_params: BgParams | None = None) -> tuple[float, list[Figure]]:
-def bg(im: ImArray, bg_params: BgParams | None = None) -> BgResult:
+def calculate_bg(im: ImArray, bg_params: BgParams | None = None) -> BgResult:
     """Segment background from an image stack.
 
     Parameters
@@ -398,7 +398,7 @@ def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:
 
 
 # fit the bg for clop3 experiments
-def bg_refine_iteratively(
+def calculate_bg_iteratively(
     frame: NDArray[np.float64],
     bgmax: None | np.float64 = None,
     *,

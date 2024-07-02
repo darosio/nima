@@ -28,7 +28,7 @@ from scipy import ndimage, signal  # type: ignore[import-untyped]
 from skimage import feature, filters, measure, morphology, segmentation, transform
 from tifffile import TiffFile, TiffReader
 
-from .segmentation import BgParams, bg
+from .segmentation import BgParams, calculate_bg
 
 threshold_method_choices = ["yen", "li"]
 
@@ -240,7 +240,7 @@ def d_bg(
         List of (list ?) of figures.
 
     """
-    d_bg = defaultdict(list)
+    d_bg = defaultdict(list)  # pylint: disable=W0621
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
     dd_cor: dict[str, Im] = {}
@@ -249,7 +249,7 @@ def d_bg(
             im_for_bg = im
             if downscale:
                 im_for_bg = transform.downscale_local_mean(im, downscale)  # type: ignore[no-untyped-call]
-            bg_result = bg(im_for_bg, bg_params=bg_params)
+            bg_result = calculate_bg(im_for_bg, bg_params=bg_params)
             med = bg_result.iqr[1]
             if bg_result.figures:
                 d_fig[k].append(bg_result.figures)
@@ -347,7 +347,7 @@ def d_mask_label(  # noqa: PLR0913
             m = segmentation.clear_border(m)  # type: ignore[no-untyped-call]
         mask.append(m)
     d_im["mask"] = np.array(mask)
-    labels, n_labels = ndimage.label(mask)
+    labels, _ = ndimage.label(mask)
     # TODO if any timepoint mask is empty cluster labels
     d_im["labels"] = labels
 
@@ -398,7 +398,7 @@ def process_watershed(
             labels_ws = segmentation.random_walker(d_im["mask"][time], markers)
         else:
             labels_ws = segmentation.watershed(-d, markers, mask=lbl)  # type: ignore[no-untyped-call]
-    d_im["labels"][time] = labels_ws
+    d_im["labels"][time] = labels_ws  # pylint: disable=W0631
 
 
 def d_ratio(
@@ -563,7 +563,7 @@ def d_plot_meas(
     n_axes = len(channels) + 3  # 2 ratios and 1 bg axes
     nrows = int(np.ceil(n_axes / ncols))
     # colors by segmented r.o.i. id and channel names
-    id_colors = mpl.cm.Set2.colors  # type: ignore[attr-defined]
+    id_colors = mpl.cm.Set2.colors  # type: ignore[attr-defined] # pylint: disable=E1101
     ch_colors = {
         k: k.lower() if k.lower() in mpl.colors.BASE_COLORS else "k" for k in channels
     }
