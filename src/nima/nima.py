@@ -861,7 +861,7 @@ class Channel:
         )
 
 
-@dataclass(eq=True)
+@dataclass(eq=True, frozen=True)
 class StagePosition:
     """Dataclass representing stage position.
 
@@ -948,8 +948,8 @@ class Metadata:
         List of series names.
     date : list[str]
         List of acquisition dates.
-    stage_position : list[StagePosition]
-        List of stage positions.
+    stage_position : list[dict[StagePosition, tuple[int, int, int]]]
+        List of {StagePosition: (T,C,Z)} for each `S`.
     voxel_size : list[VoxelSize]
         List of voxel sizes.
     channels : list[list[Channel]]
@@ -970,7 +970,9 @@ class Metadata:
     objective: list[str] = field(default_factory=list)
     name: list[str] = field(default_factory=list)
     date: list[str] = field(default_factory=list)
-    stage_position: list[StagePosition] = field(default_factory=list)
+    stage_position: list[dict[StagePosition, tuple[int, int, int]]] = field(
+        default_factory=list
+    )
     voxel_size: list[VoxelSize] = field(default_factory=list)
     channels: list[list[Channel]] = field(default_factory=list)
     tcz_deltat: list[list[tuple[int, int, int, float]]] = field(default_factory=list)
@@ -1056,7 +1058,6 @@ class Metadata:
             "name",
             "objective",
             "date",
-            "stage_position",
             "voxel_size",
         ]:
             if len(set(getattr(self, attribute))) == 1:
@@ -1066,25 +1067,17 @@ class Metadata:
                 break
             self.channels = [channel]
 
-    def _get_stage_position(self, planes: list[dict[str, str]]) -> StagePosition:
+    def _get_stage_position(
+        self, planes: list[dict[str, str]]
+    ) -> dict[StagePosition, tuple[int, int, int]]:
         """Retrieve the stage positions from the given pixels."""
-
-        def raise_multiple_positions_error(message: str) -> None:
-            raise MultiplePositionsError(message)
-
-        pos = {
-            StagePosition(
-                float(plane["@PositionX"]),
-                float(plane["@PositionY"]),
-                float(plane["@PositionZ"]),
-            )
-            for plane in planes
-        }
-        stage_position = next(iter(pos)) if len(pos) == 1 else None
-        if stage_position is None:
-            raise_multiple_positions_error("Multiple positions within a series.")
-            return StagePosition(None, None, None)
-        return stage_position
+        pos_dict: dict[StagePosition, tuple[int, int, int]] = {}
+        for plane in planes:
+            x, y, z = plane["@PositionX"], plane["@PositionY"], plane["@PositionZ"]
+            pos = StagePosition(float(x), float(y), float(z))
+            t, c, z = plane["@TheT"], plane["@TheC"], plane["@TheZ"]
+            pos_dict.update({pos: (int(t), int(c), int(z))})
+        return pos_dict
 
 
 def read_tiffmd(fp: Path, channels: Sequence[str]) -> tuple[Array, Metadata]:
