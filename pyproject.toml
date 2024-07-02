@@ -51,6 +51,7 @@ dev = [
   "jupyterlab_server == 2.27.2",
   "pooch == 1.8.2",
   "pre-commit <= 3.7.1",
+  "pylint",
   "pylsp-mypy",
   "pympler",
   "questionary == 2.0.1",
