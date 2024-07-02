@@ -1,13 +1,12 @@
 """Utils for simple ratio imaging calculation."""
 
 from collections import defaultdict
-from typing import Any
 
 import numpy as np
 import pandas as pd
 import tifffile as tff
 from numpy.typing import NDArray
-from scipy import optimize, signal, stats  # type: ignore[import-untyped]
+from scipy import optimize, stats  # type: ignore[import-untyped]
 
 from nima.nima import AXES_LENGTH_4D
 
@@ -22,7 +21,7 @@ def bg(
     float,
     float,
 ]:
-    """Estimate image bg.
+    """Estimate image bg w/out iteration.
 
     Parameters
     ----------
@@ -122,28 +121,6 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
         combined_df["r_Cl"] = combined_df[2] / combined_df[1]
         combined_df["r_pH"] = combined_df[0] / combined_df[2]
     return combined_df
-
-
-def bg2(
-    img: ImArray, step: float = 0.2, bgmax: None | float = None
-) -> tuple[float, float, NDArray[np.signedinteger[Any]], NDArray[np.floating[Any]]]:
-    """Estimate image bg."""
-    if bgmax is None:
-        bgmax = _bgmax(img)
-    vals = img[img < bgmax]
-    mmin = vals.min()
-    mmax = vals.max()
-    density = stats.gaussian_kde(vals)
-    x = np.arange(mmin, mmax, step=step)
-    density = density(x)
-    # MAYBE: plot x, density
-    pos_max = signal.find_peaks(density, width=2, rel_height=0.1)[0][0]
-    v = density[pos_max] / 2
-    pos_delta = signal.find_peaks(-np.absolute(density - v), width=2, rel_height=0.2)[
-        0
-    ][0]
-    delta = (pos_max - pos_delta) * step
-    return pos_max * step + mmin, delta, x, density
 
 
 def mask_all_channels(im: ImArray, thresholds: tuple[float]) -> ImMask:
