@@ -1022,7 +1022,7 @@ class Metadata:
                     Channel(
                         int(channel["OME:LightSourceSettings"]["@Wavelength"]),
                         float(channel["OME:LightSourceSettings"]["@Attenuation"]),
-                        float(channel["OME:DetectorSettings"]["@Gain"]),
+                        float(channel["OME:DetectorSettings"].get("@Gain", 0)),
                         channel["OME:DetectorSettings"]["@Binning"],
                         [
                             d["@ID"].removeprefix("Filter:")
@@ -1032,6 +1032,7 @@ class Metadata:
                     for channel in channels
                 ]
             )
+
             self.tcz_deltat.append(
                 [
                     (
