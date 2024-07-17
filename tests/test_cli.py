@@ -152,21 +152,35 @@ class TestNima:
         assert text in page4.extract_text()  # pylint: disable=E1101
 
 
-def test_bias_mflat(tmp_path: Path) -> None:
+@pytest.fixture()
+def run_bima(tmp_path: Path) -> Path:
+    """Run `bima mflat` saving output in the temporary path."""
+    filename = Path("tests") / "data" / "test_flat*.tif"
+    runner = CliRunner()
+    result = runner.invoke(
+        bima, ["-o", str(tmp_path / "ff.tif"), "mflat", str(filename)]
+    )
+    assert str(3) in result.output
+    assert (tmp_path / "ff-raw.tif").exists(), "ff-raw.tif was not created"
+    return tmp_path
+
+
+def test_bias_mflat(run_bima: Path) -> None:
     """Check `bias dflat` cli."""
-    d = tmp_path
+    d = run_bima
     tmpflt = d / "ff.tif"
     tmpraw = d / "ff-raw.tif"
-    filename = str(Path("tests") / "data" / "test_flat*.tif")
-    runner = CliRunner()
-    result = runner.invoke(bima, ["-o", f"{tmpflt.resolve()}", "mflat", filename])
-    assert str(3) in result.output
-    test = tff.imread(tmpraw)
-    expect = np.array(tff.imread(TESTS_PATH / "data" / "output" / "test_flat.tif"))
-    np.testing.assert_allclose(np.array(test), expect)
-    test = np.array(tff.imread(tmpflt))
-    expect = np.array(
+    # Verify that the raw output file exists
+    assert tmpraw.exists(), f"Test file not found: {tmpraw}"
+    # Load the test data
+    test_raw = tff.imread(tmpraw)
+    expect_raw = np.array(tff.imread(TESTS_PATH / "data" / "output" / "test_flat.tif"))
+    np.testing.assert_allclose(np.array(test_raw), expect_raw)
+    # Verify the processed output file
+    test_flt = np.array(tff.imread(tmpflt))
+    expect_flt = np.array(
         tff.imread(TESTS_PATH / "data" / "output" / "test_flat_gaussnorm.tif")
     )
-    np.testing.assert_allclose(test, expect)
+    np.testing.assert_allclose(test_flt, expect_flt)
+    # Ensure the PNG file is created
     assert tmpflt.with_suffix(".png").exists()
