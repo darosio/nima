@@ -78,7 +78,7 @@ docs = [
 ]
 tests = [
   "coverage[toml] <= 7.6.0",
-  "mypy <= 1.10.1",
+  "mypy <= 1.11.0",
   "pandas-stubs <= 2.2.2.240603",
   "pygments <= 2.17.2",  # color xdoctest
   "pypdf <= 4.3.0",
