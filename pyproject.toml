@@ -61,7 +61,7 @@ dev = [
 ]
 docs = [
   "Pygments <= 2.18.0",
-  "Sphinx <= 7.4.6",
+  "Sphinx <= 7.4.7",
   "autodocsumm <= 0.2.12",
   "bokeh",
   "dask_image",
