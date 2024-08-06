@@ -149,8 +149,8 @@ def mask_all_channels(im: ImArray, thresholds: tuple[float]) -> ImMask:
     >>> fp = "tests/data/1b_c16_15.tif"
     >>> rdr = bioio_tifffile.reader.Reader(fp)
     >>> dd = rdr.dask_data
-    >>> mask_all_channels(dd[0, :], [19, 17, 22]).compute().sum()
-    np.int64(262144)
+    >>> int(mask_all_channels(dd[0, :], [19, 17, 22]).compute().sum())
+    262144
     """
     if len(thresholds) != im.shape[0]:
         msg = "Length of thresholds must match the number of image dimensions."
