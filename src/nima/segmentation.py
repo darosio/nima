@@ -40,7 +40,7 @@ def _bg_plot(im: ImArray, m: ImMask, title: str, lim: ImArray | None) -> list[Fi
     figures = [fig1]
     if lim is not None:
         fig2 = plt.figure(figsize=(9, 4))
-        ax1, ax2, host = fig2.subplots(nrows=1, ncols=3)  # type: ignore[misc]
+        ax1, ax2, host = fig2.subplots(nrows=1, ncols=3)
         img0 = ax1.imshow(lim)
         plt.colorbar(img0, ax=ax2, orientation="horizontal")
         ax2.hist(lim.ravel(), bins=60, log=True, color="lightgray", edgecolor="black")
