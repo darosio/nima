@@ -68,7 +68,7 @@ docs = [
   "holoviews",
   "hvplot",
   "impy-array",
-  "nbsphinx <= 0.9.4",
+  "nbsphinx <= 0.9.5",
   "pydata-sphinx-theme <= 0.15.4",
   "seaborn",
   "selenium",
