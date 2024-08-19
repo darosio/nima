@@ -152,7 +152,7 @@ class TestNima:
         assert text in page4.extract_text()  # pylint: disable=E1101
 
 
-@pytest.fixture()
+@pytest.fixture
 def run_bima(tmp_path: Path) -> Path:
     """Run `bima mflat` saving output in the temporary path."""
     filename = Path("tests") / "data" / "test_flat*.tif"
