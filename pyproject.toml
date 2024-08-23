@@ -55,7 +55,7 @@ dev = [
   "pylsp-mypy",
   "pympler",
   "questionary == 2.0.1",
-  "ruff <= 0.6.1",
+  "ruff <= 0.6.2",
   "ruff-lsp",
   "urllib3 == 1.26.18"
 ]
