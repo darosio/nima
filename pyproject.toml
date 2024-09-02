@@ -46,7 +46,7 @@ version = "0.10.2"
 dev = [
   "commitizen <= 3.29.0",
   "ipykernel <=6.29.5",
-  "ipython == 8.18.0",
+  "ipython == 8.27.0",
   "jupyter <= 1.1.1",
   "jupyterlab_server == 2.27.3",
   "pooch == 1.8.2",
