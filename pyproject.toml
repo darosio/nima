@@ -45,16 +45,13 @@ version = "0.10.2"
 [project.optional-dependencies]
 dev = [
   "commitizen <= 3.29.0",
-  "ipykernel <=6.29.5",
-  "ipython == 8.18.0",
-  "jupyter <= 1.1.1",
-  "jupyterlab_server == 2.27.3",
-  "pooch == 1.8.2",
+  "ipykernel",
+  "jupyter",
+  "jupyterlab",
   "pre-commit <= 3.8.0",
   "pylint",
   "pylsp-mypy",
   "pympler",
-  "questionary == 2.0.1",
   "ruff <= 0.6.3",
   "ruff-lsp",
   "urllib3 == 1.26.18"
