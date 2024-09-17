@@ -63,7 +63,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
 
     Raises
     ------
-    Exception
+    ValueError
         When number of channels and total length of TIFF sequence does not match.
 
     Examples
@@ -138,7 +138,7 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
 
     Raises
     ------
-    Exception
+    ValueError
         When ImArray is neither a single image nor a stack.
 
     """
