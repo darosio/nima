@@ -52,7 +52,7 @@ dev = [
   "pylint",
   "pylsp-mypy",
   "pympler",
-  "ruff <= 0.6.4",
+  "ruff <= 0.6.5",
   "ruff-lsp",
   "urllib3 == 2.2.3"
 ]
