@@ -44,7 +44,7 @@ version = "0.10.2"
 
 [project.optional-dependencies]
 dev = [
-  "commitizen <= 3.29.0",
+  "commitizen <= 3.29.1",
   "ipykernel",
   "jupyter",
   "jupyterlab",
