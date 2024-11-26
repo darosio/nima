@@ -193,19 +193,16 @@ def d_shading(
     # assertion type(flat) == np.ndarray or flat.keys() == d_im.keys(),
     # raise_msg will be replaced by type checking.
     d_cor = {}
-    for k in d_im:
-        d_cor[k] = d_im[k].astype(float)
-        if isinstance(dark, dict):
-            d_cor[k] -= dark[k]
-        else:
-            d_cor[k] -= dark  # numpy.ndarray
-        if isinstance(flat, dict):
-            d_cor[k] /= flat[k]
-        else:
-            d_cor[k] /= flat  # numpy.ndarray
+
+    for key, value in d_im.items():
+        d_cor[key] = value.astype(float)
+        # Subtract dark frame (per key or globally)
+        d_cor[key] -= dark[key] if isinstance(dark, dict) else dark
+        # Divide by flat field (per key or globally), avoid division by zero
+        d_cor[key] /= flat[key] if isinstance(flat, dict) else flat
     if clip:
-        for k in d_cor:
-            d_cor[k] = d_cor[k].clip(0)
+        for key, value in d_cor.items():
+            d_cor[key] = value.clip(min=0)
     return d_cor
 
 
@@ -244,21 +241,21 @@ def d_bg(
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
     dd_cor: dict[str, Im] = {}
-    for k in d_im:
-        for t, im in enumerate(d_im[k]):
-            im_for_bg = im
+    for key, time_frames in d_im.items():
+        for frame in time_frames:
+            im_for_bg = frame
             if downscale:
-                im_for_bg = transform.downscale_local_mean(im, downscale)  # type: ignore[no-untyped-call]
+                im_for_bg = transform.downscale_local_mean(frame, downscale)  # type: ignore[no-untyped-call]
             bg_result = calculate_bg(im_for_bg, bg_params=bg_params)
             med = bg_result.iqr[1]
             if bg_result.figures:
-                d_fig[k].append(bg_result.figures)
-            d_bg[k].append(med)
-            d_cor[k].append(d_im[k][t] - med)
-        dd_cor[k] = np.array(d_cor[k])
+                d_fig[key].append(bg_result.figures)
+            d_bg[key].append(med)
+            d_cor[key].append(frame - med)
+        dd_cor[key] = np.array(d_cor[key])
     if clip:
-        for k in d_cor:
-            dd_cor[k] = dd_cor[k].clip(0)
+        for key in d_cor:
+            dd_cor[key] = dd_cor[key].clip(0)
     bgs = pd.DataFrame({k: np.array(v) for k, v in d_bg.items()})
     return dd_cor, bgs, d_fig
 
@@ -524,7 +521,7 @@ def d_meas_props(  # noqa: PLR0913
             r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels))
         ratios_ph = np.array(r_ph)
         ratios_cl = np.array(r_cl)
-        for lbl in meas:
+        for lbl, value in meas.items():
             res_df = pd.DataFrame(
                 {
                     "r_pH_median": ratios_ph[:, lbl - 1],
@@ -532,7 +529,7 @@ def d_meas_props(  # noqa: PLR0913
                 }
             )
             # concat only on index that are present in both
-            meas[lbl] = pd.concat([meas[lbl], res_df], axis=1, join="inner")
+            meas[lbl] = pd.concat([value, res_df], axis=1, join="inner")
     return meas, pr
 
 
