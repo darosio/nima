@@ -283,8 +283,6 @@ docstring-code-format = true
 
 [tool.ruff.lint]
 ignore = [
-  "ANN101",  # `self` annotation; will be removed from ruff
-  "ANN102",  # same for `cls`
   "ISC001",
   "S311"  # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
