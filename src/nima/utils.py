@@ -49,12 +49,17 @@ def bg(
     def fitfunc(
         p: list[float], x: float | NDArray[np.float64]
     ) -> float | NDArray[np.float64]:
-        return p[0] * np.exp(-0.5 * ((x - p[1]) / p[2]) ** 2) + p[3]
+        return (p[0] * np.exp(-0.5 * ((x - p[1]) / p[2]) ** 2) + p[3]).astype(
+            np.float64
+        )
 
     def errfunc(
         p: list[float], x: float | NDArray[np.float64], y: float | NDArray[np.float64]
     ) -> float | NDArray[np.float64]:
-        return y - fitfunc(p, x)
+        residuals = y - fitfunc(p, x)
+        if isinstance(residuals, np.ndarray):
+            return residuals.astype(np.float64)
+        return np.float64(residuals)
 
     mmin = int(im.min())
     mmax = int(im.max())

@@ -140,9 +140,9 @@ class TestNima:
     @pytest.mark.parametrize(
         ("text", "filename"),
         [
-            ("[262. 273. 284.]", "bg-C-li_adaptive.pdf"),
-            ("[423. 460. 528.]", "bg-G-li_adaptive.pdf"),
-            ("[237. 248. 264.]", "bg-R-li_adaptive.pdf"),
+            ("262.0, 273.0, 284.0", "bg-C-li_adaptive.pdf"),
+            ("423.0, 460.0, 528.0", "bg-G-li_adaptive.pdf"),
+            ("237.0, 248.0, 264.0", "bg-R-li_adaptive.pdf"),
         ],
     )
     def test_pdf(self, result_folder: ResultFolder, text: str, filename: str) -> None:

@@ -16,19 +16,25 @@ data_fp = "./tests/data/1b_c16_15.tif"
 @pytest.fixture(name="d_im")
 def d_im_setup() -> dict[str, NDArray[np.float64]]:
     """Create a dict of images."""
-    return {"C": np.ones((5, 5, 5)) * 2, "C2": np.ones((5, 5, 5)) * 4}
+    return {
+        "C": (np.ones((5, 5, 5)) * 2).astype(np.float64),
+        "C2": (np.ones((5, 5, 5)) * 4).astype(np.float64),
+    }
 
 
 @pytest.fixture(name="d_flat")
 def d_flat_setup() -> dict[str, NDArray[np.float64]]:
     """Create a dict of flat images."""
-    return {"C": np.ones((5, 5)) * 2, "C2": np.ones((5, 5)) * 3}
+    return {
+        "C": (np.ones((5, 5)) * 2).astype(np.float64),
+        "C2": (np.ones((5, 5)) * 3).astype(np.float64),
+    }
 
 
 @pytest.fixture(name="d_dark")
 def d_dark_setup() -> dict[str, NDArray[np.float64]]:
     """Create a dict of bias images."""
-    return {"C": np.ones((5, 5)), "C2": np.ones((5, 5)) * 2}
+    return {"C": np.ones((5, 5)), "C2": (np.ones((5, 5)) * 2).astype(np.float64)}
 
 
 @pytest.fixture(name="dark")
@@ -40,7 +46,7 @@ def dark_setup() -> NDArray[np.float64]:
 @pytest.fixture(name="flat")
 def flat_setup() -> NDArray[np.float64]:
     """Create a flat image."""
-    return np.ones((5, 5)) * 2
+    return (np.ones((5, 5)) * 2).astype(np.float64)
 
 
 class TestDShading:

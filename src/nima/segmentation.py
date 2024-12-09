@@ -281,7 +281,8 @@ def calculate_bg(im: ImArray, bg_params: BgParams | None = None) -> BgResult:
 
     m, title, lim = processing_functions[bg_params.kind](im, bg_params)
     pixel_values = im[m]
-    iqr = np.percentile(pixel_values, [25, 50, 75])
+    p25, p50, p75 = np.percentile(pixel_values, [25, 50, 75])
+    iqr: tuple[float, float, float] = (float(p25), float(p50), float(p75))
     title = title + "\n" + str(iqr)
     figures = _bg_plot(im, m, title, lim)
     bg, sd = stats.distributions.norm.fit(pixel_values)
@@ -379,12 +380,14 @@ def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:
         params: list[float], x: float | NDArray[np.float64]
     ) -> NDArray[np.float64]:
         amplitude, mean, sigma, offset = params
-        return amplitude * np.exp(-0.5 * ((x - mean) / sigma) ** 2) + offset
+        return (amplitude * np.exp(-0.5 * ((x - mean) / sigma) ** 2) + offset).astype(
+            np.float64
+        )
 
     def fit_error_func(
         params: list[float], x: NDArray[np.float64], y: NDArray[np.float64]
     ) -> NDArray[np.float64]:
-        return y - gaussian_fit_func(params, x)
+        return (y - gaussian_fit_func(params, x)).astype(np.float64)
 
     min_val, max_val = int(vals.min()), int(vals.max())
     ydata, edges = np.histogram(vals, bins=max_val - min_val, range=(min_val, max_val))
