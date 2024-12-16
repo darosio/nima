@@ -126,8 +126,8 @@ class TestNima:
         """It checks tif files: r_Cl, r_pH of segmented cells."""
         fp_expected = TESTS_PATH / "data" / "output" / result_folder[1][0] / f
         fp_result = result_folder[0] / result_folder[1][0] / f
-        expected = skimage.io.imread(fp_expected)  # type: ignore[no-untyped-call]
-        result = skimage.io.imread(fp_result)  # type: ignore[no-untyped-call]
+        expected = skimage.io.imread(fp_expected)
+        result = skimage.io.imread(fp_result)
         assert np.sum(result - expected) == pytest.approx(0, 2.3e-06)
 
     @pytest.mark.parametrize(("f", "tol"), [("_dim.png", 8.001), ("_meas.png", 20)])
