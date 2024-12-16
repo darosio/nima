@@ -233,7 +233,7 @@ def output_results(  # noqa: PLR0913
     # Create PDF files
     for ch, llf in ff.items():
         pdf_file = bname / Path(f"bg-{ch}-{bg_method}.pdf")
-        with PdfPages(pdf_file) as pp:  # type: ignore[no-untyped-call]
+        with PdfPages(pdf_file) as pp:
             for lf in llf:
                 for f_i in lf:
                     pp.savefig(f_i)
