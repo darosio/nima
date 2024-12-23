@@ -54,7 +54,7 @@ dev = [
   "pympler",
   "ruff <= 0.8.4",
   "ruff-lsp",
-  "urllib3 == 2.2.3"
+  "urllib3 == 2.3.0"
 ]
 docs = [
   "Pygments <= 2.18.0",
