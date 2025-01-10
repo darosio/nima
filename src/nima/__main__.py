@@ -397,21 +397,40 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
 
     """
     image_sequence = tifffile.TiffSequence(globpath)
-    axes_n_shape = " ".join((str(image_sequence.axes), str(image_sequence.shape)))
-    click.secho(axes_n_shape, fg="green")
-    store = image_sequence.aszarr()
-    Client()  # type: ignore[no-untyped-call, unused-awaitable]
-    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore[attr-defined, no-untyped-call]
-    fp = f.persist()
-    progress(fp)  # type: ignore[no-untyped-call]
-    tprojection = fp.compute()
-    if ctx.obj["output"]:
-        output = ctx.obj["output"]
-    else:
-        output = Path(globpath).name.replace("*", "").replace("?", "")
-        output = Path(output).with_suffix(".tiff")
-    bias_frame = None if bias_fp is None else np.array(tifffile.imread(bias_fp))
-    _output_flat(output, tprojection, bias_frame)
+    sequence_info = f"{image_sequence.axes} {image_sequence.shape}"
+    click.secho(sequence_info, fg="green")
+    # Start a local client without assignment
+    Client()  # type: ignore[no-untyped-call]
+    # Stack TIFF files as a Dask array
+    dask_array = da.stack(  # type: ignore[attr-defined,no-untyped-call]
+        [
+            da.from_array(tifffile.imread(file), chunks="auto")  # type: ignore[attr-defined,no-untyped-call]
+            for file in image_sequence
+        ],
+        axis=0,
+    )
+    # Compute mean projection
+    mean_projection = da.mean(dask_array, axis=0)  # type: ignore[attr-defined]
+    persisted_result = mean_projection.persist()
+    progress(persisted_result)  # type: ignore[no-untyped-call]
+    # Compute the mean projection
+    tprojection = persisted_result.compute()
+    # Determine the output file path
+    output_path = (
+        ctx.obj["output"]
+        if ctx.obj.get("output")
+        else (
+            Path(Path(globpath).name.replace("*", "").replace("?", "")).with_suffix(
+                ".tiff"
+            )
+        )
+    )
+    # Read the bias file (if provided)
+    bias_frame = None
+    if bias_fp:
+        bias_frame = np.array(tifffile.imread(bias_fp))
+    # Save the results
+    _output_flat(output_path, tprojection, bias_frame)
 
 
 @bima.command()
@@ -469,6 +488,8 @@ def _output_flat(
     adjustment based on the specific requirements of the flat field correction.
 
     """
+    # Ensure the parent directories exist
+    output.parent.mkdir(parents=True, exist_ok=True)
     tifffile.imwrite(output.with_stem(f"{output.stem}-raw"), tprojection)
     if bias_im is None:
         flat_im = ndimage.gaussian_filter(tprojection, sigma=100)

@@ -1,10 +1,12 @@
 """Utils for simple ratio imaging calculation."""
 
 from collections import defaultdict
+from typing import cast
 
 import numpy as np
 import pandas as pd
 import tifffile as tff
+from dask.array.core import Array
 from numpy.typing import NDArray
 from scipy import optimize, stats  # type: ignore[import-untyped]
 
@@ -128,19 +130,21 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
     return combined_df
 
 
-def mask_all_channels(im: ImArray, thresholds: tuple[float]) -> ImMask:
+def mask_all_channels(
+    image: ImArray | Array, thresholds: tuple[float, ...]
+) -> ImMask | Array:
     """Mask a multichannel plane.
 
     Parameters
     ----------
-    im : ImArray
+    image : ImArray | Array
         CYX multichannel image.
-    thresholds : tuple[float]
+    thresholds : tuple[float, ...]
         threshold values
 
     Returns
     -------
-    ImMask
+    ImMask | Array
         Multichannel mask.
 
     Raises
@@ -150,18 +154,26 @@ def mask_all_channels(im: ImArray, thresholds: tuple[float]) -> ImMask:
 
     Examples
     --------
-    >>> import bioio_tifffile
+    >>> import tifffile
     >>> fp = "tests/data/1b_c16_15.tif"
-    >>> rdr = bioio_tifffile.reader.Reader(fp)
-    >>> dd = rdr.dask_data
-    >>> int(mask_all_channels(dd[0, :], [19, 17, 22]).compute().sum())
+    >>> dd = tifffile.imread(fp)
+    >>> int(mask_all_channels(dd[0, :], [19, 17, 22]).sum())
     262144
     """
-    if len(thresholds) != im.shape[0]:
-        msg = "Length of thresholds must match the number of image dimensions."
+    if len(thresholds) != image.shape[0]:
+        msg = "Number of thresholds must match the number of channels in the image."
         raise ValueError(msg)
-    m: ImMask = im[0] > thresholds[0]
-    thr: float
-    for i, thr in enumerate(thresholds[1:], 1):
-        m = m & (im[i] > thr)
-    return m
+
+    is_dask_array: bool = isinstance(image, Array)
+
+    # Create the initial mask for the first channel
+    mask = image[0] > thresholds[0]
+
+    # Combine conditions for the rest of the channels
+    for channel_index, threshold in enumerate(thresholds[1:], 1):
+        mask &= image[channel_index] > threshold
+
+    # If it's a Dask array, return as-is unless it's finalized; otherwise, compute
+    if is_dask_array:
+        return cast(Array, mask)
+    return cast(ImMask, np.asarray(mask))
