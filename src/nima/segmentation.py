@@ -18,7 +18,7 @@ from scipy import (  # type: ignore[import-untyped]
 )
 from skimage import filters, morphology
 
-from .types import ImArray, ImMask
+from .nima_types import ImArray, ImMask
 
 # TODO: add new bg/fg segmentation based on conditional probability but
 # working with dask arrays. Try being clean: define function only for NDArray

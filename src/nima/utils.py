@@ -12,8 +12,8 @@ from scipy import optimize, stats  # type: ignore[import-untyped]
 
 from nima.nima import AXES_LENGTH_4D
 
+from .nima_types import ImArray, ImMask
 from .segmentation import _bgmax, calculate_bg_iteratively, prob
-from .types import ImArray, ImMask
 
 
 # fit the bg for clop3 experiments
