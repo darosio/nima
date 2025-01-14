@@ -268,11 +268,11 @@ def output_results(  # noqa: PLR0913
     # Create TIFF files
     objs = ndimage.find_objects(d_im_bg["labels"])
     for n, o in enumerate(objs):
-        name = bname / Path(f"label{n+1}_rcl.tif")
+        name = bname / Path(f"label{n + 1}_rcl.tif")
         tifffile.imwrite(
             name, d_im_bg["r_cl"][o], compression="lzma", photometric="minisblack"
         )
-        name = bname / Path(f"label{n+1}_rpH.tif")
+        name = bname / Path(f"label{n + 1}_rpH.tif")
         tifffile.imwrite(
             name, d_im_bg["r_pH"][o], compression="lzma", photometric="minisblack"
         )
