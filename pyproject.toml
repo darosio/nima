@@ -48,7 +48,7 @@ dev = [
   "ipykernel",
   "jupyter",
   "jupyterlab",
-  "pre-commit <= 4.0.1",
+  "pre-commit <= 4.1.0",
   "pylint",
   "pylsp-mypy",
   "pympler",
