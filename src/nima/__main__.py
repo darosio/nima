@@ -308,9 +308,8 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
     """
     if fpath.suffix == ".zip":
-        with zipfile.ZipFile(fpath) as zf, zf.open(zf.namelist()[0]) as fo:
-            # Alternatively: ignore store = tifffile.imread(fo)
-            store = tifffile.imread(BytesIO(fo.read()))
+        with zipfile.ZipFile(fpath) as zf, zf.open(zf.namelist()[0]) as firstfile:
+            store = tifffile.imread(BytesIO(firstfile.read()))
     else:
         store = tifffile.imread(fpath)
     ensure_ndarray(store, "store")

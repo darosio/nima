@@ -100,12 +100,6 @@ repository = "https://github.com/darosio/nima/"
 [tool.bandit]
 skips = ["B101", "B603"]
 
-[tool.codespell]
-count = true
-ignore-words-list = 'generat'
-quiet-level = 3
-skip = 'src/nima/__main__.py'
-
 [tool.commitizen]
 name = "cz_customize"
 tag_format = "v$version"
@@ -346,3 +340,18 @@ mccabe.max-complexity = 12
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
+
+[tool.typos]
+
+[tool.typos.default]
+# Ignore specific patterns such as "id": "XXXX" in JSON
+extend-ignore-re = ["\"id\":\\s*\"[^\"]+\""]
+
+[tool.typos.default.extend-words]
+ND = "ND"
+Nd = "Nd"
+OME = "OME"
+arange = "arange"
+arosio = "Arosio"
+generat = "generat"
+thr = "thr"
