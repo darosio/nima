@@ -74,7 +74,7 @@ docs = [
   "statsmodels"
 ]
 tests = [
-  "coverage[toml] <= 7.6.11",
+  "coverage[toml] <= 7.6.12",
   "mypy <= 1.15.0",
   "pandas-stubs <= 2.2.3.241126",
   "pygments <= 2.19.1",  # color xdoctest
