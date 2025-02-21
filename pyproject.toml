@@ -173,6 +173,7 @@ source = ["nima", "tests"]
 
 [tool.hatch.envs.default]
 features = ["dev", "tests", "docs"]
+installer = "uv"
 
 [tool.hatch.envs.default.scripts]
 bump = [
@@ -196,6 +197,7 @@ lint = [
 
 [tool.hatch.envs.tests]
 features = ["tests"]
+installer = "uv"
 template = "tests"
 
 [[tool.hatch.envs.tests.matrix]]
