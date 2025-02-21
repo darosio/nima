@@ -247,7 +247,7 @@ def output_results(  # noqa: PLR0913
     # Show all channels and labels
     d = {ch: d_im_bg[ch] for ch in channels}
     d["labels"] = d_im_bg["labels"]
-    fig = nima.d_show(d, cmap=cm.inferno_r)  # type: ignore[attr-defined] # pylint: disable=no-member
+    fig = nima.d_show(d, cmap=cm.inferno_r)  # type: ignore[attr-defined]
     fig.savefig(bname.with_name(bname.name + "_dim.png"))
     # Create measurement CSV files
     for k, df in meas.items():

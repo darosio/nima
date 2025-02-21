@@ -49,7 +49,6 @@ dev = [
   "jupyter",
   "jupyterlab",
   "pre-commit <= 4.1.0",
-  "pylint",
   "pylsp-mypy",
   "pympler",
   "ruff <= 0.9.6",
@@ -232,30 +231,6 @@ show_error_context = true
 strict = true
 warn_unreachable = true
 warn_unused_configs = true
-
-[tool.pylint.format]
-ignore-long-lines = "^\\s*(# )?<?https?://\\S+>?$|# type: ignore|# noqa:|# nosec \"|# pylint:"
-max-line-length = 88
-max-module-lines = 1600
-
-[tool.pylint.main]
-ignore-paths = [""]
-jobs = 0
-py-version = "3.12"
-
-[tool.pylint.messages_control]
-disable = [
-  "invalid-name",
-  "design",
-  "fixme"
-]
-
-[tool.pylint.refactoring]
-# Maximum number of nested blocks for function / method body
-max-nested-blocks = 8  # default 5
-
-[tool.pylint.reports]
-output-format = "colorized"
 
 [tool.pylsp-mypy]
 dmypy = false

@@ -119,7 +119,7 @@ def gen_frame(  # noqa: PLR0913
     sky: float = 2,
     noise_sd: float = 1,
     seed: int | None = None,
-) -> NDArray[np.float64]:  # pylint: disable=too-many-arguments
+) -> NDArray[np.float64]:
     """Simulate an acquired frame [bias + noise + flat * (sky + obj)]."""
     (nrows, ncols) = objs.shape
     if bias is None:

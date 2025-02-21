@@ -237,7 +237,7 @@ def d_bg(
         List of (list ?) of figures.
 
     """
-    d_bg = defaultdict(list)  # pylint: disable=W0621
+    d_bg = defaultdict(list)
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
     dd_cor: dict[str, Im] = {}
@@ -395,7 +395,7 @@ def process_watershed(
             labels_ws = segmentation.random_walker(d_im["mask"][time], markers)
         else:
             labels_ws = segmentation.watershed(-d, markers, mask=lbl)  # type: ignore[no-untyped-call]
-    d_im["labels"][time] = labels_ws  # pylint: disable=W0631
+    d_im["labels"][time] = labels_ws
 
 
 def d_ratio(
@@ -560,7 +560,7 @@ def d_plot_meas(
     n_axes = len(channels) + 3  # 2 ratios and 1 bg axes
     nrows = int(np.ceil(n_axes / ncols))
     # colors by segmented r.o.i. id and channel names
-    id_colors = mpl.cm.Set2.colors  # type: ignore[attr-defined] # pylint: disable=E1101
+    id_colors = mpl.cm.Set2.colors  # type: ignore[attr-defined]
     ch_colors = {
         k: k.lower() if k.lower() in mpl.colors.BASE_COLORS else "k" for k in channels
     }

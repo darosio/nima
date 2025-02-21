@@ -149,7 +149,7 @@ class TestNima:
         """It checks pdf files: saved bg estimation."""
         fp_result = result_folder[0] / result_folder[1][0] / filename
         page4 = pypdf.PdfReader(fp_result).pages[3]
-        assert text in page4.extract_text()  # pylint: disable=E1101
+        assert text in page4.extract_text()
 
 
 @pytest.fixture
