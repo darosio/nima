@@ -97,9 +97,6 @@ Documentation = "https://nima.readthedocs.io"
 Homepage = "https://github.com/darosio/nima"
 repository = "https://github.com/darosio/nima/"
 
-[tool.bandit]
-skips = ["B101", "B603"]
-
 [tool.commitizen]
 name = "cz_customize"
 tag_format = "v$version"
@@ -315,7 +312,7 @@ select = [
   "RET",  # Return
   "RSE",  # Raise
   "RUF",  # Ruff
-  "S",  # bandit XXX
+  "S",  # bandit
   "SLF",  # private self
   "SLOT",  # __slot__
   "SIM",  # simplify
