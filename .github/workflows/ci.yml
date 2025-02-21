@@ -49,8 +49,10 @@ jobs:
       - name: Cache pre-commit
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pre-commit/
-          key: pre-commit|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('.pre-commit-config.yaml') }}
+          path: /home/runner/.cache/pre-commit/
+          key: pre-commit|${{ runner.os }}|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit|${{ runner.os }}|${{ env.STABLE_PYTHON_VERSION }}|
 
       - name: Run lint
         run: hatch run lint
