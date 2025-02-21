@@ -50,9 +50,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: /home/runner/.cache/pre-commit/
-          key: pre-commit|${{ runner.os }}|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit|${{ runner.os }}|${{ hashFiles('.pre-commit-config.yaml') }}
           restore-keys: |
-            pre-commit|${{ runner.os }}|${{ env.STABLE_PYTHON_VERSION }}|
+            pre-commit|${{ runner.os }}|
 
       - name: Run lint
         run: hatch run lint
