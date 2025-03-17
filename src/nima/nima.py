@@ -565,7 +565,7 @@ def d_plot_meas(
         k: k.lower() if k.lower() in mpl.colors.BASE_COLORS else "k" for k in channels
     }
     fig = plt.figure(figsize=(ncols * 5, nrows * 3))
-    axes = cast(np.ndarray[Any, Any], fig.subplots(nrows, ncols))
+    axes = cast("np.ndarray[Any, Any]", fig.subplots(nrows, ncols))
     for k, df in meas.items():
         c = id_colors[(int(k) - 1) % len(id_colors)]
         axes[0, 0].plot(df["r_pH"], marker="o", color=c, label=k)
