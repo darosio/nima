@@ -321,8 +321,8 @@ def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float64
     result = np.minimum(1, result)
     # Use typing.cast to explicitly inform mypy
     if isinstance(v, float):
-        return cast(float, result)
-    return cast(NDArray[np.float64], result)
+        return cast("float", result)
+    return cast("NDArray[np.float64]", result)
 
 
 def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:

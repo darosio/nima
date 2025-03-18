@@ -175,5 +175,5 @@ def mask_all_channels(
 
     # If it's a Dask array, return as-is unless it's finalized; otherwise, compute
     if is_dask_array:
-        return cast(Array, mask)
-    return cast(ImMask, np.asarray(mask))
+        return cast("Array", mask)
+    return cast("ImMask", np.asarray(mask))
