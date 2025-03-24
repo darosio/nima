@@ -401,7 +401,7 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
     # Start a local client without assignment
     Client()  # type: ignore[no-untyped-call]
     # Stack TIFF files as a Dask array
-    dask_array = da.stack(  # type: ignore[attr-defined,no-untyped-call]
+    dask_array = da.stack(
         [
             da.from_array(tifffile.imread(file), chunks="auto")  # type: ignore[attr-defined,no-untyped-call]
             for file in image_sequence
