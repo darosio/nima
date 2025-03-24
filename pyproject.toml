@@ -52,7 +52,7 @@ dev = [
   "pre-commit <= 4.2.0",
   "pylsp-mypy",
   "pympler",
-  "ruff <= 0.11.1",
+  "ruff <= 0.11.2",
   "ruff-lsp",
   "urllib3 == 2.3.0"
 ]
