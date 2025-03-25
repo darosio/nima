@@ -1081,7 +1081,7 @@ def read_tiffmd(fp: Path, channels: Sequence[str]) -> tuple[Array, Metadata]:
     """Read multichannel TIFF timelapse image."""
     n_channels = len(channels)
     rdr = TiffReader(fp)
-    dim = da.from_zarr(rdr.aszarr())
+    dim = da.from_zarr(rdr.aszarr())  # type: ignore[no-untyped-call]
     md = Metadata(rdr)
     if md.size_c[0] % n_channels:
         msg = "n_channel mismatch total length of TIFF sequence"
