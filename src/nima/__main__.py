@@ -401,9 +401,9 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
     # Start a local client without assignment
     Client()  # type: ignore[no-untyped-call]
     # Stack TIFF files as a Dask array
-    dask_array = da.stack(
+    dask_array = da.stack(  # type: ignore[no-untyped-call]
         [
-            da.from_array(tifffile.imread(file), chunks="auto")
+            da.from_array(tifffile.imread(file), chunks="auto")  # type: ignore[no-untyped-call]
             for file in image_sequence
         ],
         axis=0,
@@ -450,7 +450,7 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path) -> None:
 
     """
     store = tifffile.imread(fpath, aszarr=True)
-    f = da.mean(da.from_zarr(store).rechunk(), axis=0)
+    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore[no-untyped-call]
     with ProgressBar():  # type: ignore[no-untyped-call]
         tprojection = f.compute()
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
