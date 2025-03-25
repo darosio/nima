@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xmltodict  # type: ignore[import-untyped]
-from dask.array import Array  # type: ignore[attr-defined]
+from dask.array import Array
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
@@ -1081,7 +1081,7 @@ def read_tiffmd(fp: Path, channels: Sequence[str]) -> tuple[Array, Metadata]:
     """Read multichannel TIFF timelapse image."""
     n_channels = len(channels)
     rdr = TiffReader(fp)
-    dim = da.from_zarr(rdr.aszarr())  # type:ignore[attr-defined, no-untyped-call]
+    dim = da.from_zarr(rdr.aszarr())  # type: ignore[no-untyped-call]
     md = Metadata(rdr)
     if md.size_c[0] % n_channels:
         msg = "n_channel mismatch total length of TIFF sequence"
