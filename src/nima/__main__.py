@@ -403,13 +403,13 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
     # Stack TIFF files as a Dask array
     dask_array = da.stack(
         [
-            da.from_array(tifffile.imread(file), chunks="auto")  # type: ignore[attr-defined,no-untyped-call]
+            da.from_array(tifffile.imread(file), chunks="auto")
             for file in image_sequence
         ],
         axis=0,
     )
     # Compute mean projection
-    mean_projection = da.mean(dask_array, axis=0)  # type: ignore[attr-defined]
+    mean_projection = da.mean(dask_array, axis=0)
     persisted_result = mean_projection.persist()
     progress(persisted_result)  # type: ignore[no-untyped-call]
     # Compute the mean projection
@@ -450,7 +450,7 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path) -> None:
 
     """
     store = tifffile.imread(fpath, aszarr=True)
-    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore[attr-defined, no-untyped-call]
+    f = da.mean(da.from_zarr(store).rechunk(), axis=0)
     with ProgressBar():  # type: ignore[no-untyped-call]
         tprojection = f.compute()
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
