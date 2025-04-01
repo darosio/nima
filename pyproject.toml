@@ -56,8 +56,6 @@ dev = [
   "urllib3"
 ]
 docs = [
-  "pygments <= 2.19.1",
-  "Sphinx <= 8.2.3",
   "autodocsumm <= 0.2.14",
   "bokeh",
   "dask_image",
@@ -66,10 +64,12 @@ docs = [
   "impy-array",
   "nbsphinx <= 0.9.7",
   "pydata-sphinx-theme <= 0.16.1",
+  "pygments <= 2.19.1",
   "seaborn",
   "selenium",
+  "sphinx == 8.2.3",
   "sphinx-click <= 6.0.0",
-  "sphinx_autodoc_typehints <= 3.1.0",
+  "sphinx_autodoc_typehints == 3.1.0",
   "statsmodels"
 ]
 tests = [
