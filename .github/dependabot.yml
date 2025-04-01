@@ -12,10 +12,11 @@ updates:
       interval: daily
       time: "04:55"
       timezone: "Europe/Rome"
-  - package-ecosystem: pip
+  - package-ecosystem: uv
     directory: "/"
     schedule:
       interval: daily
       time: "04:55"
       timezone: "Europe/Rome"
     open-pull-requests-limit: 15
+    versioning-strategy: increase-if-necessary
