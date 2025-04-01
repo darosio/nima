@@ -2173,9 +2173,9 @@ requires-dist = [
     { name = "scipy", specifier = "==1.15.2" },
     { name = "seaborn", marker = "extra == 'docs'" },
     { name = "selenium", marker = "extra == 'docs'" },
-    { name = "sigfig", specifier = "<=1.3.19" },
+    { name = "sigfig", specifier = "==1.3.19" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = "==8.2.3" },
-    { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = "<=3.1.0" },
+    { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = "==3.1.0" },
     { name = "sphinx-click", marker = "extra == 'docs'", specifier = "<=6.0.0" },
     { name = "statsmodels", marker = "extra == 'docs'" },
     { name = "tifffile", specifier = "==2025.3.30" },
@@ -3560,14 +3560,14 @@ wheels = [
 
 [[package]]
 name = "sphinx-autodoc-typehints"
-version = "3.0.1"
+version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "sphinx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/26/f0/43c6a5ff3e7b08a8c3b32f81b859f1b518ccc31e45f22e2b41ced38be7b9/sphinx_autodoc_typehints-3.0.1.tar.gz", hash = "sha256:b9b40dd15dee54f6f810c924f863f9cf1c54f9f3265c495140ea01be7f44fa55", size = 36282 }
+sdist = { url = "https://files.pythonhosted.org/packages/cb/cc/d38e7260b1bd3af0c84ad8285dfd78236584b74544510584e07963e000ec/sphinx_autodoc_typehints-3.1.0.tar.gz", hash = "sha256:a6b7b0b6df0a380783ce5b29150c2d30352746f027a3e294d37183995d3f23ed", size = 36528 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3c/dc/dc46c5c7c566b7ec5e8f860f9c89533bf03c0e6aadc96fb9b337867e4460/sphinx_autodoc_typehints-3.0.1-py3-none-any.whl", hash = "sha256:4b64b676a14b5b79cefb6628a6dc8070e320d4963e8ff640a2f3e9390ae9045a", size = 20245 },
+    { url = "https://files.pythonhosted.org/packages/14/2f/bc5bed0677ae00b9ca7919968ea675e2f696b6b20f1648262f26a7a6c6b4/sphinx_autodoc_typehints-3.1.0-py3-none-any.whl", hash = "sha256:67bdee7e27ba943976ce92ebc5647a976a7a08f9f689a826c54617b96a423913", size = 20404 },
 ]
 
 [[package]]
