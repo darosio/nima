@@ -2081,7 +2081,7 @@ source = { editable = "." }
 dependencies = [
     { name = "bioio-tifffile" },
     { name = "click" },
-    { name = "dask" },
+    { name = "dask", extra = ["distributed"] },
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
@@ -2143,7 +2143,7 @@ requires-dist = [
     { name = "click", specifier = "==8.1.8" },
     { name = "commitizen", marker = "extra == 'dev'", specifier = "<=4.4.1" },
     { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = "<=7.8.0" },
-    { name = "dask", specifier = "==2025.3.0" },
+    { name = "dask", extras = ["distributed"], specifier = "==2025.3.0" },
     { name = "dask-image", marker = "extra == 'docs'" },
     { name = "holoviews", marker = "extra == 'docs'" },
     { name = "hvplot", marker = "extra == 'docs'" },
