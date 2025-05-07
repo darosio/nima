@@ -1,20 +1,17 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": ["config:recommended"],
-    "commitMessage": "build(deps): bump {{depName}} from {{currentVersion}} to {{newVersion}}",
     "prFooter": " (#{{prNumber}})",
     "packageRules": [
         {
             "matchPackagePatterns": ["*"],
-            // Explicitly disable Renovate's built-in automerge.
-            // Separate GitHub Actions workflow (e.g., using pascalgn/automerge-action)
-            // will handle the automerging based on labels and required checks.
             "automerge": false,
-            "labels": ["dependencies"]
+            "labels": ["dependencies"],
+            "commitMessagePrefix": "build(deps):",
+            "commitMessageAction": "bump",
+            "commitMessageTopic": "{{depName}}",
+            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}",
+            "commitMessageSuffix": "{{groupName}}"
         }
     ]
-    // Prerequisites for Renovate's automerge to work:
-    // 1. All required status checks on the PR must pass.
-    // 2. Renovate must have the necessary repository permissions to merge branches.
-    // 3. Branch protection rules must allow Renovate to merge after checks pass.
 }
