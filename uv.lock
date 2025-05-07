@@ -2141,7 +2141,7 @@ requires-dist = [
     { name = "bioio-tifffile", specifier = "<=1.0.1" },
     { name = "bokeh", marker = "extra == 'docs'" },
     { name = "click", specifier = "<=8.1.8" },
-    { name = "commitizen", marker = "extra == 'dev'", specifier = "<=4.4.1" },
+    { name = "commitizen", marker = "extra == 'dev'", specifier = "<=4.6.3" },
     { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = "<=7.8.0" },
     { name = "dask", extras = ["distributed"], specifier = "<=2025.3.0" },
     { name = "dask-image", marker = "extra == 'docs'" },
