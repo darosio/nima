@@ -6,12 +6,10 @@
     "packageRules": [
         {
             "matchPackagePatterns": ["*"],
-            // Enable Renovate's built-in automerge for all dependency update PRs.
-            // This means Renovate will attempt to merge the PR once all required
-            // status checks (like CI tests, pre-commit, docs build) have passed.
-            // You can now remove your separate GitHub Actions automerge workflow
-            // (e.g., the one using pascalgn/automerge-action).
-            "automerge": true,
+            // Explicitly disable Renovate's built-in automerge.
+            // Separate GitHub Actions workflow (e.g., using pascalgn/automerge-action)
+            // will handle the automerging based on labels and required checks.
+            "automerge": false,
             "labels": ["dependencies"]
         }
     ]
