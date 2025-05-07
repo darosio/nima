@@ -2167,7 +2167,7 @@ requires-dist = [
     { name = "pympler", marker = "extra == 'dev'" },
     { name = "pypdf", marker = "extra == 'tests'", specifier = "<=5.4.0" },
     { name = "pytest", marker = "extra == 'tests'", specifier = "<=8.3.5" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = "<=0.11.2" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "<=0.11.8" },
     { name = "ruff-lsp", marker = "extra == 'dev'" },
     { name = "s3fs", specifier = "<=2025.3.2" },
     { name = "scikit-image", specifier = "<=0.25.2" },
