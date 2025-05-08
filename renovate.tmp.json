@@ -1,0 +1,19 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": ["config:recommended"],
+    "timezone": "Europe/Rome",
+    "schedule": ["after 05:00 every day"],
+    "prFooter": " (#{{prNumber}})",
+    "packageRules": [
+        {
+            "matchManagers": ["github-actions"],
+            "matchPaths": ["*"],
+            "schedule": ["after 05:00 every day"]
+        },
+        {
+            "matchManagers": ["pip"],
+            "matchPaths": [".github/workflows/**"],
+            "schedule": ["after 05:00 every day"]
+        }
+    ]
+}

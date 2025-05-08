@@ -12,6 +12,16 @@
             "commitMessageTopic": "{{depName}}",
             "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}",
             "commitMessageSuffix": "{{groupName}}"
+        },
+        {
+            "matchDepTypes": ["project.optional-dependencies"],
+            "matchPackagePatterns": ["*"],
+            "groupName": "optional-deps",
+            "automerge": false,
+            "labels": ["dev-dependencies"],
+            "commitMessagePrefix": "build(optional-deps):",
+            "commitMessageTopic": "{{depName}}",
+            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
         }
     ]
 }
