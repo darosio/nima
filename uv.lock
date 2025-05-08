@@ -557,7 +557,7 @@ wheels = [
 
 [[package]]
 name = "commitizen"
-version = "4.4.1"
+version = "4.6.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "argcomplete" },
@@ -571,9 +571,9 @@ dependencies = [
     { name = "termcolor" },
     { name = "tomlkit" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b5/fd/cd449bed87a26ecb61c950410e2d94e97ac31bf1f3ec69cc718b215384ce/commitizen-4.4.1.tar.gz", hash = "sha256:626d9f545fb9b2db42305e16ef35d6348a35081a80527bad863a05a7ba0bec21", size = 52345, upload-time = "2025-03-02T16:29:21.977Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/32/0a/0e503a0ade507cd9383209a375f20851e3bdfa7e75b517fe91430ea096d6/commitizen-4.6.3.tar.gz", hash = "sha256:c97d48a49d84bea27496737e43fdea5ccc87e1e2d288b0a071bf97292548ffd9", size = 53167, upload-time = "2025-05-07T00:44:19.651Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/0a/03fd9b5b7d9de11ff5e7c5a73b66c17775d00c9eea07b585d4fd7bf45a31/commitizen-4.4.1-py3-none-any.whl", hash = "sha256:98dbee784cc74fd1b24915e265e99ce81caccd64e54cb42b347a37d1dd2a4cd8", size = 74882, upload-time = "2025-03-02T16:29:20.465Z" },
+    { url = "https://files.pythonhosted.org/packages/04/05/02594e527b81da38aaa3cd1fb43ad5a077c822bf6f35ef79487453ad2a07/commitizen-4.6.3-py3-none-any.whl", hash = "sha256:4f4f8e0650b7981627dcf01f763bcbee9a59ee61afc34d4f15acc515fbb1d7d7", size = 75738, upload-time = "2025-05-07T00:44:18.281Z" },
 ]
 
 [[package]]
@@ -2140,7 +2140,7 @@ requires-dist = [
     { name = "bioio-tifffile", specifier = ">=1.1.0" },
     { name = "bokeh", marker = "extra == 'docs'", specifier = ">=3.7.2" },
     { name = "click", specifier = ">=8.1.8" },
-    { name = "commitizen", marker = "extra == 'dev'", specifier = "~=4.4.1" },
+    { name = "commitizen", marker = "extra == 'dev'", specifier = "~=4.6.3" },
     { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = ">=7.8.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2025.4.1" },
     { name = "dask-image", marker = "extra == 'docs'", specifier = ">=2024.5.3" },
