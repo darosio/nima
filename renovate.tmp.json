@@ -4,6 +4,9 @@
     "timezone": "Europe/Rome",
     "schedule": ["after 05:00 every day"],
     "prFooter": " (#{{prNumber}})",
+    "lockFileMaintenance": {
+        "enabled": true
+    },
     "packageRules": [
         {
             "matchManagers": ["github-actions"],
