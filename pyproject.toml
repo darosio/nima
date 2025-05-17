@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
   "bioio-tifffile>=1.1.0",
-  "click>=8.1.8",
+  "click>=8.2.0",
   "dask[distributed]>=2025.4.1",
   "matplotlib>=3.10.1",
   "numpy>=2.2.5",
