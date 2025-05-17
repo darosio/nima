@@ -557,7 +557,7 @@ wheels = [
 
 [[package]]
 name = "commitizen"
-version = "4.7.0"
+version = "4.7.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "argcomplete" },
@@ -571,9 +571,9 @@ dependencies = [
     { name = "termcolor" },
     { name = "tomlkit" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f3/7a/2c2a781b3e227f528b19e1144efcfdd61f7414bf9cf84ba6bbdc215f3427/commitizen-4.7.0.tar.gz", hash = "sha256:ef95f2ef354b438dce7c6164e5d47d10cc377df666ee65a116bcfcb146bb0c0a", size = 53254, upload-time = "2025-05-10T13:47:33.585Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6c/dc/a993a0744fbdb81e08536f3f7f85cd479da54e5a74589e0f287b8add77a9/commitizen-4.7.1.tar.gz", hash = "sha256:7eba472ef582b1bf2480164901ed542173e83f4f885968e7bed0b8cd0f6dfb07", size = 53290, upload-time = "2025-05-16T02:50:59.933Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/27/2d/0ae2129dd1071f16fffa373f9223971f84808a7fee85c0cefc1db2ffaec8/commitizen-4.7.0-py3-none-any.whl", hash = "sha256:2d274e013a6e09bc69f97fe64d6a6389926e2a22f5a4a19b16571d5b4c31083c", size = 76010, upload-time = "2025-05-10T13:47:31.75Z" },
+    { url = "https://files.pythonhosted.org/packages/64/1e/30d492dc7c17727d0b08cffb40dab5a6fe86767cb9d96eeafe06d4163c26/commitizen-4.7.1-py3-none-any.whl", hash = "sha256:80b08328b9741483d2de01cd76d015e9f6dba62c0ae450d4f8606ee3cbf9aa0e", size = 76035, upload-time = "2025-05-16T02:50:57.904Z" },
 ]
 
 [[package]]
@@ -1185,7 +1185,7 @@ wheels = [
 
 [[package]]
 name = "ipykernel"
-version = "6.29.4"
+version = "6.29.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "appnope", marker = "sys_platform == 'darwin'" },
@@ -1202,9 +1202,9 @@ dependencies = [
     { name = "tornado" },
     { name = "traitlets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8f/d8/6300fbbc6c211f51c833a0b8def7df9904eec315a2880f204e54dc117304/ipykernel-6.29.4.tar.gz", hash = "sha256:3d44070060f9475ac2092b760123fadf105d2e2493c24848b6691a7c4f42af5c", size = 162958, upload-time = "2024-03-27T22:25:45.577Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e9/5c/67594cb0c7055dc50814b21731c22a601101ea3b1b50a9a1b090e11f5d0f/ipykernel-6.29.5.tar.gz", hash = "sha256:f093a22c4a40f8828f8e330a9c297cb93dcab13bd9678ded6de8e5cf81c56215", size = 163367, upload-time = "2024-07-01T14:07:22.543Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/53/9d/40d5207db523363d9b5698f33778c18b0d591e3fdb6e0116b894b2a2491c/ipykernel-6.29.4-py3-none-any.whl", hash = "sha256:1181e653d95c6808039c509ef8e67c4126b3b3af7781496c7cbfb5ed938a27da", size = 117131, upload-time = "2024-03-27T22:25:41.903Z" },
+    { url = "https://files.pythonhosted.org/packages/94/5c/368ae6c01c7628438358e6d337c19b05425727fbb221d2a3c4303c372f42/ipykernel-6.29.5-py3-none-any.whl", hash = "sha256:afdb66ba5aa354b09b91379bac28ae4afebbb30e8b39510c9690afb7a10421b5", size = 117173, upload-time = "2024-07-01T14:07:19.603Z" },
 ]
 
 [[package]]
@@ -2140,14 +2140,14 @@ requires-dist = [
     { name = "bioio-tifffile", specifier = ">=1.1.0" },
     { name = "bokeh", marker = "extra == 'docs'", specifier = "==3.7.3" },
     { name = "click", specifier = ">=8.2.0" },
-    { name = "commitizen", marker = "extra == 'dev'", specifier = "==4.7.0" },
+    { name = "commitizen", marker = "extra == 'dev'", specifier = "==4.7.1" },
     { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = ">=7.8.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2025.5.0" },
     { name = "dask-image", marker = "extra == 'docs'", specifier = "==2024.5.3" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.20.2" },
     { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.11.3" },
     { name = "impy-array", marker = "extra == 'docs'", specifier = "==2.4.9" },
-    { name = "ipykernel", marker = "extra == 'dev'", specifier = "==6.29.4" },
+    { name = "ipykernel", marker = "extra == 'dev'", specifier = "==6.29.5" },
     { name = "jupyter", marker = "extra == 'dev'", specifier = "==1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.3" },
     { name = "mypy", marker = "extra == 'tests'", specifier = ">=1.15.0" },
