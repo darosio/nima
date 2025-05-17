@@ -2170,7 +2170,7 @@ requires-dist = [
     { name = "s3fs", specifier = ">=2025.3.2" },
     { name = "scikit-image", specifier = ">=0.25.2" },
     { name = "scipy", specifier = ">=1.15.3" },
-    { name = "seaborn", marker = "extra == 'docs'", specifier = "==0.13.2" },
+    { name = "seaborn", marker = "extra == 'docs'", specifier = "==0.13.1" },
     { name = "selenium", marker = "extra == 'docs'", specifier = "==4.32.0" },
     { name = "sigfig", specifier = ">=1.3.19" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = "<8.2" },
@@ -3416,16 +3416,16 @@ wheels = [
 
 [[package]]
 name = "seaborn"
-version = "0.13.2"
+version = "0.13.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/86/59/a451d7420a77ab0b98f7affa3a1d78a313d2f7281a57afb1a34bae8ab412/seaborn-0.13.2.tar.gz", hash = "sha256:93e60a40988f4d65e9f4885df477e2fdaff6b73a9ded434c1ab356dd57eefff7", size = 1457696, upload-time = "2024-01-25T13:21:52.551Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/33/9c/86a12a4d83602cff440f16ffd1b77a9aef614563de9ebb114b755387d654/seaborn-0.13.1.tar.gz", hash = "sha256:bfad65e9c5989e5e1897e61bdbd2f22e62455940ca76fd49eca3ed69345b9179", size = 1457600, upload-time = "2023-12-31T22:10:21.31Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/11/00d3c3dfc25ad54e731d91449895a79e4bf2384dc3ac01809010ba88f6d5/seaborn-0.13.2-py3-none-any.whl", hash = "sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987", size = 294914, upload-time = "2024-01-25T13:21:49.598Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/46/cf3fce41ffc543b6e94dadbe6b647559d591df446ec716e72c3b4ce71b34/seaborn-0.13.1-py3-none-any.whl", hash = "sha256:6baa69b6d1169ae59037971491c450c0b73332b42bd4b23570b62a546bc61cb8", size = 294757, upload-time = "2023-12-31T22:10:18.807Z" },
 ]
 
 [[package]]

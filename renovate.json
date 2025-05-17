@@ -48,7 +48,8 @@
             "labels": ["dependencies"],
             "commitMessagePrefix": "build(dev):",
             "commitMessageAction": "bump",
-            "commitMessageTopic": "{{depName}}"
+            "commitMessageTopic": "{{depName}}",
+            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
         },
         {
             "matchDepTypes": ["project.optional-dependencies"],
@@ -74,7 +75,8 @@
             "labels": ["dependencies"],
             "commitMessagePrefix": "build(docs):",
             "commitMessageAction": "bump",
-            "commitMessageTopic": "optional-deps",
+            "commitMessageTopic": "{{depName}}",
+            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}",
             "commitMessageSuffix": "{{groupName}}"
         },
         {
