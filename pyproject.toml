@@ -69,7 +69,7 @@ docs = [
   "sphinx<8.2",
   "sphinx-autodoc-typehints<3.2",
   "sphinx-click==6.0.0",
-  "statsmodels==0.14.4"
+  "statsmodels==0.14.3"
 ]
 tests = [
   "coverage[toml]>=7.8.0",

@@ -76,8 +76,7 @@
             "commitMessagePrefix": "build(docs):",
             "commitMessageAction": "bump",
             "commitMessageTopic": "{{depName}}",
-            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}",
-            "commitMessageSuffix": "{{groupName}}"
+            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
         },
         {
             "matchDepTypes": ["project.optional-dependencies"],
