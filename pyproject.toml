@@ -39,7 +39,7 @@ keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
 license = "BSD-3-Clause"
 name = "nima"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.13.3"
 version = "0.10.2"
 
 [project.optional-dependencies]
