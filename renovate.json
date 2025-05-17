@@ -1,11 +1,17 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": ["config:recommended"],
+    "prHourlyLimit": 0,
+    "prConcurrentLimit": 0,
+    "lockFileMaintenance": {
+        "enabled": true
+    },
     "prFooter": " (#{{prNumber}})",
     "packageRules": [
         {
             "matchPackagePatterns": ["*"],
             "automerge": false,
+            "rangeStrategy": "bump",
             "labels": ["dependencies"],
             "commitMessagePrefix": "build(deps):",
             "commitMessageAction": "bump",
