@@ -348,7 +348,7 @@ css = [
 
 [[package]]
 name = "bokeh"
-version = "3.7.2"
+version = "3.7.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "contourpy" },
@@ -362,9 +362,9 @@ dependencies = [
     { name = "tornado", marker = "sys_platform != 'emscripten'" },
     { name = "xyzservices" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1d/8f/f41bb2fb9214bfe054055312d5744f354f536e08a3827fedaa75fb5238a3/bokeh-3.7.2.tar.gz", hash = "sha256:80c21885cec276431acd4db92f831c71eb999ea995470ce777e0c577b0cfc1d8", size = 6364893, upload-time = "2025-03-28T08:06:36.158Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/75/18/12d0d6024177ad18ba65deffc363046d0cbafe116f8b964a9efa85d2800f/bokeh-3.7.3.tar.gz", hash = "sha256:70a89a9f797b103d5ee6ad15fb7944adda115cf0da996ed0b75cfba61cb12f2b", size = 6366610, upload-time = "2025-05-12T12:13:29.318Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/76/d2/5f2a3c80ab897eaccd15cc89aaebec2bf8b91bc8314fe9e43cf04d6e9edd/bokeh-3.7.2-py3-none-any.whl", hash = "sha256:efd9172a90cc233c1c21ef4813d58a8a6f97ee63c8e2f1b4f2389a64fcef0722", size = 7028135, upload-time = "2025-03-28T08:06:33.997Z" },
+    { url = "https://files.pythonhosted.org/packages/91/48/08b2382e739236aa3360b7976360ba3e0c043b6234e25951c18c1eb6fa06/bokeh-3.7.3-py3-none-any.whl", hash = "sha256:b0e79dd737f088865212e4fdcb0f3b95d087f0f088bf8ca186a300ab1641e2c7", size = 7031447, upload-time = "2025-05-12T12:13:27.47Z" },
 ]
 
 [[package]]
@@ -1056,7 +1056,7 @@ wheels = [
 
 [[package]]
 name = "hvplot"
-version = "0.11.2"
+version = "0.11.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bokeh" },
@@ -1068,9 +1068,9 @@ dependencies = [
     { name = "panel" },
     { name = "param" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/61/63b9b18e070aa810c7dd7be4d4f6e246c5ccf0d4ca9b39e0aeb04888c4c8/hvplot-0.11.2.tar.gz", hash = "sha256:b7ad1f2f1c705e47e26b22c89c11711a84f7774faaabab756b45e8d1e00a6010", size = 6980313, upload-time = "2024-12-16T15:36:19.289Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5d/a4/5558d167414eb6f9cc78f2da0382b398ba8f126a60e862cca97d4a0c4a44/hvplot-0.11.3.tar.gz", hash = "sha256:ce82dea296af6146b9a51aa5ed1f772e5415a07c6c33a4eae0f00bbe7ec880ca", size = 7010334, upload-time = "2025-04-30T12:52:21.879Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ed/d9/466e22e60dd6b1eb09680d7155c47b58da17eda51bbaf4aad8392a45fe12/hvplot-0.11.2-py3-none-any.whl", hash = "sha256:9d576a0c2df0f1cf5041545f2a2eddcf962510162876991cae4d1779fad74556", size = 161870, upload-time = "2024-12-16T15:36:13.04Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/4a/3490c93a699f3d5e4d708748b494a44639dec973b609eb4e17c2d94bc733/hvplot-0.11.3-py3-none-any.whl", hash = "sha256:5fa236a737ef3ca83870bf1b481218855834f4fad56ed0cb041ce5f2792cc7a3", size = 170266, upload-time = "2025-04-30T12:52:19.655Z" },
 ]
 
 [[package]]
@@ -1160,7 +1160,7 @@ wheels = [
 
 [[package]]
 name = "impy-array"
-version = "2.4.8"
+version = "2.4.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dask" },
@@ -1169,9 +1169,9 @@ dependencies = [
     { name = "scikit-image" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/62/91203a80918fa0bb3073c206ca2ac9a34a89996b2a75b013079332cfa17d/impy_array-2.4.8.tar.gz", hash = "sha256:eaa5476d3313ae666018ccc8dbf26f6708d160e085926469e06ad03798cf1d1e", size = 154958, upload-time = "2025-03-28T14:14:28.238Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/43/8a/32d6a57b6507b50e1f1a74fdaf435a7784f62fefed8ec00be24a8bc02045/impy_array-2.4.9.tar.gz", hash = "sha256:83e5944be914b3a262388e267858e68ec2d614c3cda7a1156fb0821c35cb8009", size = 155100, upload-time = "2025-04-07T23:50:54.474Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/a8/49c18e79e75b897ca2f9097c7fc40140df6f29360ecf51b0263ee5f8cd70/impy_array-2.4.8-py3-none-any.whl", hash = "sha256:121225f6931af9b01b6f537cf33ebd8b303b97fe4e00d6b270523143abb25f55", size = 183814, upload-time = "2025-03-28T14:14:26.69Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/20/50bd47b699cff3503b3c51e5944b1a6b06bdf84fd6f21dcdd1d3752eb83e/impy_array-2.4.9-py3-none-any.whl", hash = "sha256:044faa93ace7be3d7c553b096b972adfb7084492ac1b2ce003d80957cf9bc1af", size = 183967, upload-time = "2025-04-07T23:50:52.648Z" },
 ]
 
 [[package]]
@@ -2041,7 +2041,7 @@ wheels = [
 
 [[package]]
 name = "nbsphinx"
-version = "0.9.6"
+version = "0.9.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "docutils" },
@@ -2051,9 +2051,9 @@ dependencies = [
     { name = "sphinx" },
     { name = "traitlets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/62/38/6f6a0f9115b493af9d69b68335945827dd46e09de8ef525d1f58cd0870dc/nbsphinx-0.9.6.tar.gz", hash = "sha256:c2b28a2d702f1159a95b843831798e86e60a17fc647b9bff9ba1585355de54e3", size = 180213, upload-time = "2024-12-24T09:30:33.426Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1e/84/b1856b7651ac34e965aa567a158714c7f3bd42a1b1ce76bf423ffb99872c/nbsphinx-0.9.7.tar.gz", hash = "sha256:abd298a686d55fa894ef697c51d44f24e53aa312dadae38e82920f250a5456fe", size = 180479, upload-time = "2025-03-03T19:46:08.069Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/8a/5dc4c8794053572a89f5c44437ef4e870f88903a6b6734500af1286f9018/nbsphinx-0.9.6-py3-none-any.whl", hash = "sha256:336b0b557945a7678ec7449b16449f854bc852a435bb53b8a72e6b5dc740d992", size = 31582, upload-time = "2024-12-24T09:30:30.03Z" },
+    { url = "https://files.pythonhosted.org/packages/49/2d/8c8e635bcc6757573d311bb3c5445426382f280da32b8cd6d82d501ef4a4/nbsphinx-0.9.7-py3-none-any.whl", hash = "sha256:7292c3767fea29e405c60743eee5393682a83982ab202ff98f5eb2db02629da8", size = 31660, upload-time = "2025-03-03T19:46:06.581Z" },
 ]
 
 [[package]]
@@ -2138,20 +2138,20 @@ tests = [
 requires-dist = [
     { name = "autodocsumm", marker = "extra == 'docs'", specifier = "==0.2.14" },
     { name = "bioio-tifffile", specifier = ">=1.1.0" },
-    { name = "bokeh", marker = "extra == 'docs'", specifier = "==3.7.2" },
+    { name = "bokeh", marker = "extra == 'docs'", specifier = "==3.7.3" },
     { name = "click", specifier = ">=8.2.0" },
     { name = "commitizen", marker = "extra == 'dev'", specifier = "==4.6.3" },
     { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = ">=7.8.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2025.5.0" },
     { name = "dask-image", marker = "extra == 'docs'", specifier = "==2024.5.3" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.20.2" },
-    { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.11.2" },
-    { name = "impy-array", marker = "extra == 'docs'", specifier = "==2.4.8" },
+    { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.11.3" },
+    { name = "impy-array", marker = "extra == 'docs'", specifier = "==2.4.9" },
     { name = "ipykernel", marker = "extra == 'dev'", specifier = "==6.29.5" },
     { name = "jupyter", marker = "extra == 'dev'", specifier = "==1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.3" },
     { name = "mypy", marker = "extra == 'tests'", specifier = ">=1.15.0" },
-    { name = "nbsphinx", marker = "extra == 'docs'", specifier = "==0.9.6" },
+    { name = "nbsphinx", marker = "extra == 'docs'", specifier = "==0.9.7" },
     { name = "numpy", specifier = ">=2.2.5" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "pandas-stubs", marker = "extra == 'tests'", specifier = ">=2.2.3.250308" },
@@ -2171,7 +2171,7 @@ requires-dist = [
     { name = "scikit-image", specifier = ">=0.25.2" },
     { name = "scipy", specifier = ">=1.15.3" },
     { name = "seaborn", marker = "extra == 'docs'", specifier = "==0.13.2" },
-    { name = "selenium", marker = "extra == 'docs'", specifier = "==4.30.0" },
+    { name = "selenium", marker = "extra == 'docs'", specifier = "==4.32.0" },
     { name = "sigfig", specifier = ">=1.3.19" },
     { name = "sphinx", marker = "extra == 'docs'", specifier = "<8.2" },
     { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = "<3.2" },
@@ -3430,7 +3430,7 @@ wheels = [
 
 [[package]]
 name = "selenium"
-version = "4.30.0"
+version = "4.32.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
@@ -3440,9 +3440,9 @@ dependencies = [
     { name = "urllib3", extra = ["socks"] },
     { name = "websocket-client" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/70/f8/12e5c86f5d4b26758151a2145cb0909d2b811a3ac846b645dd7c63023543/selenium-4.30.0.tar.gz", hash = "sha256:16ab890fc7cb21a01e1b1e9a0fbaa9445fe30837eabc66e90b3bacf12138126a", size = 859424, upload-time = "2025-03-21T20:53:41.587Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/54/2d/fafffe946099033ccf22bf89e12eede14c1d3c5936110c5f6f2b9830722c/selenium-4.32.0.tar.gz", hash = "sha256:b9509bef4056f4083772abb1ae19ff57247d617a29255384b26be6956615b206", size = 870997, upload-time = "2025-05-02T20:35:27.325Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/cb/6e9c6f9072eb09d0f0cdfc52e33ad6583a6bd5232a322fccdd378104c6e0/selenium-4.30.0-py3-none-any.whl", hash = "sha256:90bcd3be86a1762100a093b33e5e4530b328226da94208caadb15ce13243dffd", size = 9353816, upload-time = "2025-03-21T20:53:39.469Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/37/d07ed9d13e571b2115d4ed6956d156c66816ceec0b03b2e463e80d09f572/selenium-4.32.0-py3-none-any.whl", hash = "sha256:c4d9613f8a45693d61530c9660560fadb52db7d730237bc788ddedf442391f97", size = 9369668, upload-time = "2025-05-02T20:35:24.726Z" },
 ]
 
 [[package]]
