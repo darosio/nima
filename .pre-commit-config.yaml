@@ -83,6 +83,12 @@ repos:
       - id: shellcheck
         args: [-x]
 
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.7.5
+    hooks:
+      - id: uv-lock
+        stages: [pre-commit]
+
   - repo: https://github.com/commitizen-tools/commitizen
     rev: v4.7.0
     hooks:
