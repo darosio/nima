@@ -6,6 +6,13 @@
     "prFooter": " (#{{prNumber}})",
     "packageRules": [
         {
+            "matchPackageNames": ["sphinx"],
+            "rangeStrategy": "pin",
+            "allowedVersions": "<8.2",
+            "automerge": false,
+            "labels": ["docs"]
+        },
+        {
             "matchPackagePatterns": ["*"],
             "automerge": false,
             "rangeStrategy": "bump",
