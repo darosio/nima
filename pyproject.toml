@@ -64,7 +64,7 @@ docs = [
   "nbsphinx==0.9.7",
   "pydata-sphinx-theme==0.16.1",
   "pygments==2.19.1",
-  "seaborn==0.13.1",
+  "seaborn==0.13.2",
   "selenium==4.32.0",
   "sphinx<8.2",
   "sphinx-autodoc-typehints<3.2",
