@@ -3,9 +3,6 @@
     "extends": ["config:recommended"],
     "prHourlyLimit": 0,
     "prConcurrentLimit": 0,
-    "lockFileMaintenance": {
-        "enabled": true
-    },
     "prFooter": " (#{{prNumber}})",
     "packageRules": [
         {
@@ -28,6 +25,11 @@
             "commitMessagePrefix": "build(optional-deps):",
             "commitMessageTopic": "{{depName}}",
             "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
+        },
+        {
+            "matchFiles": ["pyproject.toml"],
+            "matchDepNames": ["python"],
+            "enabled": false
         }
     ]
 }
