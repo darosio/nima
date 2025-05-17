@@ -13,6 +13,13 @@
             "labels": ["docs"]
         },
         {
+            "matchPackageNames": ["sphinx-autodoc-typehints"],
+            "rangeStrategy": "pin",
+            "allowedVersions": "<3.2",
+            "automerge": false,
+            "labels": ["docs"]
+        },
+        {
             "matchPackagePatterns": ["*"],
             "automerge": false,
             "rangeStrategy": "bump",
