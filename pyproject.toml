@@ -45,13 +45,9 @@ version = "0.10.2"
 [project.optional-dependencies]
 dev = [
   "commitizen==4.7.1",
-  "ipykernel==6.29.5",
-  "jupyter==1.1.1",
   "pylsp-mypy==0.7.0",
-  "pympler==1.1",
   "ruff==0.11.10",
-  "ruff-lsp==0.0.62",
-  "urllib3==2.4.0"
+  "ruff-lsp==0.0.62"
 ]
 docs = [
   "autodocsumm==0.2.14",
@@ -60,14 +56,17 @@ docs = [
   "holoviews==1.20.2",
   "hvplot==0.11.3",
   "impy-array==2.4.9",
+  "ipykernel==6.29.5",
+  "jupyter==1.1.1",
   "nbsphinx==0.9.7",
   "pydata-sphinx-theme==0.16.1",
   "pygments==2.19.1",
+  "pympler==1.1",
   "seaborn==0.13.2",
   "selenium==4.32.0",
-  "sphinx<8.2",
   "sphinx-autodoc-typehints<3.2",
   "sphinx-click==6.0.0",
+  "sphinx<8.2",
   "statsmodels==0.14.4"
 ]
 lint = ["pre-commit==4.2.0"]
@@ -161,22 +160,25 @@ tests = ["tests", "*/tests"]
 [tool.coverage.report]
 # fail_under = 100
 exclude_lines = [
-  "pragma: no cover"
+  "pragma: no cover",
+  "def __repr__",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:"
 ]
 show_missing = true
+skip_covered = true
 
 [tool.coverage.run]
 branch = true
-omit = ["*__init__.py"]
-source = ["nima", "tests"]
+omit = ["*/__init__.py"]
+source = ["nima"]
 
 [tool.hatch.envs.default]
-features = ["dev", "docs", "lint", "tests"]
+features = ["dev", "docs", "tests"]  # separate docs and lint
 installer = "uv"
 path = ".venv"
 
 [tool.hatch.envs.default.scripts]
-all = ["test", "type", "xdoc", "cov"]
 bump = [
   "cz bump --major-version-zero -ch {args}",  # e.g. "--increment PATCH"
   "uv sync --all-extras",
@@ -185,37 +187,44 @@ bump = [
 ]
 ch = "cz ch --incremental --unreleased-version HEAD"
 clean = "rm -rf ./build .coverage ./__pycache__ ./.mypy_cache ./.pytest_cache ./docs/_build ./tests/__pycache__ ./dist ./src/nima/__pycache__"
-cov = [
-  "coverage combine",
-  "coverage report",
-  "coverage xml"
-]
-docs = "sphinx-build docs docs/_build"
-docserve = "python -m http.server 8000 -d docs/_build"
-init = [
-  "pre-commit --version",
-  "pre-commit install",
-  "pre-commit install --hook-type commit-msg --hook-type pre-push"
-]
-lint = [
-  "pre-commit --version",
-  "pre-commit run --all-files --show-diff-on-failure {args}"
-]
-test = "coverage run -p -m pytest -v"
-type = "mypy src tests docs/conf.py"
-xdoc = "python -m xdoctest nima all"
+
+[tool.hatch.envs.docs]
+cache = true
+features = ["docs"]
+installer = "uv"
+template = "docs"
+
+[tool.hatch.envs.docs.scripts]
+build = "sphinx-build docs docs/_build"
+serve = "python -m http.server 8000 -d docs/_build"
 
 [tool.hatch.envs.lint]
 cache = true
 features = ["lint"]
 installer = "uv"
+template = "lint"
+
+[tool.hatch.envs.lint.scripts]
+init = [
+  "pre-commit --version",
+  "pre-commit install",
+  "pre-commit install --hook-type commit-msg --hook-type pre-push"
+]
+lint = "pre-commit run --all-files --show-diff-on-failure {args}"
 
 [tool.hatch.envs.tests]
 cache = true
 features = ["tests"]
 installer = "uv"
-# template = "tests"
 matrix = [{python = ["3.13", "3.12", "3.11"]}]
+template = "tests"
+
+[tool.hatch.envs.tests.scripts]
+all = ["test", "type", "xdoc", "cov"]
+cov = "coverage combine && coverage report && coverage xml"
+test = "coverage run -p -m pytest -v"
+type = "mypy src tests docs/conf.py"
+xdoc = "python -m xdoctest nima all"
 
 [tool.isort]
 combine_as_imports = true
@@ -245,9 +254,11 @@ strict = true
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
+fix = true
 force-exclude = true
 line-length = 88
-target-version = "py312"
+target-version = "py311"
+unsafe-fixes = true
 
 [tool.ruff.format]
 docstring-code-format = true

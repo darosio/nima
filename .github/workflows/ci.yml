@@ -221,7 +221,7 @@ jobs:
         run: python -m pip install --constraint=.github/workflows/constraints.txt pip hatch
 
       - name: Run hatch
-        run: hatch run docs
+        run: hatch run docs:build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
