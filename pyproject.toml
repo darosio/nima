@@ -47,7 +47,6 @@ dev = [
   "commitizen==4.7.1",
   "ipykernel==6.29.5",
   "jupyter==1.1.1",
-  "pre-commit==4.2.0",
   "pylsp-mypy==0.7.0",
   "pympler==1.1",
   "ruff==0.11.10",
@@ -71,6 +70,7 @@ docs = [
   "sphinx-click==6.0.0",
   "statsmodels==0.14.4"
 ]
+lint = ["pre-commit==4.2.0"]
 tests = [
   "coverage[toml]>=7.8.0",
   "mypy>=1.15.0",
@@ -171,11 +171,12 @@ omit = ["*__init__.py"]
 source = ["nima", "tests"]
 
 [tool.hatch.envs.default]
-features = ["dev", "tests", "docs"]
+features = ["dev", "docs", "lint", "tests"]
 installer = "uv"
 path = ".venv"
 
 [tool.hatch.envs.default.scripts]
+all = ["test", "type", "xdoc", "cov"]
 bump = [
   "cz bump --major-version-zero -ch {args}",  # e.g. "--increment PATCH"
   "uv sync --all-extras",
@@ -184,6 +185,11 @@ bump = [
 ]
 ch = "cz ch --incremental --unreleased-version HEAD"
 clean = "rm -rf ./build .coverage ./__pycache__ ./.mypy_cache ./.pytest_cache ./docs/_build ./tests/__pycache__ ./dist ./src/nima/__pycache__"
+cov = [
+  "coverage combine",
+  "coverage report",
+  "coverage xml"
+]
 docs = "sphinx-build docs docs/_build"
 docserve = "python -m http.server 8000 -d docs/_build"
 init = [
@@ -195,27 +201,21 @@ lint = [
   "pre-commit --version",
   "pre-commit run --all-files --show-diff-on-failure {args}"
 ]
-sync = "uv pip sync uv.lock"  # New command for uv lockfile sync
+test = "coverage run -p -m pytest -v"
+type = "mypy src tests docs/conf.py"
+xdoc = "python -m xdoctest nima all"
+
+[tool.hatch.envs.lint]
+cache = true
+features = ["lint"]
+installer = "uv"
 
 [tool.hatch.envs.tests]
 cache = true
 features = ["tests"]
 installer = "uv"
-template = "tests"
-
-[[tool.hatch.envs.tests.matrix]]
-python = ["3.13", "3.12", "3.11"]  # reverse order to ensure the presence in older python of module included in newer versions
-
-[tool.hatch.envs.tests.scripts]
-all = ["test", "type", "xdoc", "cov"]
-cov = [
-  "coverage combine",
-  "coverage report",
-  "coverage xml"
-]
-test = "coverage run -p -m pytest -v"
-type = "mypy src tests docs/conf.py"
-xdoc = "python -m xdoctest nima all"
+# template = "tests"
+matrix = [{python = ["3.13", "3.12", "3.11"]}]
 
 [tool.isort]
 combine_as_imports = true

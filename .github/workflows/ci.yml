@@ -66,7 +66,7 @@ jobs:
             pre-commit|${{ runner.os }}|
 
       - name: Run lint
-        run: hatch run lint
+        run: hatch run lint:lint
 
   tests:
     name: ${{ matrix.tests }} py-${{ matrix.python }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
