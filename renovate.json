@@ -6,6 +6,12 @@
     "prHourlyLimit": 0,
     "prConcurrentLimit": 0,
     "prFooter": " (#{{prNumber}})",
+    "pre-commit": {
+        "enabled": true,
+        "fileMatch": [
+            "^\\.pre-commit-config\\.yaml$"
+        ]
+    },
     "packageRules": [
         {
             "matchPackageNames": [
