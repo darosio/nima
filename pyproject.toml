@@ -4,7 +4,7 @@ requires = ["hatchling"]
 
 [project]
 authors = [
-  {name = "daniele arosio", email = "daniele.arosio@cnr.it"}
+  { name = "daniele arosio", email = "daniele.arosio@cnr.it" },
 ]
 classifiers = [
   "Environment :: Console",
@@ -16,7 +16,7 @@ classifiers = [
   "Programming Language :: Unix Shell",
   "Intended Audience :: Science/Research",
   "Topic :: Scientific/Engineering",
-  "Development Status :: 2 - Pre-Alpha"
+  "Development Status :: 2 - Pre-Alpha",
 ]
 dependencies = [
   "bioio-tifffile>=1.1.0",
@@ -31,8 +31,8 @@ dependencies = [
   "scikit-image>=0.25.2",
   "scipy>=1.15.3",
   "sigfig>=1.3.19",
-  "tifffile>=2025.5.10",  # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
-  "xmltodict>=0.14.2"
+  "tifffile>=2025.5.10", # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
+  "xmltodict>=0.14.2",
 ]
 description = "Numerical IMage Analyses."
 keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
@@ -45,9 +45,13 @@ version = "0.10.2"
 [project.optional-dependencies]
 dev = [
   "commitizen==4.7.2",
+  "mdformat==0.7.22",
+  "mdformat-gfm==0.4.1",
+  "commitizen==4.7.1",
   "pylsp-mypy==0.7.0",
   "ruff==0.11.10",
-  "ruff-lsp==0.0.62"
+  "ruff-lsp==0.0.62",
+  "taplo>=0.9.3",
 ]
 docs = [
   "autodocsumm==0.2.14",
@@ -67,17 +71,19 @@ docs = [
   "sphinx-autodoc-typehints<3.2",
   "sphinx-click==6.0.0",
   "sphinx<8.2",
-  "statsmodels==0.14.4"
+  "statsmodels==0.14.4",
 ]
-lint = ["pre-commit==4.2.0"]
+lint = [
+  "pre-commit==4.2.0",
+]
 tests = [
   "coverage[toml]>=7.8.0",
   "mypy>=1.15.0",
   "pandas-stubs>=2.2.3.250308",
-  "pygments>=2.19.1",  # color xdoctest
+  "pygments>=2.19.1", # color xdoctest
   "pypdf>=5.5.0",
   "pytest>=8.3.5",
-  "xdoctest>=1.2.0"
+  "xdoctest>=1.2.0",
 ]
 
 [project.scripts]
@@ -101,13 +107,13 @@ version = "0.10.2"
 version_files = [
   "pyproject.toml:version",
   "docs/conf.py:release",
-  "README.md:Version"
+  "README.md:Version",
 ]
 
 [tool.commitizen.customize]
-bump_map = {"^.+!:" = "MAJOR", "BREAKING CHANGE" = "MAJOR", "feat" = "MINOR", "fix" = "PATCH", "perf" = "PATCH", "refactor" = "PATCH"}
+bump_map = { "^.+!:" = "MAJOR", "BREAKING CHANGE" = "MAJOR", "feat" = "MINOR", "fix" = "PATCH", "perf" = "PATCH", "refactor" = "PATCH" }
 bump_pattern = "^(BREAKING CHANGE|feat|fix|perf|refactor)"
-change_type_map = {"feat" = "Feat", "fix" = "Fix", "docs" = "Docs", "build" = "Build", "style" = "Style", "refactor" = "Refactor", "perf" = "Perf", "test" = "Test", "ci" = "CI/CD"}
+change_type_map = { "feat" = "Feat", "fix" = "Fix", "docs" = "Docs", "build" = "Build", "style" = "Style", "refactor" = "Refactor", "perf" = "Perf", "test" = "Test", "ci" = "CI/CD" }
 change_type_order = ["BREAKING CHANGE", "Feat", "Fix", "Docs", "Style", "Perf", "Test", "Build", "CI/CD"]
 changelog_pattern = "^(feat|fix|docs|style|refactor|perf|test|build|ci)?(\\(.*\\))?(!)?"
 commit_parser = "^(?P<change_type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(?:\\((?P<scope>[^()\r\n]*)\\)|\\()?(?P<breaking>!)?:\\s(?P<message>.*)?"
@@ -128,16 +134,16 @@ schema_pattern = "^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert
 
 [[tool.commitizen.customize.questions]]
 choices = [
-  {value = "feat", name = "feat: A new feature. Correlates with MINOR in SemVer"},
-  {value = "fix", name = "fix: A bug fix. Correlates with PATCH in SemVer"},
-  {value = "perf", name = "perf: A code change that improves performance. Correlates with PATCH in SemVer"},
-  {value = "docs", name = "docs: Documentation only changes"},
-  {value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)"},
-  {value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature"},
-  {value = "test", name = "test: Adding missing or correcting existing tests"},
-  {value = "build", name = "build: Changes that update the build system, development tools or external dependencies"},
-  {value = "ci", name = "ci: Changes to our CI configuration files and scripts (example scopes: GitLabCI)"},
-  {value = "revert", name = "revert: Reverting to previous commit(s)."}
+  { value = "feat", name = "feat: A new feature. Correlates with MINOR in SemVer" },
+  { value = "fix", name = "fix: A bug fix. Correlates with PATCH in SemVer" },
+  { value = "perf", name = "perf: A code change that improves performance. Correlates with PATCH in SemVer" },
+  { value = "docs", name = "docs: Documentation only changes" },
+  { value = "style", name = "style: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)" },
+  { value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature" },
+  { value = "test", name = "test: Adding missing or correcting existing tests" },
+  { value = "build", name = "build: Changes that update the build system, development tools or external dependencies" },
+  { value = "ci", name = "ci: Changes to our CI configuration files and scripts (example scopes: GitLabCI)" },
+  { value = "revert", name = "revert: Reverting to previous commit(s)." },
 ]
 message = "Select the type of change you are committing"
 name = "change_type"
@@ -163,7 +169,7 @@ exclude_lines = [
   "pragma: no cover",
   "def __repr__",
   "raise NotImplementedError",
-  "if __name__ == .__main__.:"
+  "if __name__ == .__main__.:",
 ]
 show_missing = true
 skip_covered = true
@@ -174,16 +180,16 @@ omit = ["*/__init__.py"]
 source = ["nima"]
 
 [tool.hatch.envs.default]
-features = ["dev", "docs", "tests"]  # separate docs and lint
+features = ["dev", "docs", "tests"] # separate docs and lint
 installer = "uv"
 path = ".venv"
 
 [tool.hatch.envs.default.scripts]
 bump = [
-  "cz bump --major-version-zero -ch {args}",  # e.g. "--increment PATCH"
+  "cz bump --major-version-zero -ch {args}", # e.g. "--increment PATCH"
   "uv sync --all-extras",
   "hatch build",
-  "export TEST_PYPI_TOKEN=$(pass show cloud/test_pypi | head -n 1) && hatch publish -r test -u __token__ -a $TEST_PYPI_TOKEN"
+  "export TEST_PYPI_TOKEN=$(pass show cloud/test_pypi | head -n 1) && hatch publish -r test -u __token__ -a $TEST_PYPI_TOKEN",
 ]
 ch = "cz ch --incremental --unreleased-version HEAD"
 clean = "rm -rf ./build .coverage ./__pycache__ ./.mypy_cache ./.pytest_cache ./docs/_build ./tests/__pycache__ ./dist ./src/nima/__pycache__"
@@ -208,7 +214,7 @@ template = "lint"
 init = [
   "pre-commit --version",
   "pre-commit install",
-  "pre-commit install --hook-type commit-msg --hook-type pre-push"
+  "pre-commit install --hook-type commit-msg --hook-type pre-push",
 ]
 lint = "pre-commit run --all-files --show-diff-on-failure {args}"
 
@@ -216,7 +222,7 @@ lint = "pre-commit run --all-files --show-diff-on-failure {args}"
 cache = true
 features = ["tests"]
 installer = "uv"
-matrix = [{python = ["3.13", "3.12", "3.11"]}]
+matrix = [{ python = ["3.13", "3.12", "3.11"] }]
 template = "tests"
 
 [tool.hatch.envs.tests.scripts]
@@ -231,9 +237,17 @@ combine_as_imports = true
 force_single_line = false
 include_trailing_comma = true
 known_first_party = "nima"
-line_length = 88  # to match black's default line length
+line_length = 88 # to match black's default line length
 multi_line_output = 3
 profile = "black"
+
+[tool.mdformat]
+number = false # Prevent renumbering ordered lists
+plugins = [
+  "gfm", # Enable GitHub Flavored Markdown extensions
+]
+# Configure line wrapping (e.g., match your Apheleia arg --wrap "keep")
+wrap = "keep"
 
 [tool.mypy]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -266,55 +280,55 @@ docstring-code-format = true
 [tool.ruff.lint]
 ignore = [
   "ISC001",
-  "S311"  # Standard pseudo-random generators are not suitable for cryptographic purposes
+  "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
 select = [
-  "A",  # builtins
-  "ANN",  # typing annotation
-  "ARG",  # unused arguments
-  "B",  # bugbear
-  "BLE",  # blind-except
+  "A", # builtins
+  "ANN", # typing annotation
+  "ARG", # unused arguments
+  "B", # bugbear
+  "BLE", # blind-except
   "C",
-  "C4",  # comprehensions
-  "C90",  # mccabe
-  "D",  # pydocstyle
-  "DTZ",  # dates
-  "E",  # pycodestyle
-  "TRY",  # exceptions
-  "EM",  # exceptions
-  "ERA",  # eradicate
-  "F",  # pyflakes
-  "FBT",  # boolean-trap
-  "FLY",  # flyntp
-  "FURB",  # refurbishing and modernizing
-  "I",  # isort
-  "ICN",  # import conventions (opinionated)
-  "ISC",  # implicit-str-concat
-  "N",  # pep8-naming
+  "C4", # comprehensions
+  "C90", # mccabe
+  "D", # pydocstyle
+  "DTZ", # dates
+  "E", # pycodestyle
+  "TRY", # exceptions
+  "EM", # exceptions
+  "ERA", # eradicate
+  "F", # pyflakes
+  "FBT", # boolean-trap
+  "FLY", # flyntp
+  "FURB", # refurbishing and modernizing
+  "I", # isort
+  "ICN", # import conventions (opinionated)
+  "ISC", # implicit-str-concat
+  "N", # pep8-naming
   "NPY",
-  "AIR",  # airflow
-  "PERF",  # pperformance anti pattern
-  "PD",  # pandas-vet
-  "PGH",  # pygrep WAIT
-  "PL",  # pylint see PLR2004...
-  "PT",  # pytest-style
-  "PTH",  # use-pathlib
-  "Q",  # quotes
-  "RET",  # Return
-  "RSE",  # Raise
-  "RUF",  # Ruff
-  "S",  # bandit
-  "SLF",  # private self
-  "SLOT",  # __slot__
-  "SIM",  # simplify
-  "TID",  # tidy-imports
-  "TCH",  # TYPE_CHECKING
-  "TRY",  # tryceratops
+  "AIR", # airflow
+  "PERF", # pperformance anti pattern
+  "PD", # pandas-vet
+  "PGH", # pygrep WAIT
+  "PL", # pylint see PLR2004...
+  "PT", # pytest-style
+  "PTH", # use-pathlib
+  "Q", # quotes
+  "RET", # Return
+  "RSE", # Raise
+  "RUF", # Ruff
+  "S", # bandit
+  "SLF", # private self
+  "SLOT", # __slot__
+  "SIM", # simplify
+  "TID", # tidy-imports
+  "TCH", # TYPE_CHECKING
+  "TRY", # tryceratops
   # "TD",  # TODOs
   # "FIX",  #
-  "UP",  # pyupgrade
-  "YTT",  # 2020
-  "W"  # pycodestyle
+  "UP", # pyupgrade
+  "YTT", # 2020
+  "W", # pycodestyle
 ]
 isort.combine-as-imports = true
 isort.force-single-line = false
