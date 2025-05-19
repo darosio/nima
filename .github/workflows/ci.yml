@@ -139,11 +139,13 @@ jobs:
 
       - name: Get version
         id: version
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          echo ${{ github.event.head_commit.message }}
-          ver=`echo ${{ github.event.head_commit.message }} | awk '{ print $NF }'`
-          echo "ver=${ver}" >> $GITHUB_OUTPUT
-          echo "ver=${ver}" >> $GITHUB_ENV
+          echo "$COMMIT_MESSAGE"
+          ver=$(echo "$COMMIT_MESSAGE" | awk '{ print $NF }')
+          echo "ver=${ver}" >> "$GITHUB_OUTPUT"
+          echo "ver=${ver}" >> "$GITHUB_ENV"
 
       - name: Cache pip
         id: cache-pip
