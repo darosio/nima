@@ -44,15 +44,6 @@ repos:
       - id: ruff-format
         types_or: [python, pyi, jupyter]
 
-  - repo: local
-    hooks:
-      - id: prettier
-        name: prettier (YAML, Markdown, JSON, etc.)
-        entry: npx prettier --write
-        language: node
-        types: [yaml, markdown, html, css, scss, javascript, json]
-        args: [--prose-wrap=preserve]
-
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
