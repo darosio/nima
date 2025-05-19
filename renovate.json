@@ -29,17 +29,17 @@
             "matchPackageNames": [
                 "sphinx"
             ],
-            "rangeStrategy": "pin",
             "allowedVersions": "<8.2",
-            "commitMessagePrefix": "build(docs):"
+            "rangeStrategy": "update-lockfile",
+            "enabled": false
         },
         {
             "matchPackageNames": [
                 "sphinx-autodoc-typehints"
             ],
-            "rangeStrategy": "pin",
             "allowedVersions": "<3.2",
-            "commitMessagePrefix": "build(docs):"
+            "rangeStrategy": "update-lockfile",
+            "enabled": false
         },
         {
             "matchDepTypes": [
