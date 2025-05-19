@@ -1,16 +1,28 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     "extends": [
-        "config:recommended"
+        "config:recommended",
+        ":dependencyDashboard"
     ],
     "prHourlyLimit": 0,
     "prConcurrentLimit": 0,
     "prFooter": " (#{{prNumber}})",
+    "automerge": false,
+    "rangeStrategy": "bump",
+    "commitMessagePrefix": "build(deps):",
+    "commitMessageAction": "bump",
+    "commitMessageTopic": "{{depName}}",
+    "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}",
+    "labels": [
+        "dependencies"
+    ],
     "pre-commit": {
         "enabled": true,
         "fileMatch": [
             "^\\.pre-commit-config\\.yaml$"
-        ]
+        ],
+        "commitMessagePrefix": "build(hooks):",
+        "groupName": "pre-commit hooks"
     },
     "packageRules": [
         {
@@ -19,10 +31,7 @@
             ],
             "rangeStrategy": "pin",
             "allowedVersions": "<8.2",
-            "automerge": false,
-            "labels": [
-                "docs"
-            ]
+            "commitMessagePrefix": "build(docs):"
         },
         {
             "matchPackageNames": [
@@ -30,25 +39,7 @@
             ],
             "rangeStrategy": "pin",
             "allowedVersions": "<3.2",
-            "automerge": false,
-            "labels": [
-                "docs"
-            ]
-        },
-        {
-            "matchPackagePatterns": [
-                "*"
-            ],
-            "automerge": false,
-            "rangeStrategy": "bump",
-            "labels": [
-                "dependencies"
-            ],
-            "commitMessagePrefix": "build(deps):",
-            "commitMessageAction": "bump",
-            "commitMessageTopic": "{{depName}}",
-            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}",
-            "commitMessageSuffix": "{{groupName}}"
+            "commitMessagePrefix": "build(docs):"
         },
         {
             "matchDepTypes": [
@@ -56,20 +47,19 @@
             ],
             "matchPackageNames": [
                 "commitizen",
+                "mdformat",
+                "mdformat-gfm",
                 "pre-commit",
                 "pylsp-mypy",
                 "ruff",
                 "ruff-lsp"
             ],
-            "groupName": "dev",
-            "automerge": false,
+            "groupName": "dev dependencies",
             "labels": [
-                "dependencies"
+                "dependencies",
+                "dev"
             ],
-            "commitMessagePrefix": "build(dev):",
-            "commitMessageAction": "bump",
-            "commitMessageTopic": "{{depName}}",
-            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
+            "commitMessagePrefix": "build(dev):"
         },
         {
             "matchDepTypes": [
@@ -95,15 +85,12 @@
                 "sphinx",
                 "statsmodels"
             ],
-            "groupName": "docs",
-            "automerge": false,
+            "groupName": "docs dependencies",
             "labels": [
-                "dependencies"
+                "dependencies",
+                "docs"
             ],
-            "commitMessagePrefix": "build(docs):",
-            "commitMessageAction": "bump",
-            "commitMessageTopic": "{{depName}}",
-            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
+            "commitMessagePrefix": "build(docs):"
         },
         {
             "matchDepTypes": [
@@ -118,15 +105,22 @@
                 "pytest",
                 "xdoctest"
             ],
-            "groupName": "tests",
-            "automerge": false,
+            "groupName": "test dependencies",
             "labels": [
-                "dependencies"
+                "dependencies",
+                "tests"
             ],
-            "commitMessagePrefix": "build(tests):",
-            "commitMessageAction": "bump",
-            "commitMessageTopic": "{{depName}}",
-            "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
+            "commitMessagePrefix": "build(tests):"
+        },
+        {
+            "matchManagers": [
+                "pre-commit"
+            ],
+            "labels": [
+                "dependencies",
+                "pre-commit"
+            ],
+            "commitMessagePrefix": "build(hooks):"
         },
         {
             "matchFiles": [
