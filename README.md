@@ -77,7 +77,7 @@ nima <TIFFSTK> CHANNELS
 ```
 
 Replace \<TIFFSTK> with the path to the TIFF time-lapse stack file, and `CHANNELS`
-with the channel names. By default, the channels are set to \["G", "R", "C"\].
+with the channel names. By default, the channels are set to ["G", "R", "C"].
 
 #### bima
 
