@@ -1,29 +1,43 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": ["config:recommended"],
+    "extends": [
+        "config:recommended"
+    ],
     "prHourlyLimit": 0,
     "prConcurrentLimit": 0,
     "prFooter": " (#{{prNumber}})",
     "packageRules": [
         {
-            "matchPackageNames": ["sphinx"],
+            "matchPackageNames": [
+                "sphinx"
+            ],
             "rangeStrategy": "pin",
             "allowedVersions": "<8.2",
             "automerge": false,
-            "labels": ["docs"]
+            "labels": [
+                "docs"
+            ]
         },
         {
-            "matchPackageNames": ["sphinx-autodoc-typehints"],
+            "matchPackageNames": [
+                "sphinx-autodoc-typehints"
+            ],
             "rangeStrategy": "pin",
             "allowedVersions": "<3.2",
             "automerge": false,
-            "labels": ["docs"]
+            "labels": [
+                "docs"
+            ]
         },
         {
-            "matchPackagePatterns": ["*"],
+            "matchPackagePatterns": [
+                "*"
+            ],
             "automerge": false,
             "rangeStrategy": "bump",
-            "labels": ["dependencies"],
+            "labels": [
+                "dependencies"
+            ],
             "commitMessagePrefix": "build(deps):",
             "commitMessageAction": "bump",
             "commitMessageTopic": "{{depName}}",
@@ -31,7 +45,9 @@
             "commitMessageSuffix": "{{groupName}}"
         },
         {
-            "matchDepTypes": ["project.optional-dependencies"],
+            "matchDepTypes": [
+                "project.optional-dependencies"
+            ],
             "matchPackageNames": [
                 "commitizen",
                 "pre-commit",
@@ -41,14 +57,18 @@
             ],
             "groupName": "dev",
             "automerge": false,
-            "labels": ["dependencies"],
+            "labels": [
+                "dependencies"
+            ],
             "commitMessagePrefix": "build(dev):",
             "commitMessageAction": "bump",
             "commitMessageTopic": "{{depName}}",
             "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
         },
         {
-            "matchDepTypes": ["project.optional-dependencies"],
+            "matchDepTypes": [
+                "project.optional-dependencies"
+            ],
             "matchPackageNames": [
                 "autodocsumm",
                 "bokeh",
@@ -71,14 +91,18 @@
             ],
             "groupName": "docs",
             "automerge": false,
-            "labels": ["dependencies"],
+            "labels": [
+                "dependencies"
+            ],
             "commitMessagePrefix": "build(docs):",
             "commitMessageAction": "bump",
             "commitMessageTopic": "{{depName}}",
             "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
         },
         {
-            "matchDepTypes": ["project.optional-dependencies"],
+            "matchDepTypes": [
+                "project.optional-dependencies"
+            ],
             "matchPackageNames": [
                 "coverage",
                 "mypy",
@@ -90,15 +114,21 @@
             ],
             "groupName": "tests",
             "automerge": false,
-            "labels": ["dependencies"],
+            "labels": [
+                "dependencies"
+            ],
             "commitMessagePrefix": "build(tests):",
             "commitMessageAction": "bump",
             "commitMessageTopic": "{{depName}}",
             "commitMessageExtra": "from {{currentVersion}} to {{newVersion}}"
         },
         {
-            "matchFiles": ["pyproject.toml"],
-            "matchDepNames": ["python"],
+            "matchFiles": [
+                "pyproject.toml"
+            ],
+            "matchDepNames": [
+                "python"
+            ],
             "enabled": false
         }
     ]
