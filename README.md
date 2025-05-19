@@ -22,22 +22,30 @@ analysis tasks using scipy.ndimage and scikit-image.
 You can get the library directly from [PyPI](https://pypi.org/project/nima/)
 using `pip`:
 
-    pip install nima
+```
+pip install nima
+```
 
 Alternatively, you can use [pipx](https://pypa.github.io/pipx/) to install it in
 an isolated environment:
 
-    pipx install nima
+```
+pipx install nima
+```
 
 To enable auto completion for the `nima` command, follow these steps:
 
-1.  Generate the completion script by running the following command:
+1. Generate the completion script by running the following command:
 
-        _CLOP_COMPLETE=bash_source nima > ~/.local/bin/nima-complete.bash
+   ```
+   _CLOP_COMPLETE=bash_source nima > ~/.local/bin/nima-complete.bash
+   ```
 
-2.  Source the generated completion script to enable auto completion:
+1. Source the generated completion script to enable auto completion:
 
-        source ~/.local/bin/nima-complete.bash
+   ```
+   source ~/.local/bin/nima-complete.bash
+   ```
 
 ## Usage
 
@@ -45,7 +53,9 @@ To enable auto completion for the `nima` command, follow these steps:
 
 To use nima in your python code, import it as follows:
 
-    from nima import nima, generat, utils
+```
+from nima import nima, generat, utils
+```
 
 ### Command-Line Interface (CLI)
 
@@ -62,10 +72,12 @@ on multi-channel TIFF time-lapse stacks.
 To perform multi-ratio ratiometric imaging analyses on a multichannel TIFF
 time-lapse stack, use the following command:
 
-    nima <TIFFSTK> CHANNELS
+```
+nima <TIFFSTK> CHANNELS
+```
 
 Replace \<TIFFSTK> with the path to the TIFF time-lapse stack file, and `CHANNELS`
-with the channel names. By default, the channels are set to ["G", "R", "C"].
+with the channel names. By default, the channels are set to \["G", "R", "C"\].
 
 #### bima
 
@@ -73,13 +85,17 @@ The `bima` command is used to compute bias, dark, and flat corrections.
 
 To estimate the detector bias frame:
 
-    bima bias <FPATH>
+```
+bima bias <FPATH>
+```
 
 Replace \<FPATH> with the paths to the bias stack (Light Off - 0 acquisition time).
 
 To estimate the system dark (multi-channel) frame:
 
-    bima dark <FPATH>
+```
+bima dark <FPATH>
+```
 
 Replace \<FPATH> with the paths to the dark stack (Light Off - Long acquisition time).
 
@@ -89,9 +105,11 @@ removed soon.
 
 To estimate the system flat (multi-channel) frame:
 
-    bima flat --bias <BIAS_PATH> <FPATH>
+```
+bima flat --bias <BIAS_PATH> <FPATH>
+```
 
-Replace \<FPATH> with the path to the tf8 stack and <BIAS_PATH> with the path to
+Replace \<FPATH> with the path to the tf8 stack and \<BIAS_PATH> with the path to
 the bias image.
 
 ## Contributing
