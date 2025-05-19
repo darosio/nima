@@ -1,7 +1,9 @@
 ci:
-  autoupdate_commit_msg: "build(pre-commit): update hooks"
+  autoupdate_schedule: "quarterly" # Least frequent official option
+  skip_autoupdate_commit: true # Prevents auto-commits
+  # Optional: Keep these for manual runs
+  autoupdate_commit_msg: "chore: update pre-commit hooks"
   autofix_commit_msg: "style: pre-commit fixes"
-
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
