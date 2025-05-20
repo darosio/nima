@@ -23,7 +23,6 @@ env:
   STABLE_PYTHON_VERSION: "3.13"
   PYTHONUNBUFFERED: "1"
   FORCE_COLOR: "1"
-  UV_CACHE_DIR: ~/.cache/uv # Cross-platform cache dir
 
 jobs:
   pre-commit:
@@ -40,26 +39,35 @@ jobs:
           python-version: ${{ env.STABLE_PYTHON_VERSION }}
 
       - name: Cache uv
-        id: cache-uv
         uses: actions/cache@v4
         with:
-          path: ${{ env.UV_CACHE_DIR }} # Uses env variable for path: ~/.cache/uv
+          path: |
+            ~/.cache/uv
+            ~/Library/Caches/uv
+            ~\AppData\Local\uv\Cache
           key: ${{ runner.os }}|uv|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('uv.lock') }}
-          enableCrossOsArchive: true
 
       - name: Install uv and hatch
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          uv pip install --system -c .github/workflows/constraints.txt hatch
+
+      - name: Create and activate venv
+        run: |
+          uv venv .venv
+          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Install hatch
+        run: |
+          uv pip install ".[hatch]"
 
       - name: Cache pre-commit
         uses: actions/cache@v4
         with:
           path: /home/runner/.cache/pre-commit/
           key: pre-commit|${{ runner.os }}|${{ hashFiles('.pre-commit-config.yaml') }}
-          restore-keys: |
-            pre-commit|${{ runner.os }}|
+          restore-keys: pre-commit|${{ runner.os }}|
 
       - name: Run lint
         run: hatch run lint:lint

@@ -83,6 +83,9 @@ tests = [
   "pytest>=8.3.5",
   "xdoctest>=1.2.0",
 ]
+hatch = [
+  "hatch>=1.14.1",
+]
 
 [project.scripts]
 bima = "nima.__main__:bima"
@@ -178,7 +181,7 @@ omit = ["*/__init__.py"]
 source = ["nima"]
 
 [tool.hatch.envs.default]
-features = ["dev", "docs", "tests"] # separate docs and lint
+features = ["dev", "docs", "lint", "tests"] # separate docs and lint
 installer = "uv"
 path = ".venv"
 
