@@ -32,36 +32,25 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.STABLE_PYTHON_VERSION }}
-
-      - name: Cache uv
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/uv
-            ~/Library/Caches/uv
-            ~\AppData\Local\uv\Cache
-          key: ${{ runner.os }}|uv|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}|uv|${{ env.STABLE_PYTHON_VERSION }}|
-            ${{ runner.os }}|uv|
+      # - name: Set up Python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: ${{ env.STABLE_PYTHON_VERSION }}
 
       - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.6"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
-      - name: Create and activate venv
-        run: |
-          uv venv .venv
-          echo "VIRTUAL_ENV=$PWD/.venv" >> "$GITHUB_ENV"
-          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
 
-      - name: Install hatch
-        run: uv pip install ".[hatch]"
+      - name: Install base and hatch
+        run: uv sync --locked --extra hatch
 
       - name: Cache pre-commit
         uses: actions/cache@v4
@@ -71,7 +60,7 @@ jobs:
           restore-keys: pre-commit|${{ runner.os }}|
 
       - name: Run lint
-        run: hatch run lint:lint
+        run: uv run hatch run lint:lint
 
   tests:
     name: ${{ matrix.tests }} py-${{ matrix.python }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
