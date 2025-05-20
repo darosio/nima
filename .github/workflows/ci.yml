@@ -38,12 +38,11 @@ jobs:
           version: "0.7.6"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-          python-version: ${{ env.STABLE_PYTHON_VERSION }}
-      # - name: "Set up Python"
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version-file: ".python-version"
-      - name: Install base and hatch
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - name: Install base and hatch and lint
         run: uv sync --locked --extra hatch --extra lint
       - name: Cache pre-commit
         uses: actions/cache@v4
@@ -78,8 +77,8 @@ jobs:
       - name: Run test and coverage
         if: matrix.tests == 'test'
         run: |
-          uv run hatch run tests.py${{ matrix.python }}:test # coverage run -p -m pytest -v
-          uv run hatch run tests.py${{ matrix.python }}:cov # coverage combine && coverage report && coverage xml
+          uv run hatch run tests.py${{ matrix.python }}:test
+          uv run hatch run tests.py${{ matrix.python }}:cov
       - name: Upload coverage report
         if: matrix.tests == 'test'
         uses: codecov/codecov-action@v5.4.3
@@ -98,12 +97,10 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Set up Python-${{ env.STABLE_PYTHON_VERSION }}
+      - name: "Set up Python"
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.STABLE_PYTHON_VERSION }}
-
+          python-version-file: ".python-version"
       - name: Get version
         id: version
         env:
@@ -137,7 +134,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
@@ -151,47 +147,54 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v4
-
-      - name: Set up Python ${{ env.STABLE_PYTHON_VERSION }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.6"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: "Set up Python"
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.STABLE_PYTHON_VERSION }}
-
+          python-version-file: ".python-version"
+      - name: Install base and hatch
+        run: uv sync --locked --extra hatch
+      # - name: Set up Python ${{ env.STABLE_PYTHON_VERSION }}
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: ${{ env.STABLE_PYTHON_VERSION }}
       - name: Build and publish
         run: |
-          pipx run hatch build
-          pipx run hatch publish --user=__token__ --auth=${{ secrets.PYPI_TOKEN }}
+          uv run hatch build
+          uv run hatch publish --user=__token__ --auth=${{ secrets.PYPI_TOKEN }}
 
   docs_build:
     runs-on: ubuntu-latest
     steps:
+      # - name: Install docs binaries (Linux)
+      #   if: runner.os == 'Linux'
+      #   run: |
+      #     sudo apt-get install -y --no-install-recommends pandoc
+      - uses: r-lib/actions/setup-pandoc@v2
+        with:
+          pandoc-version: "3.1.11"
+      - run: echo "# Test" | pandoc -t html
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Set up Python ${{ env.STABLE_PYTHON_VERSION }}
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.6"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: "Set up Python"
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.STABLE_PYTHON_VERSION }}
-
-      - name: Install binaries for docs
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc
-
-      - name: Cache pip
-        id: cache-pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}|pip|${{ env.STABLE_PYTHON_VERSION }}|-${{ hashFiles('**/constraints.txt', '**/pyproject.toml') }}
-          enableCrossOsArchive: true
-
-      - name: Install pip and hatch
-        run: python -m pip install --constraint=.github/workflows/constraints.txt pip hatch
-
+          python-version-file: ".python-version"
+      - name: Install base and hatch
+        run: uv sync --locked --extra hatch
       - name: Run hatch
-        run: hatch run docs:build
-
+        run: uv run hatch run docs:build
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
@@ -215,7 +218,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: github-pages
-
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
@@ -223,8 +225,7 @@ jobs:
   auto_merge_deps:
     name: Auto Merge dependencies labeled PRs
     needs: [pre-commit, tests, docs_build]
-    # Run only on pull_request labeled dependencies (e.g. by dependabot) or
-    # with the pre-commit ci commit message.
+    # Run only on pull_request labeled "dependencies"
     if: >
       startsWith(github.event.pull_request.title, 'build(pre-commit): update hooks') ||
       contains(github.event.pull_request.labels.*.name, 'dependencies')
@@ -234,7 +235,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Merge PR
         uses: pascalgn/automerge-action@v0.16.4
         env:
