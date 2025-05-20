@@ -73,7 +73,6 @@ jobs:
       - name: Run lint
         run: hatch run lint:lint
 
-
   tests:
     name: ${{ matrix.tests }} py-${{ matrix.python }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
@@ -91,6 +90,13 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.6"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Setup pip cache directory
         run: mkdir -p ~/.cache/pip
@@ -121,7 +127,6 @@ jobs:
       - name: Run mypy or xdoc
         if: matrix.tests != 'test'
         run: hatch run tests.py${{ matrix.python }}:${{ matrix.tests }}
-
 
   testpypi:
     needs: [pre-commit, tests]
