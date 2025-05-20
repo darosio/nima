@@ -60,7 +60,7 @@ jobs:
 
       - name: Install hatch
         run: |
-          uv pip install ".[hatch,lint]"
+          uv pip install ".[hatch]"
 
       - name: Cache pre-commit
         uses: actions/cache@v4
@@ -70,7 +70,7 @@ jobs:
           restore-keys: pre-commit|${{ runner.os }}|
 
       - name: Run lint
-        run: pre-commit run --all-files --show-diff-on-failure
+        run: hatch run lint:lint
 
   tests:
     name: ${{ matrix.tests }} py-${{ matrix.python }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
