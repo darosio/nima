@@ -188,7 +188,6 @@ path = ".venv"
 [tool.hatch.envs.default.scripts]
 bump = [
   "cz bump --major-version-zero -ch {args}", # e.g. "--increment PATCH"
-  "uv sync --all-extras",
   "hatch build",
   "export TEST_PYPI_TOKEN=$(pass show cloud/test_pypi | head -n 1) && hatch publish -r test -u __token__ -a $TEST_PYPI_TOKEN",
 ]
