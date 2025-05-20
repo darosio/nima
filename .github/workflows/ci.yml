@@ -38,10 +38,11 @@ jobs:
           version: "0.7.6"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
+          python-version: ${{ env.STABLE_PYTHON_VERSION }}
+      # - name: "Set up Python"
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version-file: ".python-version"
       - name: Install base and hatch
         run: uv sync --locked --extra hatch --extra lint
       - name: Cache pre-commit
@@ -65,52 +66,28 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      # - name: Set up Python-${{ matrix.python }}
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: ${{ matrix.python }}
-
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.7.6"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
           python-version: ${{ matrix.python }}
-
-      - name: Setup pip cache directory
-        run: mkdir -p ~/.cache/pip
-        if: runner.os == 'macOS'
-
-      - name: Cache pip dependencies
-        id: cache-pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python }}-${{ matrix.tests }}-${{ hashFiles('**/constraints.txt', '**/pyproject.toml') }}
-
-      - name: Install pip and hatch
-        run: python -m pip install --constraint=.github/workflows/constraints.txt pip hatch
-
+      - name: Install base and hatch
+        run: uv sync --locked --extra hatch
       - name: Run test and coverage
         if: matrix.tests == 'test'
         run: |
-          hatch run tests.py${{ matrix.python }}:test
-          hatch run tests.py${{ matrix.python }}:cov
-
+          uv run hatch run tests.py${{ matrix.python }}:test # coverage run -p -m pytest -v
+          uv run hatch run tests.py${{ matrix.python }}:cov # coverage combine && coverage report && coverage xml
       - name: Upload coverage report
         if: matrix.tests == 'test'
         uses: codecov/codecov-action@v5.4.3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-
       - name: Run mypy or xdoc
         if: matrix.tests != 'test'
-        run: hatch run tests.py${{ matrix.python }}:${{ matrix.tests }}
+        run: uv run hatch run tests.py${{ matrix.python }}:${{ matrix.tests }}
 
   testpypi:
     needs: [pre-commit, tests]
