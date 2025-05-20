@@ -188,6 +188,7 @@ path = ".venv"
 [tool.hatch.envs.default.scripts]
 bump = [
   "cz bump --major-version-zero -ch {args}", # e.g. "--increment PATCH"
+  "uv sync --all-extras",
   "hatch build",
   "export TEST_PYPI_TOKEN=$(pass show cloud/test_pypi | head -n 1) && hatch publish -r test -u __token__ -a $TEST_PYPI_TOKEN",
 ]
@@ -238,14 +239,6 @@ known_first_party = "nima"
 line_length = 88 # to match black's default line length
 multi_line_output = 3
 profile = "black"
-
-[tool.mdformat]
-number = false # Prevent renumbering ordered lists
-plugins = [
-  "gfm", # Enable GitHub Flavored Markdown extensions
-]
-# Configure line wrapping (e.g., match your Apheleia arg --wrap "keep")
-wrap = "keep"
 
 [tool.mypy]
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
