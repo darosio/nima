@@ -28,12 +28,11 @@ jobs:
   pre-commit:
     name: Lint
     runs-on: "ubuntu-latest"
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Python-${{ env.STABLE_PYTHON_VERSION }}
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.STABLE_PYTHON_VERSION }}
@@ -52,8 +51,10 @@ jobs:
 
       - name: Install uv
         run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          if ! command -v uv &> /dev/null; then
+            curl -LsSf https://astral.sh/uv/install.sh | sh
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Create and activate venv
         run: |
@@ -62,8 +63,7 @@ jobs:
           echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Install hatch
-        run: |
-          uv pip install ".[hatch]"
+        run: uv pip install ".[hatch]"
 
       - name: Cache pre-commit
         uses: actions/cache@v4
@@ -73,8 +73,7 @@ jobs:
           restore-keys: pre-commit|${{ runner.os }}|
 
       - name: Run lint
-        run: |
-          hatch run lint:lint
+        run: hatch run lint:lint
 
 
   tests:
