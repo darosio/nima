@@ -46,8 +46,11 @@ jobs:
             ~/Library/Caches/uv
             ~\AppData\Local\uv\Cache
           key: ${{ runner.os }}|uv|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}|uv|${{ env.STABLE_PYTHON_VERSION }}|
+            ${{ runner.os }}|uv|
 
-      - name: Install uv and hatch
+      - name: Install uv
         run: |
           curl -LsSf https://astral.sh/uv/install.sh | sh
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
@@ -60,7 +63,7 @@ jobs:
 
       - name: Install hatch
         run: |
-          uv pip install ".[hatch,lint]"
+          uv pip install ".[hatch]"
 
       - name: Cache pre-commit
         uses: actions/cache@v4
@@ -71,8 +74,8 @@ jobs:
 
       - name: Run lint
         run: |
-          hatch config set dirs.env.virtual .venv
           hatch run lint:lint
+
 
   tests:
     name: ${{ matrix.tests }} py-${{ matrix.python }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}

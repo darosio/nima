@@ -196,20 +196,18 @@ ch = "cz ch --incremental --unreleased-version HEAD"
 clean = "rm -rf ./build .coverage ./__pycache__ ./.mypy_cache ./.pytest_cache ./docs/_build ./tests/__pycache__ ./dist ./src/nima/__pycache__"
 
 [tool.hatch.envs.docs]
-cache = true
+type = "virtual"
 features = ["docs"]
 installer = "uv"
-template = "docs"
 
 [tool.hatch.envs.docs.scripts]
 build = "sphinx-build docs docs/_build"
 serve = "python -m http.server 8000 -d docs/_build"
 
 [tool.hatch.envs.lint]
-cache = true
+type = "virtual"
 features = ["lint"]
 installer = "uv"
-template = "lint"
 
 [tool.hatch.envs.lint.scripts]
 init = [
@@ -220,11 +218,11 @@ init = [
 lint = "pre-commit run --all-files --show-diff-on-failure {args}"
 
 [tool.hatch.envs.tests]
-cache = true
+type = "virtual"
 features = ["tests"]
 installer = "uv"
 matrix = [{ python = ["3.13", "3.12", "3.11"] }]
-template = "tests"
+template = "tests" #built-in test template
 
 [tool.hatch.envs.tests.scripts]
 all = ["test", "type", "xdoc", "cov"]
