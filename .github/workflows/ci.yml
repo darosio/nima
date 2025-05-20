@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  STABLE_PYTHON_VERSION: "3.13"
+  # STABLE_PYTHON_VERSION: "3.13"
   PYTHONUNBUFFERED: "1"
   FORCE_COLOR: "1"
 
@@ -97,6 +97,12 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.6"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
       - name: "Set up Python"
         uses: actions/setup-python@v5
         with:
@@ -110,22 +116,20 @@ jobs:
           ver=$(echo "$COMMIT_MESSAGE" | awk '{ print $NF }')
           echo "ver=${ver}" >> "$GITHUB_OUTPUT"
           echo "ver=${ver}" >> "$GITHUB_ENV"
+      # - name: Cache pip
+      #   id: cache-pip
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: ~/.cache/pip
+      #     key: ${{ runner.os }}|pip|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('**/constraints.txt', '**/pyproject.toml') }}
+      #     enableCrossOsArchive: true
 
-      - name: Cache pip
-        id: cache-pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}|pip|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('**/constraints.txt', '**/pyproject.toml') }}
-          enableCrossOsArchive: true
-
-      - name: Install pip
-        run: python -m pip install --constraint=.github/workflows/constraints.txt pip
-
+      # - name: Install pip
+      #   run: python -m pip install --constraint=.github/workflows/constraints.txt pip
       - name: Run CLI
         run: |
-          python -m pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ nima==${{ env.ver }}
-          nima --version
+          uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ nima==${{ env.ver }}
+          uv run nima --version
 
   release:
     name: Release to GitHub
@@ -177,7 +181,7 @@ jobs:
       #     sudo apt-get install -y --no-install-recommends pandoc
       - uses: r-lib/actions/setup-pandoc@v2
         with:
-          pandoc-version: "3.1.11"
+          pandoc-version: "3.1.12"
       - run: echo "# Test" | pandoc -t html
       - name: Checkout Repository
         uses: actions/checkout@v4
