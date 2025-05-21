@@ -20,7 +20,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # STABLE_PYTHON_VERSION: "3.13"
   PYTHONUNBUFFERED: "1"
   FORCE_COLOR: "1"
 
@@ -88,69 +87,30 @@ jobs:
         if: matrix.tests != 'test'
         run: uv run hatch run tests.py${{ matrix.python }}:${{ matrix.tests }}
 
-  testpypi:
+
+  build-publish-release:
     needs: [pre-commit, tests]
     runs-on: ubuntu-latest
-    if: "startsWith(github.event.head_commit.message, 'bump:')"
-    outputs:
-      version: ${{ steps.version.outputs.ver }}
+    if: "startsWith(github.event.head_commit.message, 'chore: release')"
+    env:
+      VERSION: ${{ github.ref_name }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          version: "0.7.6"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - name: "Set up Python"
-        uses: actions/setup-python@v5
-        with:
-          python-version-file: ".python-version"
-      - name: Get version
-        id: version
-        env:
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-        run: |
-          echo "$COMMIT_MESSAGE"
-          ver=$(echo "$COMMIT_MESSAGE" | awk '{ print $NF }')
-          echo "ver=${ver}" >> "$GITHUB_OUTPUT"
-          echo "ver=${ver}" >> "$GITHUB_ENV"
-      # - name: Cache pip
-      #   id: cache-pip
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: ~/.cache/pip
-      #     key: ${{ runner.os }}|pip|${{ env.STABLE_PYTHON_VERSION }}|${{ hashFiles('**/constraints.txt', '**/pyproject.toml') }}
-      #     enableCrossOsArchive: true
 
-      # - name: Install pip
-      #   run: python -m pip install --constraint=.github/workflows/constraints.txt pip
-      - name: Run CLI
-        run: |
-          uv pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ nima==${{ env.ver }}
-          uv run nima --version
+      - name: Generate changelog
+        run: git cliff -t ${{ env.VERSION }} -o RELEASE.md
 
-  release:
-    name: Release to GitHub
-    needs: testpypi
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-      - name: Create Release
+      - name: Version check
+        run: echo ${{ env.VERSION }}
+
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          # bodyFile: "release.md"
-          tag: v${{ needs.testpypi.outputs.version }}
+          bodyFile: "RELEASE.md"
+          # tag: v${{ needs.testpypi.outputs.version }}
+          # tag: ${{ env.VERSION }}
 
-  publish:
-    name: Publish to PyPI
-    needs: testpypi
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repository
-        uses: actions/checkout@v4
       - name: Install uv
         uses: astral-sh/setup-uv@v6
         with:
@@ -163,10 +123,6 @@ jobs:
           python-version-file: ".python-version"
       - name: Install base and hatch
         run: uv sync --locked --extra hatch
-      # - name: Set up Python ${{ env.STABLE_PYTHON_VERSION }}
-      #   uses: actions/setup-python@v5
-      #   with:
-      #     python-version: ${{ env.STABLE_PYTHON_VERSION }}
       - name: Build and publish
         run: |
           uv run hatch build

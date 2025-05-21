@@ -1,4 +1,10 @@
+default_install_hook_types:
+  - pre-commit
+  - commit-msg
+
+
 repos:
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -95,10 +101,9 @@ repos:
       - id: uv-lock
         stages: [pre-commit]
 
-  - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.8.0
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.2.0
     hooks:
-      - id: commitizen
-      - id: commitizen-branch
-        stages:
-          - pre-push
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+        args: []
