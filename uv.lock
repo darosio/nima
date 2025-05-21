@@ -735,7 +735,7 @@ wheels = [
 
 [[package]]
 name = "dask"
-version = "2025.5.0"
+version = "2025.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -747,9 +747,9 @@ dependencies = [
     { name = "pyyaml" },
     { name = "toolz" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/df/44/ac66964138b026bc31d82c38c97ff260b1be7e13d8446c5c21e81b4c0991/dask-2025.5.0.tar.gz", hash = "sha256:3ec9175e53effe1c2b0086668352e0d5261c5ef6f71a410264eda83659d686ef", size = 10971343, upload-time = "2025-05-13T22:18:40.791Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3d/29/05feb8e2531c46d763547c66b7f5deb39b53d99b3be1b4ddddbd1cec6567/dask-2025.5.1.tar.gz", hash = "sha256:979d9536549de0e463f4cab8a8c66c3a2ef55791cd740d07d9bf58fab1d1076a", size = 10969324, upload-time = "2025-05-20T19:54:30.688Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/20/cb/a68c59dd229bae7c439631dba66b0286d551efae67e09e0bbf813635b0d3/dask-2025.5.0-py3-none-any.whl", hash = "sha256:77e9a64bb09098515bc579477b7051b0909474cd7b3e0005e3d0968a70c84015", size = 1473896, upload-time = "2025-05-13T22:18:30.514Z" },
+    { url = "https://files.pythonhosted.org/packages/38/30/53b0844a7a4c6b041b111b24ca15cc9b8661a86fe1f6aaeb2d0d7f0fb1f2/dask-2025.5.1-py3-none-any.whl", hash = "sha256:3b85fdaa5f6f989dde49da6008415b1ae996985ebdfb1e40de2c997d9010371d", size = 1474226, upload-time = "2025-05-20T19:54:20.309Z" },
 ]
 
 [package.optional-dependencies]
@@ -853,7 +853,7 @@ wheels = [
 
 [[package]]
 name = "distributed"
-version = "2025.5.0"
+version = "2025.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -872,9 +872,9 @@ dependencies = [
     { name = "urllib3" },
     { name = "zict" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/17/4d/a4eca3d263a4574c9721f4e5121083aaf113951e697f1c87eabbd7fc8a19/distributed-2025.5.0.tar.gz", hash = "sha256:49dc3395eb3b7169800160731064bbc7ee6f5235bbea49d9b85baa6358a2e37a", size = 1108873, upload-time = "2025-05-13T22:18:35.877Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/29/ba/45950f405d023a520a4d10753ef40209a465b86c8fdc131236ec29bcb15c/distributed-2025.5.1.tar.gz", hash = "sha256:cf1d62a2c17a0a9fc1544bd10bb7afd39f22f24aaa9e3df3209c44d2cfb16703", size = 1107874, upload-time = "2025-05-20T19:54:26.005Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a1/e4/a462ea00743788a5b006a3ddc3ea18656410ed97a7a5a8571ae44f0faef0/distributed-2025.5.0-py3-none-any.whl", hash = "sha256:374e3236b4945745b48cd821025f802095abb18fd6477123dd237905253bc60f", size = 1014792, upload-time = "2025-05-13T22:18:32.179Z" },
+    { url = "https://files.pythonhosted.org/packages/25/65/89601dcc7383f0e5109e59eab90677daa9abb260d821570cd6089c8894bf/distributed-2025.5.1-py3-none-any.whl", hash = "sha256:74782b965ddb24ce59c6441fa777e944b5962d82325cc41f228537b59bb7fbbe", size = 1014789, upload-time = "2025-05-20T19:54:21.935Z" },
 ]
 
 [[package]]
@@ -2356,7 +2356,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.2.1" },
     { name = "commitizen", marker = "extra == 'dev'", specifier = "==4.8.0" },
     { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = ">=7.8.0" },
-    { name = "dask", extras = ["distributed"], specifier = ">=2025.5.0" },
+    { name = "dask", extras = ["distributed"], specifier = ">=2025.5.1" },
     { name = "dask-image", marker = "extra == 'docs'", specifier = "==2024.5.3" },
     { name = "hatch", marker = "extra == 'hatch'", specifier = ">=1.14.1" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.20.2" },
