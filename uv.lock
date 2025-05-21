@@ -173,15 +173,6 @@ wheels = [
 ]
 
 [[package]]
-name = "argcomplete"
-version = "3.5.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/0c/be/6c23d80cb966fb8f83fb1ebfb988351ae6b0554d0c3a613ee4531c026597/argcomplete-3.5.3.tar.gz", hash = "sha256:c12bf50eded8aebb298c7b7da7a5ff3ee24dffd9f5281867dfe1424b58c55392", size = 72999, upload-time = "2024-12-31T19:22:57.301Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/08/2a4db06ec3d203124c967fc89295e85a202e5cbbcdc08fd6a64b65217d1e/argcomplete-3.5.3-py3-none-any.whl", hash = "sha256:2ab2c4a215c59fd6caaff41a869480a23e8f6a5f910b266c1808037f4e375b61", size = 43569, upload-time = "2024-12-31T19:22:54.305Z" },
-]
-
-[[package]]
 name = "argon2-cffi"
 version = "23.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -565,27 +556,6 @@ wheels = [
 ]
 
 [[package]]
-name = "commitizen"
-version = "4.8.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "argcomplete" },
-    { name = "charset-normalizer" },
-    { name = "colorama" },
-    { name = "decli" },
-    { name = "jinja2" },
-    { name = "packaging" },
-    { name = "pyyaml" },
-    { name = "questionary" },
-    { name = "termcolor" },
-    { name = "tomlkit" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/8a/92/aed954564c5cdd1ab74c42a70909dd1a4e5a3f3cccae568ae50f295385bd/commitizen-4.8.0.tar.gz", hash = "sha256:488cb70afe18ff393a2ac18d32e82c3a18a81bf044dceeb33145ae5697ab832b", size = 53383, upload-time = "2025-05-20T15:04:02.113Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f6/f8/aa0f90d1f55283dd1422a47ae49de75ed94e260c094ce76360a4f8008834/commitizen-4.8.0-py3-none-any.whl", hash = "sha256:1cc1395010d3291b447c5d41f8201dde9cbe46e866f2a6b91ac4f599720f4516", size = 76208, upload-time = "2025-05-20T15:04:00.797Z" },
-]
-
-[[package]]
 name = "contourpy"
 version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -801,15 +771,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/82/82/ed81852a8d94086f51664d032d83c7f87cd2b087c6ea70dabec7c1ba813d/debugpy-1.8.13-cp313-cp313-win32.whl", hash = "sha256:5268ae7fdca75f526d04465931cb0bd24577477ff50e8bb03dab90983f4ebd02", size = 5226270, upload-time = "2025-03-05T01:02:56.241Z" },
     { url = "https://files.pythonhosted.org/packages/15/63/aa92fb341a78ec40f1c414ec7a7885c2ee17032eee00d12cee0cdc502af4/debugpy-1.8.13-cp313-cp313-win_amd64.whl", hash = "sha256:79ce4ed40966c4c1631d0131606b055a5a2f8e430e3f7bf8fd3744b09943e8e8", size = 5268621, upload-time = "2025-03-05T01:02:57.845Z" },
     { url = "https://files.pythonhosted.org/packages/37/4f/0b65410a08b6452bfd3f7ed6f3610f1a31fb127f46836e82d31797065dcb/debugpy-1.8.13-py2.py3-none-any.whl", hash = "sha256:d4ba115cdd0e3a70942bd562adba9ec8c651fe69ddde2298a1be296fc331906f", size = 5229306, upload-time = "2025-03-05T01:03:16.51Z" },
-]
-
-[[package]]
-name = "decli"
-version = "0.6.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/3d/a0/a4658f93ecb589f479037b164dc13c68d108b50bf6594e54c820749f97ac/decli-0.6.2.tar.gz", hash = "sha256:36f71eb55fd0093895efb4f416ec32b7f6e00147dda448e3365cf73ceab42d6f", size = 7424, upload-time = "2024-04-28T17:41:05.963Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/bf/70/3ea48dc9e958d7d66c44c9944809181f1ca79aaef25703c023b5092d34ff/decli-0.6.2-py3-none-any.whl", hash = "sha256:2fc84106ce9a8f523ed501ca543bdb7e416c064917c12a59ebdc7f311a97b7ed", size = 7854, upload-time = "2024-04-28T17:41:04.663Z" },
 ]
 
 [[package]]
@@ -1038,6 +999,23 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f2/77/deb99b97981e2e191913454da82d406702405178631c31cd623caebaf1b1/fsspec-2025.5.0.tar.gz", hash = "sha256:e4f4623bb6221f7407fd695cc535d1f857a077eb247580f4ada34f5dc25fd5c8", size = 300989, upload-time = "2025-05-20T15:46:22.484Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2c/a9/a7022f58e081149ec0184c31ea81dcee605e1d46380b48122e1ef94ac24e/fsspec-2025.5.0-py3-none-any.whl", hash = "sha256:0ca253eca6b5333d8a2b8bd98c7326fe821f1f0fdbd34e1b445bddde8e804c95", size = 196164, upload-time = "2025-05-20T15:46:20.89Z" },
+]
+
+[[package]]
+name = "git-cliff"
+version = "2.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/2c/4be68bbdea827ad2b3fd5e7ae880da65e5e4dae8a37af368cc6a1a6ec1ab/git_cliff-2.8.0.tar.gz", hash = "sha256:ab252f0d31c6febb57b6d4f24f9584b779327af43bc94e2bdb00867248cb5d0d", size = 87078, upload-time = "2025-01-24T15:08:11.93Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a5/48/06035b44dee6e1bdaea093d48d8b32f4570c665366accf6143e60faa92f4/git_cliff-2.8.0-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:bfd552f1bda845e85e0a570336b4dacaf76e481f9ebe00301fe5c869377e2289", size = 6325036, upload-time = "2025-01-24T15:07:49.174Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/90/eaa5f850a5d14132026d121896751424e0249e14368e339272f05edec4b9/git_cliff-2.8.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:281504bb22da43b671f9131c3cd7f0d56fa4aa7c9a1922948f9a537a76b38ea7", size = 5870796, upload-time = "2025-01-24T15:07:51.543Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/50/79d7202ce0ca3839b5a03e334201ef58c285e2be5034f9a6eb84a15644d3/git_cliff-2.8.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:485b825fec2600bd2ab847cd5f1724c874ddc0aed7e57d7fb43e484fcc114f8a", size = 6226344, upload-time = "2025-01-24T15:07:54.135Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/d8/cf470a17daeef8e562b3a08310e6d35a00e79ae83391f690006455f10da8/git_cliff-2.8.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6dad66722d0df40bd3722cf274cae5f6f55d61f5faa5974c48a68c62179592f7", size = 6669351, upload-time = "2025-01-24T15:07:56.806Z" },
+    { url = "https://files.pythonhosted.org/packages/f2/9d/74357c40bf6f10b91f4422f2ffb5b97384cb33bd01130b43608378740afc/git_cliff-2.8.0-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:96cc47b9716fdeddfa0d68f6c93d6f7deb056da3dcefc0b4e337edb463b5790d", size = 6276116, upload-time = "2025-01-24T15:07:58.768Z" },
+    { url = "https://files.pythonhosted.org/packages/10/7e/12d5c62dd79a8650a75a5d3f28535ae4b4fe5c4b2ae849850608e7cda981/git_cliff-2.8.0-py3-none-manylinux_2_5_i686.manylinux1_i686.whl", hash = "sha256:aef4513c51ccd05f21cb539d4125902dbe555abd56695c9793f01636775075ee", size = 6473118, upload-time = "2025-01-24T15:08:01.836Z" },
+    { url = "https://files.pythonhosted.org/packages/20/a7/05285fddc01398b486f51ec799891c238889e680a4711322e55d4eee7723/git_cliff-2.8.0-py3-none-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:db21d6f3bf2641bd45340d076e108692606b723ddf8fc7be6bef3ffc9faedaff", size = 6929288, upload-time = "2025-01-24T15:08:04.306Z" },
+    { url = "https://files.pythonhosted.org/packages/48/9c/19e98f35fc27657fe08e22a1cbae8cf40138cb66959f213b112771f25a8d/git_cliff-2.8.0-py3-none-win32.whl", hash = "sha256:09611b9e909f2635378bf185616a82ec7e9bbccb6e79ae6ce204c2ea4005f215", size = 5963978, upload-time = "2025-01-24T15:08:07.138Z" },
+    { url = "https://files.pythonhosted.org/packages/75/e0/c4413fd66f0fb58109627afe64ac8574f46fd7358a4aabca8ed5e85d6a9c/git_cliff-2.8.0-py3-none-win_amd64.whl", hash = "sha256:e284e6b1e7f701b9f2836f31fec38c408da54f361f1a281d0e4709f33f00d905", size = 6716805, upload-time = "2025-01-24T15:08:09.345Z" },
 ]
 
 [[package]]
@@ -2305,7 +2283,7 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "commitizen" },
+    { name = "git-cliff" },
     { name = "mdformat" },
     { name = "mdformat-gfm" },
     { name = "pylsp-mypy" },
@@ -2354,10 +2332,10 @@ requires-dist = [
     { name = "bioio-tifffile", specifier = ">=1.1.0" },
     { name = "bokeh", marker = "extra == 'docs'", specifier = "==3.7.3" },
     { name = "click", specifier = ">=8.2.1" },
-    { name = "commitizen", marker = "extra == 'dev'", specifier = "==4.8.0" },
     { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = ">=7.8.0" },
     { name = "dask", extras = ["distributed"], specifier = ">=2025.5.1" },
     { name = "dask-image", marker = "extra == 'docs'", specifier = "==2024.5.3" },
+    { name = "git-cliff", marker = "extra == 'dev'", specifier = ">=2.8.0" },
     { name = "hatch", marker = "extra == 'hatch'", specifier = ">=1.14.1" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.20.2" },
     { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.11.3" },
@@ -3380,18 +3358,6 @@ wheels = [
 ]
 
 [[package]]
-name = "questionary"
-version = "2.1.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "prompt-toolkit" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/a8/b8/d16eb579277f3de9e56e5ad25280fab52fc5774117fb70362e8c2e016559/questionary-2.1.0.tar.gz", hash = "sha256:6302cdd645b19667d8f6e6634774e9538bfcd1aad9be287e743d96cacaf95587", size = 26775, upload-time = "2024-12-29T11:49:17.802Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ad/3f/11dd4cd4f39e05128bfd20138faea57bec56f9ffba6185d276e3107ba5b2/questionary-2.1.0-py3-none-any.whl", hash = "sha256:44174d237b68bc828e4878c763a9ad6790ee61990e0ae72927694ead57bab8ec", size = 36747, upload-time = "2024-12-29T11:49:16.734Z" },
-]
-
-[[package]]
 name = "referencing"
 version = "0.36.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3959,15 +3925,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/54/95/4b3044ec4bf248186769629bbfb495a458deb6e4c1f9eff7f298ae1e336e/tblib-3.1.0.tar.gz", hash = "sha256:06404c2c9f07f66fee2d7d6ad43accc46f9c3361714d9b8426e7f47e595cd652", size = 30766, upload-time = "2025-03-31T12:58:27.473Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/27/44/aa5c8b10b2cce7a053018e0d132bd58e27527a0243c4985383d5b6fd93e9/tblib-3.1.0-py3-none-any.whl", hash = "sha256:670bb4582578134b3d81a84afa1b016128b429f3d48e6cbbaecc9d15675e984e", size = 12552, upload-time = "2025-03-31T12:58:26.142Z" },
-]
-
-[[package]]
-name = "termcolor"
-version = "2.5.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/37/72/88311445fd44c455c7d553e61f95412cf89054308a1aa2434ab835075fc5/termcolor-2.5.0.tar.gz", hash = "sha256:998d8d27da6d48442e8e1f016119076b690d962507531df4890fcd2db2ef8a6f", size = 13057, upload-time = "2024-10-06T19:50:04.115Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7f/be/df630c387a0a054815d60be6a97eb4e8f17385d5d6fe660e1c02750062b4/termcolor-2.5.0-py3-none-any.whl", hash = "sha256:37b17b5fc1e604945c2642c872a3764b5d547a48009871aea3edd3afa180afb8", size = 7755, upload-time = "2024-10-06T19:50:02.097Z" },
 ]
 
 [[package]]
