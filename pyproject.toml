@@ -146,12 +146,6 @@ git tag $NEXT_VERSION
 git push
 git push --tags
 """
-# bump = [
-#   "cz bump --major-version-zero -ch {args}", # e.g. "--increment PATCH"
-#   "uv sync --all-extras",
-#   "hatch build",
-#   "export TEST_PYPI_TOKEN=$(pass show cloud/test_pypi | head -n 1) && hatch publish -r test -u __token__ -a $TEST_PYPI_TOKEN",
-# ]
 clean = "rm -rf ./build .coverage ./__pycache__ ./.mypy_cache ./.pytest_cache ./docs/_build ./tests/__pycache__ ./dist ./src/nima/__pycache__"
 
 [tool.hatch.envs.docs]
@@ -219,62 +213,72 @@ force-exclude = true
 line-length = 88
 target-version = "py311"
 unsafe-fixes = true
+# Enable preview mode
+preview = false
 
 [tool.ruff.format]
 docstring-code-format = true
 
 [tool.ruff.lint]
-ignore = [
-  "ISC001",
-  "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
-]
+# S311 Standard pseudo-random generators are not suitable for cryptographic purposes
+ignore = ["COM", "CPY", "ISC001", "S311", "T20"]
 select = [
   "A", # builtins
+  "AIR", # airflow
   "ANN", # typing annotation
   "ARG", # unused arguments
+  "ASYNC",
   "B", # bugbear
   "BLE", # blind-except
   "C",
   "C4", # comprehensions
   "C90", # mccabe
   "D", # pydocstyle
+  "DOC",
   "DTZ", # dates
   "E", # pycodestyle
-  "TRY", # exceptions
   "EM", # exceptions
   "ERA", # eradicate
+  "EXE",
   "F", # pyflakes
+  "FA", # future annotations
   "FBT", # boolean-trap
   "FLY", # flyntp
   "FURB", # refurbishing and modernizing
+  "G", # logging
   "I", # isort
   "ICN", # import conventions (opinionated)
+  "INP", #inplict namespace
+  "INT", #gettext
   "ISC", # implicit-str-concat
+  "LOG", # logging
   "N", # pep8-naming
   "NPY",
-  "AIR", # airflow
-  "PERF", # pperformance anti pattern
   "PD", # pandas-vet
+  "PERF", # pperformance anti pattern
   "PGH", # pygrep WAIT
+  "PIE",
   "PL", # pylint see PLR2004...
   "PT", # pytest-style
   "PTH", # use-pathlib
+  "PYI", #lint typeshed
   "Q", # quotes
   "RET", # Return
   "RSE", # Raise
   "RUF", # Ruff
   "S", # bandit
+  "SIM", # simplify
   "SLF", # private self
   "SLOT", # __slot__
-  "SIM", # simplify
-  "TID", # tidy-imports
+  "T10", # debugger
+  "T20", # print
+  "TC", # TYPE_CHECKING
   "TCH", # TYPE_CHECKING
+  "TID", # tidy-imports
   "TRY", # tryceratops
-  # "TD",  # TODOs
-  # "FIX",  #
   "UP", # pyupgrade
-  "YTT", # 2020
   "W", # pycodestyle
+  "YTT", # 2020
 ]
 isort.combine-as-imports = true
 isort.force-single-line = false
@@ -283,8 +287,9 @@ isort.split-on-trailing-comma = true
 mccabe.max-complexity = 12
 
 [tool.ruff.lint.per-file-ignores]
-"*.ipynb" = ["ANN001", "ANN201", "D103", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF"]
+"*.ipynb" = ["ANN001", "ANN201", "D103", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF", "T20"]
 "tests/*" = ["PLR2004", "S101"]
+"docs/*" = ["INP"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
