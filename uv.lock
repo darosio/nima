@@ -2262,7 +2262,7 @@ wheels = [
 
 [[package]]
 name = "nima"
-version = "0.11.1"
+version = "0.11.2"
 source = { editable = "." }
 dependencies = [
     { name = "bioio-tifffile" },

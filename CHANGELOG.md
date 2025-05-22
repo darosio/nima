@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.2] - 2025-05-22
+
+### 🐛 Bug Fixes
+
+- Release into a separate workflow
+
 ## [0.11.1] - 2025-05-22
 
 ### 🐛 Bug Fixes
