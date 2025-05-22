@@ -45,72 +45,12 @@
             "matchDepTypes": [
                 "project.optional-dependencies"
             ],
-            "matchPackageNames": [
-                "commitizen",
-                "mdformat",
-                "mdformat-gfm",
-                "pre-commit",
-                "pylsp-mypy",
-                "ruff",
-                "ruff-lsp"
-            ],
-            "groupName": "dev dependencies",
+            "groupName": "optional dependencies",
             "labels": [
                 "dependencies",
-                "dev"
+                "optional"
             ],
-            "commitMessagePrefix": "build(dev):"
-        },
-        {
-            "matchDepTypes": [
-                "project.optional-dependencies"
-            ],
-            "matchPackageNames": [
-                "autodocsumm",
-                "bokeh",
-                "dask-image",
-                "holoviews",
-                "hvplot",
-                "impy-array",
-                "ipykernel",
-                "jupyter",
-                "nbsphinx",
-                "pydata-sphinx-theme",
-                "pygments",
-                "pympler",
-                "seaborn",
-                "selenium",
-                "sphinx-autodoc-typehints",
-                "sphinx-click",
-                "sphinx",
-                "statsmodels"
-            ],
-            "groupName": "docs dependencies",
-            "labels": [
-                "dependencies",
-                "docs"
-            ],
-            "commitMessagePrefix": "build(docs):"
-        },
-        {
-            "matchDepTypes": [
-                "project.optional-dependencies"
-            ],
-            "matchPackageNames": [
-                "coverage",
-                "mypy",
-                "pandas-stubs",
-                "pygments",
-                "pypdf",
-                "pytest",
-                "xdoctest"
-            ],
-            "groupName": "test dependencies",
-            "labels": [
-                "dependencies",
-                "tests"
-            ],
-            "commitMessagePrefix": "build(tests):"
+            "commitMessagePrefix": "chore(dep):"
         },
         {
             "matchManagers": [
@@ -120,7 +60,7 @@
                 "dependencies",
                 "pre-commit"
             ],
-            "commitMessagePrefix": "build(hooks):"
+            "commitMessagePrefix": "chore(hooks):"
         },
         {
             "matchFiles": [
