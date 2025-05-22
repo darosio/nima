@@ -90,10 +90,6 @@ jobs:
   docs_build:
     runs-on: ubuntu-latest
     steps:
-      # - name: Install docs binaries (Linux)
-      #   if: runner.os == 'Linux'
-      #   run: |
-      #     sudo apt-get install -y --no-install-recommends pandoc
       - uses: r-lib/actions/setup-pandoc@v2
         with:
           pandoc-version: "3.1.12"
