@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.3] - 2025-05-22
+
+### 🐛 Bug Fixes
+
+- Noisy changelog
+
 ## [0.11.2] - 2025-05-22
 
 ### 🐛 Bug Fixes

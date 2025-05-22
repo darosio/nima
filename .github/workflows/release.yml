@@ -31,7 +31,7 @@ jobs:
         uses: taiki-e/install-action@git-cliff
       - name: Generate Release Notes
         run: |
-          git cliff --tag "${GITHUB_REF#refs/tags/}" -o RELEASE.md
+          git cliff --latest -o RELEASE.md
           echo "Generated release notes for ${GITHUB_REF#refs/tags/}"
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1

@@ -135,7 +135,7 @@ installer = "uv"
 path = ".venv"
 
 [tool.hatch.envs.default.scripts]
-ch = "git cliff --bump -u --prepend CHANGELOG.md"
+ch = "git cliff --bump --latest --prepend CHANGELOG.md"
 bump = """
 NEXT_VERSION=$(git cliff --bumped-version)
 uv version $NEXT_VERSION
