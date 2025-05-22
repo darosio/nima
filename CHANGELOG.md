@@ -1,6 +1,14 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [0.11.1] - 2025-05-22
+
+### 🐛 Bug Fixes
+
+- Release
+
+### 🦾 Build
+
+- *(deps)* Bump tifffile from 2025.5.10 to 2025.5.21 (#1079)
 
 ## [0.11.0] - 2025-05-21
 
