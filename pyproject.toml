@@ -44,7 +44,7 @@ version = "0.11.4"
 
 [project.optional-dependencies]
 dev = [
-  "git-cliff>=2.8.0",
+  "git-cliff==2.8.0",
   "mdformat==0.7.22",
   "mdformat-gfm==0.4.1",
   "pylsp-mypy==0.7.0",
@@ -84,7 +84,7 @@ tests = [
   "xdoctest>=1.2.0",
 ]
 hatch = [
-  "hatch>=1.14.1",
+  "hatch==1.14.1",
 ]
 
 [project.scripts]
@@ -101,8 +101,6 @@ Documentation = "https://nima.readthedocs.io"
 Homepage = "https://github.com/darosio/nima"
 repository = "https://github.com/darosio/nima/"
 
-# tag_format = "v$version"
-# version = "0.10.2"
 # version_files = [
 #   "pyproject.toml:version",
 #   "docs/conf.py:release",
@@ -111,7 +109,6 @@ repository = "https://github.com/darosio/nima/"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
-tests = ["tests", "*/tests"]
 
 [tool.coverage.report]
 # fail_under = 100
