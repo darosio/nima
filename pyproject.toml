@@ -40,7 +40,7 @@ license = "BSD-3-Clause"
 name = "nima"
 readme = "README.md"
 requires-python = ">=3.11"
-version = "0.11.3"
+version = "0.11.4"
 
 [project.optional-dependencies]
 dev = [
@@ -135,7 +135,7 @@ installer = "uv"
 path = ".venv"
 
 [tool.hatch.envs.default.scripts]
-ch = "git cliff --bump --latest --prepend CHANGELOG.md"
+ch = "git cliff --bump --unreleased --prepend CHANGELOG.md"
 bump = """
 NEXT_VERSION=$(git cliff --bumped-version)
 uv version $NEXT_VERSION

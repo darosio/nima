@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.4] - 2025-05-22
+
+### 🐛 Bug Fixes
+
+- Changelog and release generation
+
 ## [0.11.3] - 2025-05-22
 
 ### 🐛 Bug Fixes
