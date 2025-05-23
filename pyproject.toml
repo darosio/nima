@@ -65,7 +65,7 @@ docs = [
   "pygments==2.19.1",
   "pympler==1.1",
   "seaborn==0.13.2",
-  "selenium==4.32.0",
+  "selenium==4.33.0",
   "sphinx-autodoc-typehints<3.2", # TODO: wait nbsphinx
   "sphinx-click==6.0.0",
   "sphinx<8.2", # TODO: wait nbsphinx
