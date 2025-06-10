@@ -12,13 +12,13 @@ from scipy import optimize, stats  # type: ignore[import-untyped]
 
 from nima.nima import AXES_LENGTH_4D
 
-from .nima_types import ImArray, ImMask
+from .nima_types import ImFrame, ImMask, ImSequence
 from .segmentation import _bgmax, calculate_bg_iteratively, prob
 
 
 # fit the bg for clop3 experiments
 def bg(
-    im: ImArray, bgmax: float | None = None
+    im: ImFrame, bgmax: float | None = None
 ) -> tuple[
     float,
     float,
@@ -27,7 +27,7 @@ def bg(
 
     Parameters
     ----------
-    im : ImArray
+    im : ImFrame
         Single YX image.
     bgmax: float | None
         Maximum value for bg?.
@@ -78,7 +78,7 @@ def bg(
     return out[0][1], out[0][2]
 
 
-def ave(img: NDArray[np.float64], bgmax: float, prob_value: float = 0.001) -> float:
+def ave(img: ImFrame, bgmax: float, prob_value: float = 0.001) -> float:
     """Mask out the bg and return objects average of a frame."""
     if bgmax:
         # MAYBE: Use bg2
@@ -95,7 +95,7 @@ def ave(img: NDArray[np.float64], bgmax: float, prob_value: float = 0.001) -> fl
     return np.ma.masked_array(img, ~mask).mean() - av  # type: ignore[no-untyped-call, no-any-return]
 
 
-def channel_mean(img: ImArray) -> pd.DataFrame:
+def channel_mean(img: ImFrame) -> pd.DataFrame:
     """Average each channel frame by frame."""
     r = defaultdict(list)
     for t in range(img.shape[0]):
@@ -131,13 +131,13 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
 
 
 def mask_all_channels(
-    image: ImArray | Array, thresholds: tuple[float, ...]
+    image: ImSequence | Array, thresholds: tuple[float, ...]
 ) -> ImMask | Array:
     """Mask a multichannel plane.
 
     Parameters
     ----------
-    image : ImArray | Array
+    image : ImSequence | Array
         CYX multichannel image.
     thresholds : tuple[float, ...]
         threshold values

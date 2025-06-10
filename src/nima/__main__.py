@@ -21,8 +21,8 @@ from matplotlib.figure import Figure
 from scipy import ndimage  # type: ignore[import-untyped]
 
 from nima import nima
-from nima.nima import Im, ImArray
 
+from .nima_types import DIm, ImFrame, ImSequence
 from .segmentation import BgParams
 
 __version__ = importlib.metadata.version("nima")
@@ -219,9 +219,9 @@ def output_results(  # noqa: PLR0913
     output_dir: Path,
     tiffstk: Path,
     ff: dict[str, list[list[Figure]]],
-    meas: dict[np.int32, pd.DataFrame],
+    meas: dict[int, pd.DataFrame],
     channels: tuple[str, ...],
-    d_im_bg: dict[str, Im],
+    d_im_bg: DIm,
     bg_method: str,
     bgs: pd.DataFrame,
 ) -> None:
@@ -459,7 +459,7 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path) -> None:
 
 
 def _output_flat(
-    output: Path, tprojection: ImArray, bias_im: ImArray | None = None
+    output: Path, tprojection: ImFrame, bias_im: ImFrame | None = None
 ) -> None:
     """Help to generate and save output files from flat field calculations.
 
@@ -474,9 +474,9 @@ def _output_flat(
     ----------
     output : Path
         Base path for generating output file names.
-    tprojection : ImArray
+    tprojection : ImFrame
         2D array representing the raw flat field image (mean of frames).
-    bias_im : ImArray | None
+    bias_im : ImFrame | None
         2D array representing the bias frame for subtraction.
         If None (default), no bias subtraction is performed.
 
@@ -524,7 +524,10 @@ def plot(ctx: click.Context, fpath: Path) -> None:
 
 
 def plt_img_profiles(
-    img: ImArray, title: str, output: Path, hpix: pd.DataFrame | None = None
+    img: ImSequence | ImFrame,
+    title: str,
+    output: Path,
+    hpix: pd.DataFrame | None = None,
 ) -> None:
     """Compute and save image profiles graphics."""
     if img.ndim == AXES_LENGTH_2D:

@@ -43,13 +43,11 @@ def gen_object(
     rng = np.random.default_rng(seed)
     x_obj, y_obj = rng.integers(0, nrows), rng.integers(0, ncols)
     radius = rng.integers(min_radius, max_radius)
-    ellipsis = rng.random() * 3.5 - 1.75
-    return (  # type: ignore[no-any-return]
-        (x_idx - x_obj) ** 2
-        + (y_idx - y_obj) ** 2
-        + ellipsis * (x_idx - x_obj) * (y_idx - y_obj)
-        < radius**2
-    ).astype(np.bool_)
+    ellipse_factor = rng.random() * 3.5 - 1.75
+    mask = (x_idx - x_obj) ** 2 + (y_idx - y_obj) ** 2 + ellipse_factor * (
+        x_idx - x_obj
+    ) * (y_idx - y_obj) < radius**2
+    return np.asarray(mask, dtype=np.bool_)
 
 
 # MAYBE: Convert to comments like #: Attribute desc

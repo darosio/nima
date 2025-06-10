@@ -9,6 +9,7 @@ from numpy.testing import assert_array_equal
 from numpy.typing import NDArray
 
 from nima import nima, segmentation
+from nima.nima_types import DIm, ImFrame
 
 data_fp = "./tests/data/1b_c16_15.tif"
 
@@ -54,9 +55,9 @@ class TestDShading:
 
     def test_single_dark_and_single_flat(
         self,
-        d_im: dict[str, NDArray[np.float64]],
-        dark: NDArray[np.float64],
-        flat: NDArray[np.float64],
+        d_im: DIm,
+        dark: ImFrame,
+        flat: ImFrame,
     ) -> None:
         """Test d_shading using single dark and single flat images."""
         d_cor = nima.d_shading(d_im, dark, flat, clip=True)
@@ -65,9 +66,9 @@ class TestDShading:
 
     def test_single_dark_and_d_flat(
         self,
-        d_im: dict[str, NDArray[np.float64]],
-        dark: NDArray[np.float64],
-        d_flat: dict[str, NDArray[np.float64]],
+        d_im: DIm,
+        dark: ImFrame,
+        d_flat: DIm,
     ) -> None:
         """Test d_shading using single dark and a stack of flat images."""
         d_cor = nima.d_shading(d_im, dark, d_flat, clip=True)
@@ -76,9 +77,9 @@ class TestDShading:
 
     def test_d_dark_and_d_flat(
         self,
-        d_im: dict[str, NDArray[np.float64]],
-        d_dark: dict[str, NDArray[np.float64]],
-        d_flat: dict[str, NDArray[np.float64]],
+        d_im: DIm,
+        d_dark: DIm,
+        d_flat: DIm,
     ) -> None:
         """Test d_shading using stacks of dark and flat images."""
         d_cor = nima.d_shading(d_im, d_dark, d_flat, clip=True)
