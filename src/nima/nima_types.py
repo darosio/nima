@@ -7,10 +7,25 @@ It defines the following types:
 - ImMask: for bool image masks.
 """
 
-from typing import NewType, TypeVar
+from typing import TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
-ImArray = TypeVar("ImArray", NDArray[np.float64], NDArray[np.int_])
-ImMask = NewType("ImMask", NDArray[np.bool_])
+# or derive class ImSequence(np.ndarray):  # or extend NDArray manually if needed
+# ...
+
+
+ImMask: TypeAlias = NDArray[np.bool_]
+
+ImVector: TypeAlias = (
+    NDArray[np.float32] | NDArray[np.int32] | NDArray[np.uint16] | NDArray[np.uint8]
+)
+ImFrame: TypeAlias = (
+    NDArray[np.float32] | NDArray[np.int32] | NDArray[np.uint16] | NDArray[np.uint8]
+)
+ImSequence: TypeAlias = (
+    NDArray[np.float32] | NDArray[np.int32] | NDArray[np.uint16] | NDArray[np.uint8]
+)
+
+DIm: TypeAlias = dict[str, ImSequence]

@@ -1,9 +1,8 @@
 """Main library module.
 
-Contains functions for the analysis of multichannel timelapse images. It can
-be used to apply dark, flat correction; segment cells from bg; label cells;
-obtain statistics for each label; compute ratio and ratio images between
-channels.
+Contains functions for the analysis of multichannel timelapse images. It can be
+used to apply dark, flat correction; segment cells from bg; label cells; obtain
+statistics for each label; compute ratio and ratio images between channels.
 """
 
 from collections import defaultdict
@@ -12,7 +11,7 @@ from dataclasses import InitVar, dataclass, field
 from itertools import chain
 from pathlib import Path
 from pprint import pformat
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 import dask.array as da
 import matplotlib as mpl
@@ -28,20 +27,17 @@ from scipy import ndimage, signal  # type: ignore[import-untyped]
 from skimage import feature, filters, measure, morphology, segmentation, transform
 from tifffile import TiffFile, TiffReader
 
+from .nima_types import DIm, ImFrame, ImSequence
 from .segmentation import BgParams, calculate_bg
 
-threshold_method_choices = ["yen", "li"]
-
-ImArray = TypeVar("ImArray", NDArray[np.int_], NDArray[np.float64], NDArray[np.bool_])
-Im = TypeVar("Im", NDArray[np.int_], NDArray[np.float64])
-# MAYBE: DIm eq TypeVar("DIm", Dict[str, Im])
 Kwargs = dict[str, str | int | float | bool | None]
+threshold_method_choices = ["yen", "li"]
 AXES_LENGTH_4D = 4
 AXES_LENGTH_3D = 3
 AXES_LENGTH_2D = 2
 
 
-def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], int, int]:
+def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[DIm, int, int]:
     """Read multichannel TIFF timelapse image.
 
     Parameters
@@ -53,7 +49,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
 
     Returns
     -------
-    d_im : dict[str, ImArray]
+    d_im : DIm
         Dictionary of images. Each keyword represents a channel, named
         according to `channels` string list.
     n_channels : int
@@ -94,7 +90,7 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[dict[str, ImArray], in
     return d_im, n_channels, n_times
 
 
-def d_show(d_im: dict[str, ImArray], **kws: Any) -> Figure:  # noqa: ANN401
+def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
     """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
     max_rows = 9
     n_channels = len(d_im.keys())
@@ -120,7 +116,7 @@ def d_show(d_im: dict[str, ImArray], **kws: Any) -> Figure:  # noqa: ANN401
     return fig
 
 
-def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
+def d_median(d_im: DIm) -> DIm:
     """Median filter on dictionary of image (d_im).
 
     Same to skimage.morphology.disk(1) and to median filter of Fiji/ImageJ
@@ -128,12 +124,12 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
 
     Parameters
     ----------
-    d_im : dict[str, ImArray]
+    d_im : DIm
         dict of images
 
     Return
     ------
-    d_im : dict[str, ImArray]
+    DIm
         dict of images preserve dtype of input
 
     Raises
@@ -157,12 +153,8 @@ def d_median(d_im: dict[str, ImArray]) -> dict[str, ImArray]:
 
 
 def d_shading(
-    d_im: dict[str, ImArray],
-    dark: dict[str, ImArray] | NDArray[np.float64],
-    flat: dict[str, ImArray] | NDArray[np.float64],
-    *,
-    clip: bool = True,
-) -> dict[str, ImArray]:
+    d_im: DIm, dark: DIm | ImFrame, flat: DIm | ImFrame, *, clip: bool = True
+) -> DIm:
     """Shading correction on d_im.
 
     Subtract dark; then divide by flat.
@@ -173,18 +165,18 @@ def d_shading(
 
     Parameters
     ----------
-    d_im : dict[str, ImArray]
+    d_im : DIm
         Dictionary of images.
-    dark : dict[str, ImArray] | NDArray[np.float64]
+    dark : DIm | ImFrame
         Dark image (either a 2D image or 2D d_im).
-    flat : dict[str, ImArray] | NDArray[np.float64]
+    flat : DIm | ImFrame
         Flat image (either a 2D image or 2D d_im).
     clip : bool
         Boolean for clipping values >=0.
 
     Returns
     -------
-    dict[str, ImArray]
+    DIm
         Corrected d_im.
 
     """
@@ -207,17 +199,17 @@ def d_shading(
 
 
 def d_bg(
-    d_im: dict[str, Im],
+    d_im: DIm,
     bg_params: BgParams,
     downscale: tuple[int, int] | None = None,
     *,
     clip: bool = True,
-) -> tuple[dict[str, Im], pd.DataFrame, dict[str, list[list[Figure]]]]:
+) -> tuple[DIm, pd.DataFrame, dict[str, list[list[Figure]]]]:
     """Bg segmentation for d_im.
 
     Parameters
     ----------
-    d_im : dict[str, Im]
+    d_im : DIm
         desc
     bg_params : BgParams
         An instance of BgParams containing the parameters for the segmentation.
@@ -228,7 +220,7 @@ def d_bg(
 
     Returns
     -------
-    d_cor : dict[str, Im]
+    d_cor : DIm
         Dictionary of images subtracted for the estimated bg.
     bgs : pd.DataFrame
         Median of the estimated bg; columns for channels and index for time
@@ -240,10 +232,10 @@ def d_bg(
     d_bg = defaultdict(list)
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
-    dd_cor: dict[str, Im] = {}
+    dd_cor: DIm = {}
     for key, time_frames in d_im.items():
         for frame in time_frames:
-            im_for_bg = frame
+            im_for_bg = cast("ImFrame", frame)
             if downscale:
                 im_for_bg = transform.downscale_local_mean(frame, downscale)  # type: ignore[no-untyped-call]
             bg_result = calculate_bg(im_for_bg, bg_params=bg_params)
@@ -252,7 +244,7 @@ def d_bg(
                 d_fig[key].append(bg_result.figures)
             d_bg[key].append(med)
             d_cor[key].append(frame - med)
-        dd_cor[key] = np.array(d_cor[key])
+        dd_cor[key] = cast("ImSequence", np.array(d_cor[key]))
     if clip:
         for key in d_cor:
             dd_cor[key] = dd_cor[key].clip(0)
@@ -261,7 +253,7 @@ def d_bg(
 
 
 def d_mask_label(  # noqa: PLR0913
-    d_im: dict[str, ImArray],
+    d_im: DIm,
     min_size: int | None = 640,
     channels: tuple[str, ...] = ("C", "G", "R"),
     threshold_method: str = "yen",
@@ -286,7 +278,7 @@ def d_mask_label(  # noqa: PLR0913
 
     Parameters
     ----------
-    d_im : dict[str, ImArray]
+    d_im : DIm
         desc
     min_size : int | None, optional
         Objects smaller than min_size (default=640 pixels) are discarded from mask.
@@ -353,7 +345,7 @@ def d_mask_label(  # noqa: PLR0913
 
 
 def process_watershed(
-    d_im: dict[str, ImArray],
+    d_im: DIm,
     channels: tuple[str, ...],
     *,
     randomwalk: bool = False,
@@ -399,7 +391,7 @@ def process_watershed(
 
 
 def d_ratio(
-    d_im: dict[str, ImArray],
+    d_im: DIm,
     name: str = "r_cl",
     channels: tuple[str, str] = ("C", "R"),
     radii: tuple[int, int] = (7, 3),
@@ -416,7 +408,7 @@ def d_ratio(
 
     Parameters
     ----------
-    d_im : dict[str, ImArray]
+    d_im : DIm
         desc
     name : str, optional
         Name (default='r_cl') for the new key.
@@ -443,19 +435,19 @@ def d_ratio(
 
 
 def d_meas_props(  # noqa: PLR0913
-    d_im: dict[str, Im],
+    d_im: DIm,
     channels: Sequence[str] = ("C", "G", "R"),
     channels_cl: tuple[str, str] = ("C", "R"),
     channels_ph: tuple[str, str] = ("G", "C"),
     radii: tuple[int, int] | None = None,
     *,
     ratios_from_image: bool = True,
-) -> tuple[dict[np.int32, pd.DataFrame], dict[str, list[list[Any]]]]:
+) -> tuple[dict[int, pd.DataFrame], dict[str, list[list[Any]]]]:
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
     ----------
-    d_im : dict[str, Im]
+    d_im : DIm
         desc
     channels : Sequence[str], optional
         All d_im channels (default=('C', 'G', 'R')).
@@ -470,7 +462,7 @@ def d_meas_props(  # noqa: PLR0913
 
     Returns
     -------
-    meas : dict[np.int32, pd.DataFrame]
+    meas : dict[int, pd.DataFrame]
         For each label in labels: {'label': df}.
         DataFrame columns are: mean intensity of all channels,
         'equivalent_diameter', 'eccentricity', 'area', ratios from the mean
@@ -486,7 +478,7 @@ def d_meas_props(  # noqa: PLR0913
             im = d_im[ch][time]
             props = measure.regionprops(label_im, intensity_image=im)  # type: ignore[no-untyped-call]
             pr[ch].append(props)
-    meas = {}
+    meas: dict[int, pd.DataFrame] = {}
     # labels are 3D and "0" is always label for background
     labels = np.unique(d_im["labels"])[1:]
     for lbl in labels:
@@ -507,7 +499,7 @@ def d_meas_props(  # noqa: PLR0913
         res_df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
         res_df["r_cl"] = res_df[channels_cl[0]] / res_df[channels_cl[1]]
         res_df["r_pH"] = res_df[channels_ph[0]] / res_df[channels_ph[1]]
-        meas[lbl] = res_df
+        meas[int(lbl)] = res_df
     if ratios_from_image:
         kwargs = {}
         if radii:
@@ -519,22 +511,22 @@ def d_meas_props(  # noqa: PLR0913
         for time, (ph, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"], strict=True)):
             r_ph.append(ndimage.median(ph, d_im["labels"][time], index=labels))
             r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels))
-        ratios_ph = np.array(r_ph)
-        ratios_cl = np.array(r_cl)
-        for lbl, value in meas.items():
+        ratios_ph: ImSequence = np.array(r_ph)
+        ratios_cl: ImSequence = np.array(r_cl)
+        for ilbl, value in meas.items():
             res_df = pd.DataFrame(
                 {
-                    "r_pH_median": ratios_ph[:, lbl - 1],
-                    "r_cl_median": ratios_cl[:, lbl - 1],
+                    "r_pH_median": ratios_ph[:, ilbl - 1],
+                    "r_cl_median": ratios_cl[:, ilbl - 1],
                 }
             )
             # concat only on index that are present in both
-            meas[lbl] = pd.concat([value, res_df], axis=1, join="inner")
+            meas[ilbl] = pd.concat([value, res_df], axis=1, join="inner")
     return meas, pr
 
 
 def d_plot_meas(
-    bgs: pd.DataFrame, meas: dict[np.int32, pd.DataFrame], channels: Sequence[str]
+    bgs: pd.DataFrame, meas: dict[int, pd.DataFrame], channels: Sequence[str]
 ) -> Figure:
     """Plot meas object.
 
@@ -545,7 +537,7 @@ def d_plot_meas(
     ----------
     bgs : pd.DataFrame
         Estimated bg returned from d_bg()
-    meas : dict[np.int32, pd.DataFrame]
+    meas : dict[int, pd.DataFrame]
         meas object returned from d_meas_props().
     channels : Sequence[str]
         All bgs and meas channels (default=['C', 'G', 'R']).
@@ -605,7 +597,7 @@ def d_plot_meas(
 
 
 def plt_img_profile(  # noqa: PLR0915
-    img: ImArray,
+    img: ImFrame,
     title: str | None = None,
     hpix: pd.DataFrame | None = None,
     vmin: float | None = None,
@@ -615,7 +607,7 @@ def plt_img_profile(  # noqa: PLR0915
 
     Parameters
     ----------
-    img : ImArray
+    img : ImFrame
         Image of Flat or Bias.
     title : str | None, optional
         Title of the figure (default=None).
@@ -662,7 +654,7 @@ def plt_img_profile(  # noqa: PLR0915
     # sigfig: round(da.std(da.from_zarr(zim)).compute(), sigfigs=3)))
 
     def img_hist(  # noqa: PLR0913
-        im: ImArray,
+        im: ImSequence,
         ax: Axes,
         ax_px: Axes,
         ax_py: Axes,
@@ -676,11 +668,11 @@ def plt_img_profile(  # noqa: PLR0915
         )
         ax.tick_params(axis="y", labelleft=False, right=True)
         ax.tick_params(axis="x", top=True, labelbottom=False)
-        if vmin is None or vmax is None:  # both must be provided
-            vmi, vma = np.percentile(im, [18.4, 81.6])  # 1/e (66.6 %)
-        else:
-            vmi, vma = vmin, vmax
-        img = ax.imshow(im, vmin=vmi, vmax=vma, cmap="turbo")
+        if vmin is None:
+            vmin = float(np.percentile(im, [18.4]))  # 1/e (66.6 %)
+        elif vmax is None:
+            vmax = float(np.percentile(im, [81.6]))  # 1/e (66.6 %)
+        img = ax.imshow(im, vmin=vmin, vmax=vmax, cmap="turbo")
         ax_px.plot(im.mean(axis=0), lw=4, alpha=0.5)
         ymin = round(im.shape[0] / 2 * 0.67)
         ymax = round(im.shape[0] / 2 * 1.33)
@@ -718,12 +710,12 @@ def plt_img_profile(  # noqa: PLR0915
     return fig
 
 
-def plt_img_profile_2(img: ImArray, title: str | None = None) -> Figure:
+def plt_img_profile_2(img: ImFrame, title: str | None = None) -> Figure:
     """Summary graphics for Flat-Bias images.
 
     Parameters
     ----------
-    img : ImArray
+    img : ImFrame
         Image of Flat or Bias.
     title : str | None, optional
         Title of the figure  (default=None).
@@ -737,8 +729,8 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> Figure:
     fig = plt.figure(constrained_layout=True)
     gs = fig.add_gridspec(3, 3)
     ax = fig.add_subplot(gs[0:2, 0:2])
-    vmi, vma = np.percentile(img, [18.4, 81.6])  # 1/e (66.6 %)
-    ax.imshow(img, vmin=vmi, vmax=vma, cmap="turbo")
+    vmin, vmax = [float(val) for val in np.percentile(img, [18.4, 81.6])]  # 66.6 %
+    ax.imshow(img, vmin=vmin, vmax=vmax, cmap="turbo")
     ymin = round(img.shape[0] / 2 * 0.67)
     ymax = round(img.shape[0] / 2 * 1.33)
     xmin = round(img.shape[1] / 2 * 0.67)
@@ -763,7 +755,7 @@ def plt_img_profile_2(img: ImArray, title: str | None = None) -> Figure:
     return fig
 
 
-def hotpixels(bias: ImArray, n_sd: int = 20) -> pd.DataFrame:
+def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
     """Identify hot pixels in a bias-dark frame.
 
     After identification of first outliers recompute masked average and std
@@ -771,7 +763,7 @@ def hotpixels(bias: ImArray, n_sd: int = 20) -> pd.DataFrame:
 
     Parameters
     ----------
-    bias : ImArray
+    bias : ImFrame
         Usually the median over a stack of 100 frames.
     n_sd : int
         Number of SD above mean (masked out of hot pixels) value.
@@ -799,7 +791,7 @@ def hotpixels(bias: ImArray, n_sd: int = 20) -> pd.DataFrame:
 
 
 def correct_hotpixel(
-    img: ImArray, y: int | NDArray[np.int_], x: int | NDArray[np.int_]
+    img: ImFrame, y: int | NDArray[np.int_], x: int | NDArray[np.int_]
 ) -> None:
     """Correct hot pixels in a frame.
 
@@ -808,7 +800,7 @@ def correct_hotpixel(
 
     Parameters
     ----------
-    img : ImArray
+    img : ImFrame
         Frame (2D) image.
     y : int | NDArray[np.int_]
         y-coordinate(s).

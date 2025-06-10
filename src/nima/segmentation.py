@@ -18,14 +18,16 @@ from scipy import (  # type: ignore[import-untyped]
 )
 from skimage import filters, morphology
 
-from .nima_types import ImArray, ImMask
+from .nima_types import ImFrame, ImMask, ImSequence, ImVector
 
 # TODO: add new bg/fg segmentation based on conditional probability but
 # working with dask arrays. Try being clean: define function only for NDArray
 # then map dask to use it somehow.
 
 
-def _bg_plot(im: ImArray, m: ImMask, title: str, lim: ImArray | None) -> list[Figure]:
+def _bg_plot(
+    im: ImSequence, m: ImMask, title: str, lim: ImSequence | None
+) -> list[Figure]:
     fig1 = plt.figure(figsize=(9, 5))
     ax1 = fig1.add_subplot(121)
     masked = im * m
@@ -158,7 +160,7 @@ class BgResult:
     figures: list[Figure] | None
 
 
-def _bg_arcsinh(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]:
+def _bg_arcsinh(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, ImSequence]:
     perc = bg_params.perc
     radius = bg_params.radius
     arcsinh_perc = bg_params.arcsinh_perc
@@ -172,7 +174,7 @@ def _bg_arcsinh(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]
     return m, title, lim
 
 
-def _bg_entropy(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]:
+def _bg_entropy(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, ImSequence]:
     perc = bg_params.perc
     radius = bg_params.radius
     im8 = skimage.util.img_as_ubyte(im)  # type: ignore[no-untyped-call]
@@ -186,7 +188,7 @@ def _bg_entropy(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, ImArray]
     return m, title, lim
 
 
-def _bg_adaptive(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
+def _bg_adaptive(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
     adaptive_radius = bg_params.adaptive_radius
     f = im > filters.threshold_local(im, adaptive_radius)  # type: ignore[no-untyped-call]
     m = ~f
@@ -194,7 +196,7 @@ def _bg_adaptive(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
     return m, title, None
 
 
-def _bg_li_adaptive(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
+def _bg_li_adaptive(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
     adaptive_radius = bg_params.adaptive_radius
     li = filters.threshold_li(im)  # type: ignore[no-untyped-call]
     m = im < li
@@ -212,7 +214,7 @@ def _bg_li_adaptive(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None
     return m, title, None
 
 
-def _bg_li_li(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
+def _bg_li_li(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
     li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
     m = im < li
     if bg_params.erosion_disk:
@@ -229,7 +231,7 @@ def _bg_li_li(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
     return m, title, None
 
 
-def _bg_inverse_yen(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None]:
+def _bg_inverse_yen(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
     f = filters.threshold_local(1 / im)  # type: ignore[no-untyped-call]
     m = f > filters.threshold_yen(f)  # type: ignore[no-untyped-call]
     title = bg_params.kind + " " + ""
@@ -237,12 +239,12 @@ def _bg_inverse_yen(im: ImArray, bg_params: BgParams) -> tuple[ImMask, str, None
 
 
 # def bg(im: ImArray, bg_params: BgParams | None = None) -> tuple[float, list[Figure]]:
-def calculate_bg(im: ImArray, bg_params: BgParams | None = None) -> BgResult:
+def calculate_bg(im: ImSequence, bg_params: BgParams | None = None) -> BgResult:
     """Segment background from an image stack.
 
     Parameters
     ----------
-    im: ImArray
+    im: ImSequence
         An image stack.
     bg_params : BgParams | None, optional
         An instance of BgParams containing the parameters for the segmentation.
@@ -278,7 +280,6 @@ def calculate_bg(im: ImArray, bg_params: BgParams | None = None) -> BgResult:
     if bg_params.kind not in processing_functions:
         msg = f"Invalid 'kind' parameter: {bg_params.kind}"
         raise ValueError(msg)
-
     m, title, lim = processing_functions[bg_params.kind](im, bg_params)
     pixel_values = im[m]
     p25, p50, p75 = np.percentile(pixel_values, [25, 50, 75])
@@ -289,7 +290,7 @@ def calculate_bg(im: ImArray, bg_params: BgParams | None = None) -> BgResult:
     return BgResult(bg, sd, iqr, figures)
 
 
-def _bgmax(img: ImArray, bins: int = 50, *, densityplot: bool = False) -> float:
+def _bgmax(img: ImSequence, bins: int = 50, *, densityplot: bool = False) -> float:
     thr = skimage.filters.threshold_mean(img)  # type: ignore[no-untyped-call]
     vals = img[img < thr / 1]
     mmin, mmax = vals.min(), vals.max()
@@ -311,10 +312,10 @@ def _bgmax(img: ImArray, bins: int = 50, *, densityplot: bool = False) -> float:
 @overload
 def prob(v: float, bg: float, sd: float) -> float: ...
 @overload
-def prob(v: ImArray, bg: float, sd: float) -> NDArray[np.float64]: ...
+def prob(v: ImSequence, bg: float, sd: float) -> ImSequence: ...
 
 
-def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float64]:
+def prob(v: float | ImSequence, bg: float, sd: float) -> float | ImSequence:
     """Compute pixel probability of belonging to background."""
     # Using np.sqrt(2) for normalization
     result = special.erfc((v - bg) / (np.sqrt(2) * sd))
@@ -322,10 +323,10 @@ def prob(v: float | ImArray, bg: float, sd: float) -> float | NDArray[np.float64
     # Use typing.cast to explicitly inform mypy
     if isinstance(v, float):
         return cast("float", result)
-    return cast("NDArray[np.float64]", result)
+    return cast("ImSequence", result)
 
 
-def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:
+def fit_gaussian(vals: ImVector) -> tuple[float, float]:
     """Estimate mean and standard deviation using a Gaussian fit.
 
     The function fits a Gaussian distribution to a given array of values and
@@ -336,7 +337,7 @@ def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:
 
     Parameters
     ----------
-    vals : NDArray[np.float64 | np.int_]
+    vals : ImVector
         A one-dimensional NumPy array containing the data values for which the
         Gaussian distribution parameters (mean and standard deviation) are to be
         estimated.
@@ -402,8 +403,8 @@ def fit_gaussian(vals: NDArray[np.float64 | np.int_]) -> tuple[float, float]:
 
 # fit the bg for clop3 experiments
 def calculate_bg_iteratively(
-    frame: NDArray[np.float64],
-    bgmax: None | np.float64 = None,
+    frame: ImFrame,
+    bgmax: None | float = None,
     *,
     probplot: bool = False,
 ) -> BgResult:
@@ -417,9 +418,9 @@ def calculate_bg_iteratively(
 
     Parameters
     ----------
-    frame : NDArray[np.float64]
+    frame : ImFrame
         The image frame for which the background estimate needs to be refined.
-    bgmax : None | np.float64, optional
+    bgmax : None | float, optional
         Maximum value used from `frame` for background estimation. Defaults to
         None, using the mean of all pixels.
     probplot : bool, optional
@@ -498,14 +499,14 @@ def calculate_bg_iteratively(
     return BgResult(bg_updated, sd_, iqr, figs)
 
 
-def geometric_mean_filter(image: ImArray, kernel_size: float) -> ImArray:
+def geometric_mean_filter(image: ImFrame, kernel_size: float) -> ImFrame:
     """Apply a geometric mean filter to an image.
 
     It uses a neighborhood defined by kernel_size.
 
     Parameters
     ----------
-    image : ImArray
+    image : ImFrame
         The input image to be filtered.
     kernel_size : float
         The diameter of the neighborhood used for the filter, which defines the
@@ -513,12 +514,12 @@ def geometric_mean_filter(image: ImArray, kernel_size: float) -> ImArray:
 
     Returns
     -------
-    geometric_mean_image : ImArray
+    geometric_mean_image : ImFrame
         The image after applying the geometric mean filter, having the same
         shape as the input image.
     """
     # Ensure the image is in float format to avoid issues with log(0)
-    image = image.astype(np.float64)
+    # Used to be: image = image.astype(np.float64)
     # Avoid log(0) by replacing zero with a very small number
     image[image == 0] = np.finfo(np.float64).eps
     # Logarithm of the image
@@ -530,4 +531,5 @@ def geometric_mean_filter(image: ImArray, kernel_size: float) -> ImArray:
     # Apply convolution with the kernel on the logged image
     log_sum_image = ndimage.convolve(log_image, kernel, mode="constant", cval=0) / n
     # Exponential to invert the logarithm
-    return np.exp(log_sum_image)  # type: ignore[no-any-return]
+    res: ImFrame = np.exp(log_sum_image)
+    return res

@@ -112,6 +112,16 @@ bima flat --bias <BIAS_PATH> <FPATH>
 Replace \<FPATH> with the path to the tf8 stack and \<BIAS_PATH> with the path to
 the bias image.
 
+## TODO
+
+- jaxtyping
+
+```
+ImFrame: TypeAlias = Float32[Array, "height width"]  # noqa: F722
+ImSequence: TypeAlias = Float32[Array, "time height width"]  # noqa: F722
+DIm: TypeAlias = dict[str, ImSequence]
+```
+
 ## Contributing
 
 Contributions to the project are welcome!
