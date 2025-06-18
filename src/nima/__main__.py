@@ -114,7 +114,7 @@ def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
 @click.argument("channels", type=str, nargs=-1)
 def main(  # noqa: PLR0913
     verbose: int,
-    silent: bool | None,
+    silent: bool | None,  # noqa: FBT001
     output: Path,
     hotpixels: bool,  # noqa: FBT001
     flat_f: str,
@@ -127,10 +127,10 @@ def main(  # noqa: PLR0913
     bg_percentile_filter: float | None,
     fg_method: str,
     min_size: float | None,
-    clear_border: bool | None,
-    wiener: bool | None,
-    watershed: bool | None,
-    randomwalk: bool | None,
+    clear_border: bool | None,  # noqa: FBT001
+    wiener: bool | None,  # noqa: FBT001
+    watershed: bool | None,  # noqa: FBT001
+    randomwalk: bool | None,  # noqa: FBT001
     image_ratios: bool,  # noqa: FBT001
     ratio_median_radii: str | None,
     channels_cl: tuple[str, str],
