@@ -62,7 +62,7 @@ docs = [
   "jupyter==1.1.1",
   "nbsphinx==0.9.7",
   "pydata-sphinx-theme==0.16.1",
-  "pygments==2.19.1",
+  "pygments==2.19.2",
   "pympler==1.1",
   "seaborn==0.13.2",
   "selenium==4.33.0",
@@ -78,7 +78,7 @@ tests = [
   "coverage[toml]>=7.9.1",
   "mypy>=1.16.1",
   "pandas-stubs>=2.2.3.250527",
-  "pygments>=2.19.1", # color xdoctest
+  "pygments>=2.19.2", # color xdoctest
   "pypdf>=5.6.0",
   "pytest>=8.4.1",
   "xdoctest>=1.2.0",
