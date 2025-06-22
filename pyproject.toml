@@ -79,7 +79,7 @@ tests = [
   "mypy>=1.16.1",
   "pandas-stubs>=2.2.3.250527",
   "pygments>=2.19.2", # color xdoctest
-  "pypdf>=5.6.0",
+  "pypdf>=5.6.1",
   "pytest>=8.4.1",
   "xdoctest>=1.2.0",
 ]
