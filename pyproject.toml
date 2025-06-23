@@ -19,7 +19,7 @@ classifiers = [
   "Development Status :: 2 - Pre-Alpha",
 ]
 dependencies = [
-  "bioio-tifffile>=1.1.0",
+  "bioio-tifffile>=1.2.0",
   "click>=8.2.1",
   "dask[distributed]>=2025.5.1",
   "matplotlib>=3.10.3",
