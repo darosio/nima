@@ -1124,7 +1124,7 @@ wheels = [
 
 [[package]]
 name = "holoviews"
-version = "1.20.2"
+version = "1.21.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bokeh" },
@@ -1136,9 +1136,9 @@ dependencies = [
     { name = "param" },
     { name = "pyviz-comms" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/40/fb/72fd5d1a58c1c240857b754b45fd2f15b9a690031b1dfaee103fa2597ded/holoviews-1.20.2.tar.gz", hash = "sha256:8c78b798601ce3af31523667c6d1cb40df8d781249ebebbdb2c5f6143565e6d8", size = 4592575, upload-time = "2025-03-13T13:11:08.14Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e1/d2/ce75069ffb15985d57631fec228facaf63e5850e79b22394e2ab7221f078/holoviews-1.21.0.tar.gz", hash = "sha256:837885ab2fa376677f21dae0b2a2aeb94ba6db96e9fcb3824cdb899538ee5032", size = 5479132, upload-time = "2025-06-25T08:16:15.545Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/df/67/066a1d984fa259ad7300084a70789579e104afd75fc58a1d44cda9c365d5/holoviews-1.20.2-py3-none-any.whl", hash = "sha256:1f892c04bc23e8a3a9cde082b606b9463c9ff78c3d0c00e2ddcc41fe6e738458", size = 5018310, upload-time = "2025-03-13T13:11:05.666Z" },
+    { url = "https://files.pythonhosted.org/packages/30/75/d451b9a0ab3a9c0b2c7d1d3cf0bcf797ccac420f3479476f9867e1737d39/holoviews-1.21.0-py3-none-any.whl", hash = "sha256:74f3c01f35b9e8e2a8d6eb457a7ef05727de2a2a56509d59d7dc0d0409bc91c0", size = 5911622, upload-time = "2025-06-25T08:16:13.508Z" },
 ]
 
 [[package]]
@@ -2407,7 +2407,7 @@ requires-dist = [
     { name = "dask-image", marker = "extra == 'docs'", specifier = "==2024.5.3" },
     { name = "git-cliff", marker = "extra == 'dev'", specifier = "==2.9.1" },
     { name = "hatch", marker = "extra == 'hatch'", specifier = "==1.14.1" },
-    { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.20.2" },
+    { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.21.0" },
     { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.11.3" },
     { name = "impy-array", marker = "extra == 'docs'", specifier = "==2.4.9" },
     { name = "ipykernel", marker = "extra == 'docs'", specifier = "==6.29.5" },
