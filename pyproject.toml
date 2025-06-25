@@ -55,7 +55,7 @@ docs = [
   "autodocsumm==0.2.14",
   "bokeh==3.7.3",
   "dask-image==2024.5.3",
-  "holoviews==1.20.2",
+  "holoviews==1.21.0",
   "hvplot==0.11.3",
   "impy-array==2.4.9",
   "ipykernel==6.29.5",
