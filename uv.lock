@@ -307,7 +307,7 @@ wheels = [
 
 [[package]]
 name = "bioio-tifffile"
-version = "1.2.0"
+version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bioio-base" },
@@ -318,9 +318,9 @@ dependencies = [
     { name = "tifffile", extra = ["zarr"] },
     { name = "xarray" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/99/90/1bb909e8ad872d8efc61923e6f223eac2582b7572e7a34810026e23787c1/bioio_tifffile-1.2.0.tar.gz", hash = "sha256:8ecd5a9cea0849d8f458523a30303ea7a3999e78f42561c6c86b4f1db797b918", size = 24216, upload-time = "2025-06-23T18:33:23.71Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e6/55/0e3eec0bee06bcdf9382a44d12b990d2915a78c8b46d11714ec9d10f138c/bioio_tifffile-1.3.0.tar.gz", hash = "sha256:1354b28f018cf85279eab75eabca10d82412b47aca1cc39af4a1335891fe0b31", size = 19768, upload-time = "2025-07-10T21:29:03.325Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/7d/6f136d1221d146ee8e35355eeb74aaa2d57ede4f4b98df64ea320def5da5/bioio_tifffile-1.2.0-py3-none-any.whl", hash = "sha256:b3f9ffd46ace1d34c25eb5ec3f50e0f03845b4dd098536fc7b0febfd39a41c37", size = 18184, upload-time = "2025-06-23T18:33:22.431Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/ed/6810b9e630b1f79c57d6f966f775bf753030980c9eafe97fd7a1136cb367/bioio_tifffile-1.3.0-py3-none-any.whl", hash = "sha256:b10878f7fc356fa8a78829903628634a38970145359a6db4aba68d69bbd4144d", size = 11498, upload-time = "2025-07-10T21:29:02.189Z" },
 ]
 
 [[package]]
@@ -2399,7 +2399,7 @@ tests = [
 [package.metadata]
 requires-dist = [
     { name = "autodocsumm", marker = "extra == 'docs'", specifier = "==0.2.14" },
-    { name = "bioio-tifffile", specifier = ">=1.2.0" },
+    { name = "bioio-tifffile", specifier = ">=1.3.0" },
     { name = "bokeh", marker = "extra == 'docs'", specifier = "==3.7.3" },
     { name = "click", specifier = ">=8.2.1" },
     { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = ">=7.9.2" },
