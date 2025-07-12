@@ -1287,7 +1287,7 @@ wheels = [
 
 [[package]]
 name = "impy-array"
-version = "2.4.9"
+version = "2.4.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dask" },
@@ -1296,9 +1296,9 @@ dependencies = [
     { name = "scikit-image" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/43/8a/32d6a57b6507b50e1f1a74fdaf435a7784f62fefed8ec00be24a8bc02045/impy_array-2.4.9.tar.gz", hash = "sha256:83e5944be914b3a262388e267858e68ec2d614c3cda7a1156fb0821c35cb8009", size = 155100, upload-time = "2025-04-07T23:50:54.474Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/56/6c75022567372eaa01860f6e57e6ad5e8128390416a635dbe4547c877e9f/impy_array-2.4.10.tar.gz", hash = "sha256:c9ec4db795fc82d8e6129662035fdf2a1219c1310b5f47d5f1251606875d85a1", size = 155707, upload-time = "2025-07-12T07:04:52.148Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/20/50bd47b699cff3503b3c51e5944b1a6b06bdf84fd6f21dcdd1d3752eb83e/impy_array-2.4.9-py3-none-any.whl", hash = "sha256:044faa93ace7be3d7c553b096b972adfb7084492ac1b2ce003d80957cf9bc1af", size = 183967, upload-time = "2025-04-07T23:50:52.648Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/39/615de7ab7f333a71df271d2db05e7bde21f4d1a55fadbde7f0cb179b31e3/impy_array-2.4.10-py3-none-any.whl", hash = "sha256:5c21a294f3d57f963965536fd8cc4fac79cdfbf85c8613c18f1a755b6fb7eaa7", size = 185041, upload-time = "2025-07-12T07:04:50.57Z" },
 ]
 
 [[package]]
@@ -2409,7 +2409,7 @@ requires-dist = [
     { name = "hatch", marker = "extra == 'hatch'", specifier = "==1.14.1" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.21.0" },
     { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.11.3" },
-    { name = "impy-array", marker = "extra == 'docs'", specifier = "==2.4.9" },
+    { name = "impy-array", marker = "extra == 'docs'", specifier = "==2.4.10" },
     { name = "ipykernel", marker = "extra == 'docs'", specifier = "==6.29.5" },
     { name = "jupyter", marker = "extra == 'docs'", specifier = "==1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.3" },
