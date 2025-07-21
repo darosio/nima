@@ -58,7 +58,7 @@ docs = [
   "holoviews==1.21.0",
   "hvplot==0.11.3",
   "impy-array==2.4.10",
-  "ipykernel==6.29.5",
+  "ipykernel==6.30.0",
   "jupyter==1.1.1",
   "nbsphinx==0.9.7",
   "pydata-sphinx-theme==0.16.1",
