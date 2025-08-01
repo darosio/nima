@@ -1192,7 +1192,7 @@ wheels = [
 
 [[package]]
 name = "hvplot"
-version = "0.11.3"
+version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bokeh" },
@@ -1204,9 +1204,9 @@ dependencies = [
     { name = "panel" },
     { name = "param" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5d/a4/5558d167414eb6f9cc78f2da0382b398ba8f126a60e862cca97d4a0c4a44/hvplot-0.11.3.tar.gz", hash = "sha256:ce82dea296af6146b9a51aa5ed1f772e5415a07c6c33a4eae0f00bbe7ec880ca", size = 7010334, upload-time = "2025-04-30T12:52:21.879Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/24/84e289508f8ac69dd5d574fea3ae2e6aba9cb7469a334d84331f8eb58de9/hvplot-0.12.0.tar.gz", hash = "sha256:85c9d324d27fd227de54fdde5a25faa2aada92b8956b56c4f241b12f46bfe7f7", size = 7071377, upload-time = "2025-08-01T12:07:06.087Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ca/4a/3490c93a699f3d5e4d708748b494a44639dec973b609eb4e17c2d94bc733/hvplot-0.11.3-py3-none-any.whl", hash = "sha256:5fa236a737ef3ca83870bf1b481218855834f4fad56ed0cb041ce5f2792cc7a3", size = 170266, upload-time = "2025-04-30T12:52:19.655Z" },
+    { url = "https://files.pythonhosted.org/packages/06/51/b8cd6be4a303e6b88ca4b56feecf523f2a2e286ebd7cb56f0dbe986917f7/hvplot-0.12.0-py3-none-any.whl", hash = "sha256:479b16d8cce87921d83ef5df747d4ae87c180519f5615fbffc50cdaf2d2cdd2b", size = 175381, upload-time = "2025-08-01T12:07:04.055Z" },
 ]
 
 [[package]]
@@ -2456,7 +2456,7 @@ requires-dist = [
     { name = "git-cliff", marker = "extra == 'dev'", specifier = "==2.10.0" },
     { name = "hatch", marker = "extra == 'hatch'", specifier = "==1.14.1" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.21.0" },
-    { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.11.3" },
+    { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.12.0" },
     { name = "impy-array", marker = "extra == 'docs'", specifier = "==2.4.10" },
     { name = "ipykernel", marker = "extra == 'docs'", specifier = "==6.30.0" },
     { name = "jupyter", marker = "extra == 'docs'", specifier = "==1.1.1" },
