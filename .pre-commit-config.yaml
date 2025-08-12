@@ -96,7 +96,7 @@ repos:
         args: [-x]
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.8.8
+    rev: 0.8.9
     hooks:
       - id: uv-lock
         stages: [pre-commit]
