@@ -2,6 +2,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/nima.svg)](https://pypi.org/project/nima/)
 [![CI](https://github.com/darosio/nima/actions/workflows/ci.yml/badge.svg)](https://github.com/darosio/nima/actions/workflows/ci.yml)
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/darosio/nima/main.svg)](https://results.pre-commit.ci/latest/github/darosio/nima/main)
 [![codecov](https://codecov.io/gh/darosio/nima/branch/main/graph/badge.svg?token=OU6F9VFUQ6)](https://codecov.io/gh/darosio/nima)
 [![RtD](https://readthedocs.org/projects/nima/badge/)](https://nima.readthedocs.io/)
 
