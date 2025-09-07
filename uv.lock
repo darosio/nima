@@ -2479,7 +2479,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'tests'", specifier = ">=8.4.2" },
     { name = "python-lsp-ruff", marker = "extra == 'dev'", specifier = "==2.2.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.12.12" },
-    { name = "s3fs", specifier = ">=2025.7.0" },
+    { name = "s3fs", specifier = ">=2025.9.0" },
     { name = "scikit-image", specifier = ">=0.25.2" },
     { name = "scipy", specifier = ">=1.16.1" },
     { name = "seaborn", marker = "extra == 'docs'", specifier = "==0.13.2" },
