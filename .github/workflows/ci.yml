@@ -37,7 +37,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: "Set up Python"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
       - name: Install base and hatch and lint
@@ -78,7 +78,7 @@ jobs:
           uv run hatch run tests.py${{ matrix.python }}:cov
       - name: Upload coverage report
         if: matrix.tests == 'test'
-        uses: codecov/codecov-action@v5.5.0
+        uses: codecov/codecov-action@v5.5.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Run mypy or xdoc
@@ -98,7 +98,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: "Set up Python"
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
       - name: Install base and hatch
