@@ -41,7 +41,7 @@ jobs:
         with:
           python-version-file: ".python-version"
       - name: Install base and hatch and lint
-        run: uv sync --locked --extra hatch --extra lint
+        run: uv sync --locked --extra hatch --extra lint --prerelease=allow
       - name: Cache pre-commit
         uses: actions/cache@v4
         with:
