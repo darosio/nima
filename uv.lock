@@ -2489,7 +2489,7 @@ requires-dist = [
     { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = "<3.2" },
     { name = "sphinx-click", marker = "extra == 'docs'", specifier = "==6.0.0" },
     { name = "statsmodels", marker = "extra == 'docs'", specifier = "==0.14.5" },
-    { name = "tifffile", specifier = ">=2025.8.28" },
+    { name = "tifffile", specifier = ">=2025.9.9" },
     { name = "xdoctest", marker = "extra == 'tests'", specifier = ">=1.2.0" },
     { name = "xmltodict", specifier = ">=0.15.1" },
 ]
@@ -4096,14 +4096,14 @@ wheels = [
 
 [[package]]
 name = "tifffile"
-version = "2025.8.28"
+version = "2025.9.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ba/01/ffd9f97a0955a97122f6a4b33a3b948e65071441df9cf93a619631109e18/tifffile-2025.8.28.tar.gz", hash = "sha256:82929343c70f6f776983f6a817f0b92e913a1bbb3dc3f436af44419b872bb467", size = 371211, upload-time = "2025-08-27T19:47:35.594Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/a7/b77bd01f97d72bb70194f036e77f45927978f43017254762c784d7e10f49/tifffile-2025.9.9.tar.gz", hash = "sha256:6cf97ef548970eee9940cf8fc4203e57b4462a72e1e5e7a667ecdeb96113bc5f", size = 369652, upload-time = "2025-09-10T00:02:19.534Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/b3/23eec760215910609914dd99aba23ce1c72a3bcbe046ee44f45adf740452/tifffile-2025.8.28-py3-none-any.whl", hash = "sha256:b274a6d9eeba65177cf7320af25ef38ecf910b3369ac6bc494a94a3f6bd99c78", size = 231049, upload-time = "2025-08-27T19:47:33.909Z" },
+    { url = "https://files.pythonhosted.org/packages/48/c5/0d57e3547add58285f401afbc421bd3ffeddbbd275a2c0b980b9067fda4a/tifffile-2025.9.9-py3-none-any.whl", hash = "sha256:239247551fa10b5679036ee030cdbeb7762bc1b3f11b1ddaaf50759ef8b4eb26", size = 230668, upload-time = "2025-09-10T00:02:17.839Z" },
 ]
 
 [package.optional-dependencies]
