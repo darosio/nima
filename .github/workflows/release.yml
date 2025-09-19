@@ -18,17 +18,27 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - name: "Set up Python"
+          cache-dependency-glob: uv.lock
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version-file: ".python-version"
-      - name: Install base and hatch
-        run: uv sync --locked --extra hatch
-      - name: Build and publish
-        run: |
-          uv run hatch build
-          uv run hatch publish --user=__token__ --auth=${{ secrets.PYPI_TOKEN }}
+          python-version-file: .python-version
+
+      # Build distributions using hatchling in an isolated env
+      - name: Build dists
+        run: uv build
+      # Publish to PyPI using a token (kept out of command line)
+      - name: Publish to PyPI
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: uv publish --username __token__ --password "$PYPI_TOKEN"
+      # - name: Install base and hatch
+      #   run: uv sync --locked --extra hatch
+      # - name: Build and publish
+      #   run: |
+      #     uv run hatch build
+      #     uv run hatch publish --user=__token__ --auth=${{ secrets.PYPI_TOKEN }}
+      # Release notes via git-cliff (keep your existing action pinning)
       - name: Install git-cliff
         uses: taiki-e/install-action@git-cliff
       - name: Generate Release Notes

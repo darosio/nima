@@ -2230,7 +2230,7 @@ dependencies = [
     { name = "xmltodict" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "git-cliff" },
     { name = "mdformat" },
@@ -2274,54 +2274,61 @@ tests = [
 
 [package.metadata]
 requires-dist = [
-    { name = "autodocsumm", marker = "extra == 'docs'", specifier = "==0.2.14" },
     { name = "bioio-tifffile", specifier = ">=1.3.0" },
-    { name = "bokeh", marker = "extra == 'docs'", specifier = "==3.8.0" },
     { name = "click", specifier = ">=8.3.0" },
-    { name = "coverage", extras = ["toml"], marker = "extra == 'tests'", specifier = ">=7.10.6" },
     { name = "dask", extras = ["distributed"], specifier = ">=2025.9.1" },
-    { name = "dask-image", marker = "extra == 'docs'", specifier = "==2024.5.3" },
-    { name = "git-cliff", marker = "extra == 'dev'", specifier = "==2.10.0" },
-    { name = "holoviews", marker = "extra == 'docs'", specifier = "==1.21.0" },
-    { name = "hvplot", marker = "extra == 'docs'", specifier = "==0.12.1" },
-    { name = "impy-array", marker = "extra == 'docs'", specifier = "==2.4.10" },
-    { name = "ipykernel", marker = "extra == 'docs'", specifier = "==6.30.1" },
-    { name = "jupyter", marker = "extra == 'docs'", specifier = "==1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.6" },
-    { name = "mdformat", marker = "extra == 'dev'", specifier = "==0.7.22" },
-    { name = "mdformat-gfm", marker = "extra == 'dev'", specifier = "==0.4.1" },
-    { name = "mypy", marker = "extra == 'tests'", specifier = ">=1.18.2" },
-    { name = "nbsphinx", marker = "extra == 'docs'", specifier = "==0.9.7" },
     { name = "numpy", specifier = ">=2.3.3" },
     { name = "pandas", specifier = ">=2.3.2" },
-    { name = "pandas-stubs", marker = "extra == 'tests'", specifier = ">=2.3.2.250827" },
     { name = "pims", specifier = ">=0.7" },
-    { name = "pre-commit", marker = "extra == 'lint'", specifier = "==4.3.0" },
     { name = "pyarrow", specifier = ">=21.0.0" },
-    { name = "pydata-sphinx-theme", marker = "extra == 'docs'", specifier = "==0.16.1" },
-    { name = "pygments", marker = "extra == 'docs'", specifier = "==2.19.2" },
-    { name = "pygments", marker = "extra == 'tests'", specifier = ">=2.19.2" },
-    { name = "pylsp-mypy", marker = "extra == 'dev'", specifier = "==0.7.0" },
-    { name = "pympler", marker = "extra == 'docs'", specifier = "==1.1" },
-    { name = "pypdf", marker = "extra == 'tests'", specifier = ">=6.0.0" },
-    { name = "pytest", marker = "extra == 'tests'", specifier = ">=8.4.2" },
-    { name = "python-lsp-ruff", marker = "extra == 'dev'", specifier = "==2.2.2" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.13.1" },
     { name = "s3fs", specifier = ">=2025.9.0" },
     { name = "scikit-image", specifier = ">=0.25.2" },
     { name = "scipy", specifier = ">=1.16.2" },
-    { name = "seaborn", marker = "extra == 'docs'", specifier = "==0.13.2" },
-    { name = "selenium", marker = "extra == 'docs'", specifier = "==4.35.0" },
     { name = "sigfig", specifier = ">=1.3.19" },
-    { name = "sphinx", marker = "extra == 'docs'", specifier = "<8.2" },
-    { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = "<3.2" },
-    { name = "sphinx-click", marker = "extra == 'docs'", specifier = "==6.1.0" },
-    { name = "statsmodels", marker = "extra == 'docs'", specifier = "==0.14.5" },
     { name = "tifffile", specifier = ">=2025.9.9" },
-    { name = "xdoctest", marker = "extra == 'tests'", specifier = ">=1.3.0" },
     { name = "xmltodict", specifier = ">=1.0.2" },
 ]
-provides-extras = ["dev", "docs", "lint", "tests"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "git-cliff", specifier = "==2.10.0" },
+    { name = "mdformat", specifier = "==0.7.22" },
+    { name = "mdformat-gfm", specifier = "==0.4.1" },
+    { name = "pylsp-mypy", specifier = "==0.7.0" },
+    { name = "python-lsp-ruff", specifier = "==2.2.2" },
+    { name = "ruff", specifier = "==0.13.1" },
+]
+docs = [
+    { name = "autodocsumm", specifier = "==0.2.14" },
+    { name = "bokeh", specifier = "==3.8.0" },
+    { name = "dask-image", specifier = "==2024.5.3" },
+    { name = "holoviews", specifier = "==1.21.0" },
+    { name = "hvplot", specifier = "==0.12.1" },
+    { name = "impy-array", specifier = "==2.4.10" },
+    { name = "ipykernel", specifier = "==6.30.1" },
+    { name = "jupyter", specifier = "==1.1.1" },
+    { name = "nbsphinx", specifier = "==0.9.7" },
+    { name = "pydata-sphinx-theme", specifier = "==0.16.1" },
+    { name = "pygments", specifier = "==2.19.2" },
+    { name = "pympler", specifier = "==1.1" },
+    { name = "seaborn", specifier = "==0.13.2" },
+    { name = "selenium", specifier = "==4.35.0" },
+    { name = "sphinx", specifier = "<8.2" },
+    { name = "sphinx-autodoc-typehints", specifier = "<3.2" },
+    { name = "sphinx-click", specifier = "==6.1.0" },
+    { name = "statsmodels", specifier = "==0.14.5" },
+]
+lint = [{ name = "pre-commit", specifier = "==4.3.0" }]
+tests = [
+    { name = "coverage", extras = ["toml"], specifier = ">=7.10.6" },
+    { name = "mypy", specifier = ">=1.18.2" },
+    { name = "pandas-stubs", specifier = ">=2.3.2.250827" },
+    { name = "pygments", specifier = ">=2.19.2" },
+    { name = "pypdf", specifier = ">=6.0.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "xdoctest", specifier = ">=1.3.0" },
+]
 
 [[package]]
 name = "nodeenv"

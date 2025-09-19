@@ -40,8 +40,8 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
-      - name: Sync project (lint deps only)
-        run: uv sync --locked --extra lint
+      - name: Sync project with lint deps
+        run: uv sync --locked --group lint
       - name: Cache pre-commit
         uses: actions/cache@v4
         with:
@@ -49,7 +49,7 @@ jobs:
           key: pre-commit|${{ runner.os }}|${{ hashFiles('.pre-commit-config.yaml') }}
           restore-keys: pre-commit|${{ runner.os }}|
       - name: Run lint
-        run: uv run pre-commit run --all-files --show-diff-on-failure
+        run: make lint
 
   tests:
     name: ${{ matrix.tests }} py-${{ matrix.python }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
@@ -67,27 +67,26 @@ jobs:
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          cache-dependency-glob: uv.lock
           python-version: ${{ matrix.python }}
-      - name: Install hatch tool (isolated)
-        run: |
-          uv tool install --with "click<8.3" hatch==1.14.1
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-      # - name: Install base
-      # run: uv sync --locked
+      - name: Sync project with tests deps
+        run: uv sync --locked --group tests
       - name: Run test and coverage
         if: matrix.tests == 'test'
         run: |
-          hatch run tests.py${{ matrix.python }}:test
-          hatch run tests.py${{ matrix.python }}:cov
+          make test
+          make cov
       - name: Upload coverage report
         if: matrix.tests == 'test'
         uses: codecov/codecov-action@v5.5.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Run mypy or xdoc
-        if: matrix.tests != 'test'
-        run: uv run hatch run tests.py${{ matrix.python }}:${{ matrix.tests }}
+      - name: Run mypy
+        if: matrix.tests == 'type'
+        run: uv run mypy src tests docs/conf.py
+      - name: Run xdoctest
+        if: matrix.tests == 'xdoc'
+        run: uv run python -m xdoctest "nima" all
 
   docs_build:
     runs-on: ubuntu-latest
@@ -105,16 +104,15 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
-      - name: Install base and hatch
-        run: uv sync --locked --extra docs
-      - name: Run hatch
-        run: |
-          uv run sphinx-build docs docs/_build
+      - name: Sync project with docs deps
+        run: uv sync --locked --group docs
+      - name: Build docs
+        run: make docs
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:
           name: github-pages
-          path: "./docs/_build"
+          path: ./docs/_build
 
   docs_deploy:
     runs-on: ubuntu-latest
