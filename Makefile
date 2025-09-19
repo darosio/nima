@@ -48,8 +48,14 @@ xdoc:
 
 all: test type xdoc cov
 
+
+# git cliff --bump --unreleased --prepend CHANGELOG.md
 ch:
-	git cliff --bump --unreleased --prepend CHANGELOG.md
+	set -euo pipefail; \
+	git cliff --bump --unreleased -o RELEASE.md; \
+	$(UV) run python scripts/update_changelog.py --raw RELEASE.md --changelog CHANGELOG.md; \
+	rm -f RELEASE.md; \
+	echo "CHANGELOG.md updated."
 
 bump:
 	set -euo pipefail; \
@@ -58,10 +64,11 @@ bump:
 	$(UV) version "$$NEXT_VERSION"; \
 	$(UV) lock; \
 	$(UV) sync --locked --all-groups; \
+	$(MAKE) ch; \
 	if ! git diff --quiet; then git add -A && git commit -m "chore: release $$NEXT_VERSION"; else echo "No changes to commit"; fi; \
-	git tag -a "$$NEXT_VERSION" -m "Release $$NEXT_VERSION"; \
-	git push; \
-	git push --tags
+	git tag -a "$$NEXT_VERSION" -m "Release $$NEXT_VERSION"
+	# git push; \
+	# git push --tags
 
 # Project cleanup
 clean:

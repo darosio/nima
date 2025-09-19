@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.11.5] - 2025-09-19
+
+### 🐛 Bug Fixes
+
+- Renovate configuration file
+- Yanked click 8.2.2
+
+### 🦾 Build
+
+- Update ruff codes
+- *(deps)* Bump tifffile from 2025.5.21 to 2025.9.9
+- *(deps)* Bump s3fs from 2025.5.0 to 2025.9.0
+- *(deps)* Bump pandas from 2.2.3 to 2.3.2
+- *(deps)* Bump numpy from 2.2.6 to 2.3.3
+- *(deps)* Bump scipy from 1.15.3 to 1.16.2
+- *(deps)* Bump bioio-tifffile from 1.1.0 to 1.3.0
+- *(deps)* Bump dask from 2025.5.1 to 2025.9.1
+- *(deps)* Bump pyarrow from 20.0.0 to 21.0.0
+- *(deps)* Bump matplotlib from 3.10.3 to 3.10.6
+- *(deps)* Bump click from 8.2.1 to 8.3.0
+- *(deps)* Bump actions/download-artifact from v4 to v5
+- *(deps)* Bump actions/checkout from v4 to v5
+- *(deps)* Bump codecov/codecov-action from v5.4.3 to v5.5.1
+- *(deps)* Bump actions/upload-pages-artifact from v3 to v4
+- *(deps)* Bump xmltodict from 0.14.2 to 1.0.2
+- *(deps)* Bump actions/setup-python from v5 to v6
+
+### 🐙 CI/CD
+
+- Drop hatch from ci
+
+
 ## [0.11.4] - 2025-05-22
 
 ### 🐛 Bug Fixes
