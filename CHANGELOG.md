@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.6] - 2025-09-19
+
+### 🐙 CI/CD
+
+- Add a script to dedup (deps) lines in changelog
+
+
 ## [0.11.5] - 2025-09-19
 
 ### 🐛 Bug Fixes
