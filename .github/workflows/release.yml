@@ -23,21 +23,14 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version-file: .python-version
-
       # Build distributions using hatchling in an isolated env
       - name: Build dists
         run: uv build
       # Publish to PyPI using a token (kept out of command line)
-      - name: Publish to PyPI
-        env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-        run: uv publish --username __token__ --password "$PYPI_TOKEN"
-      # - name: Install base and hatch
-      #   run: uv sync --locked --extra hatch
-      # - name: Build and publish
-      #   run: |
-      #     uv run hatch build
-      #     uv run hatch publish --user=__token__ --auth=${{ secrets.PYPI_TOKEN }}
+      # - name: Publish to PyPI
+      #   env:
+      #     PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      #   run: uv publish --username __token__ --password "$PYPI_TOKEN"
       # Release notes via git-cliff (keep your existing action pinning)
       - name: Install git-cliff
         uses: taiki-e/install-action@git-cliff
@@ -45,7 +38,7 @@ jobs:
         run: |
           git cliff --latest -o RELEASE.md
           # Drop the release header for GH Release body; condense deps bumps
-          uv run python scripts/update_changelog.py --raw RELEASE.md --changelog /dev/null --tags deps --strip-header 2 --stdout > RELEASE_CLEANED.md
+          uv run python scripts/update_changelog.py --raw RELEASE.md --changelog /dev/null --tags deps --strip-header 4 --stdout > RELEASE_CLEANED.md
           # tail -n +4 RELEASE.md > RELEASE_CLEANED.md
           echo "Generated release notes for ${GITHUB_REF#refs/tags/}"
 
