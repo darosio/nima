@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.9] - 2025-09-20
+
+### 🐙 CI/CD
+
+- Adjust transition to improved release
+
 ## [0.11.8] - 2025-09-20
 
 ### 🐙 CI/CD
