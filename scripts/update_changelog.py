@@ -83,7 +83,6 @@ def condense_bumps(lines: list[str], allowed_tags: set) -> list[str]:
         seen.add(key)
 
         info = agg[key]
-        # Keep the first occurrence position if possible
         if idx == info["first_idx"]:
             out.append(
                 f"{info['bullet']}{info['tag_text']} Bump {pkg} from {info['min_from']} to {info['max_to']}\n"
@@ -106,41 +105,60 @@ def write_text(path: str, text: str) -> None:
         f.write(text)
 
 
-def insert_section_at_top(changelog_lines: list[str], section: list[str]) -> list[str]:
+def insert_section_at_top(changelog_lines: list[str], section: list[str]) -> str:
     """
-    Insert the new release section just before the first '## ' heading, i.e.,
-    right after the title/header at the top. If no '## ' is found, append.
-    Ensures one blank line around the inserted section.
+    Insert the new release section just before the first '## ' heading.
+    Normalize spacing so there is exactly one blank line before and after
+    the inserted section (if surrounding content exists), and ensure the
+    final file ends with a single trailing newline.
     """
-    # Find the first release header
+    # Locate insertion point
     first_release_idx = next(
         (i for i, ln in enumerate(changelog_lines) if ln.startswith("## ")), None
     )
+    insert_idx = first_release_idx if first_release_idx is not None else len(changelog_lines)
 
-    # Default insertion index: before the first '## ', else end of file
-    insert_idx = (
-        first_release_idx if first_release_idx is not None else len(changelog_lines)
-    )
-
-    # Ensure the changelog starts with a title; if not, do not try to preserve 3-line header
-    # But if it does (e.g., "# Changelog\n\n"), this will place the new section after it.
-    # Normalize spacing: ensure exactly one blank line before and after the inserted section.
     before = changelog_lines[:insert_idx]
     after = changelog_lines[insert_idx:]
 
-    if before and before[-1].strip() != "":
-        before.append("\n")
-    if section and section[-1].strip() != "":
-        section = [*section, "\n"]
-    if after and after[0].strip() != "":
-        section = [*section, "\n"]
+    # Trim trailing blanks from 'before'
+    while before and before[-1].strip() == "":
+        before.pop()
 
-    return before + section + after
+    # Trim trailing blanks from 'section'
+    while section and section[-1].strip() == "":
+        section.pop()
+
+    # Trim leading blanks from 'after'
+    while after and after[0].strip() == "":
+        after.pop(0)
+
+    out: list[str] = []
+    out.extend(before)
+
+    if out and section:
+        out.append("\n")  # exactly one blank line before section
+
+    out.extend(section)
+
+    if section and after:
+        out.append("\n")  # exactly one blank line between section and after
+
+    out.extend(after)
+
+    text = "".join(out)
+    # Ensure single trailing newline (no extra blank line)
+    if text:
+        text = text.rstrip("\n") + "\n"
+    return text
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(
-        description="Condense bump entries and insert the new release notes at the top of CHANGELOG.md, or print to stdout."
+        description=(
+            "Condense bump entries from a raw release and either print to stdout "
+            "(default) or insert at the top of a changelog file if --changelog is provided."
+        )
     )
     ap.add_argument(
         "--raw",
@@ -149,8 +167,8 @@ def main() -> None:
     )
     ap.add_argument(
         "--changelog",
-        required=True,
-        help="Path to CHANGELOG.md to update, or '-' to write to stdout.",
+        default=None,
+        help="Optional path to CHANGELOG.md to update. If omitted, output is written to stdout. Use '-' or '/dev/stdout' to explicitly write to stdout.",
     )
     ap.add_argument(
         "--tags",
@@ -163,11 +181,6 @@ def main() -> None:
         default=2,
         help="Drop this many header lines from raw notes before condensing (default: 2).",
     )
-    ap.add_argument(
-        "--stdout",
-        action="store_true",
-        help="Print the processed section to stdout instead of updating the changelog. Also auto-enabled if --changelog is /dev/null, /dev/stdout, or '-'.",
-    )
     args = ap.parse_args()
 
     allowed_tags = {t.strip() for t in args.tags.split(",") if t.strip()}
@@ -177,30 +190,21 @@ def main() -> None:
     body = raw_lines[args.strip_header :] if args.strip_header > 0 else raw_lines
     new_section = condense_bumps(body, allowed_tags)
 
-    # Ensure new-section ends with a newline
-    if new_section and new_section[-1].strip() != "":
-        new_section.append("\n")
-
-    # If stdout mode or stdout-like target, print the processed section
-    changelog_target = args.changelog
-    is_stdout_target = (
-        args.stdout
-        or changelog_target in ("-", "/dev/stdout")
-        or os.path.normcase(changelog_target) == os.path.normcase(os.devnull)
-    )
-    if is_stdout_target:
-        sys.stdout.write("".join(new_section))
+    # Decide destination: default to stdout unless --changelog provided.
+    target = args.changelog
+    if target is None or target in ("-", "/dev/stdout"):
+        text = "".join(new_section)
+        if text:
+            text = text.rstrip("\n") + "\n"  # exactly one trailing newline
+        sys.stdout.write(text)
         return
 
-    # Read existing changelog and insert
+    # Write only to the changelog file (no stdout)
     changelog_lines = (
-        read_lines(args.changelog)
-        if os.path.exists(args.changelog)
-        else ["# Changelog\n", "\n"]
+        read_lines(target) if os.path.exists(target) else ["# Changelog\n", "\n"]
     )
-    updated = insert_section_at_top(changelog_lines, new_section)
-
-    write_text(args.changelog, "".join(updated))
+    updated_text = insert_section_at_top(changelog_lines, new_section)
+    write_text(target, updated_text)
 
 
 if __name__ == "__main__":
