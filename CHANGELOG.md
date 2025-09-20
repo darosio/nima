@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.11.8] - 2025-09-20
+
+### 🐙 CI/CD
+
+- Fix script and changelog
+
 ## [0.11.7] - 2025-09-20
 
 ### 🐙 CI/CD
