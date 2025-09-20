@@ -49,7 +49,8 @@ jobs:
           key: pre-commit|${{ runner.os }}|${{ hashFiles('.pre-commit-config.yaml') }}
           restore-keys: pre-commit|${{ runner.os }}|
       - name: Run lint
-        run: make lint
+        run: |
+          make lint
 
   tests:
     name: ${{ matrix.tests }} py-${{ matrix.python }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
@@ -83,10 +84,12 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Run mypy
         if: matrix.tests == 'type'
-        run: uv run mypy src tests docs/conf.py
+        run: |
+          make type
       - name: Run xdoctest
         if: matrix.tests == 'xdoc'
-        run: uv run python -m xdoctest "nima" all
+        run: |
+          make xdoc
 
   docs_build:
     runs-on: ubuntu-latest
@@ -107,7 +110,8 @@ jobs:
       - name: Sync project with docs deps
         run: uv sync --locked --group docs
       - name: Build docs
-        run: make docs
+        run: |
+          make docs
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4
         with:

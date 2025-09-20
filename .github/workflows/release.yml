@@ -42,7 +42,6 @@ jobs:
           git cliff --latest -o RELEASE.md
           # Drop the release header for GH Release body; condense deps bumps
           uv run python scripts/update_changelog.py --raw RELEASE.md --tags deps --strip-header 4 > RELEASE_CLEANED.md
-          # tail -n +4 RELEASE.md > RELEASE_CLEANED.md
           echo "Generated release notes for ${GITHUB_REF#refs/tags/}"
 
       - name: Create GitHub Release

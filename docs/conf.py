@@ -20,7 +20,6 @@ sys.path.insert(0, str(Path("../..").resolve()))
 # -- Project information -----------------------------------------------------
 
 project = "nima"
-release = "0.10.2"
 author = "Daniele Arosio"
 copyright = f"2023, {author}"  # noqa: A001
 html_static_path = ["_static"]

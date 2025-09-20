@@ -29,6 +29,9 @@ docs-clean:
 docs-serve:
 	$(PYTHON) -m http.server 8000 -d $(DOCS_OUT)
 
+init:
+	$(PRECOMMIT) install
+
 lint:
 	$(PRECOMMIT) run --all-files --show-diff-on-failure $(ARGS)
 
