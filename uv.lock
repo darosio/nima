@@ -1211,7 +1211,7 @@ wheels = [
 
 [[package]]
 name = "impy-array"
-version = "2.4.10"
+version = "2.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dask" },
@@ -1220,9 +1220,9 @@ dependencies = [
     { name = "scikit-image" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/93/56/6c75022567372eaa01860f6e57e6ad5e8128390416a635dbe4547c877e9f/impy_array-2.4.10.tar.gz", hash = "sha256:c9ec4db795fc82d8e6129662035fdf2a1219c1310b5f47d5f1251606875d85a1", size = 155707, upload-time = "2025-07-12T07:04:52.148Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/50/8ee39914486b3b2f4f9874488475d3215e92bd87be1c48c211fdc26395e5/impy_array-2.5.0.tar.gz", hash = "sha256:56325a015ecdd28c9629756fba38e736a254785b7150b20f467b15e1ff846c70", size = 156150, upload-time = "2025-09-21T05:02:23.55Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/39/615de7ab7f333a71df271d2db05e7bde21f4d1a55fadbde7f0cb179b31e3/impy_array-2.4.10-py3-none-any.whl", hash = "sha256:5c21a294f3d57f963965536fd8cc4fac79cdfbf85c8613c18f1a755b6fb7eaa7", size = 185041, upload-time = "2025-07-12T07:04:50.57Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/f1/693e7c9ec087efd660e861c9db98e2bd5119b6bc905bc2852b48e2e777c7/impy_array-2.5.0-py3-none-any.whl", hash = "sha256:874f3373bb74426892b676492130f31777616b0d486d35f102aa9fb7863df618", size = 185510, upload-time = "2025-09-21T05:02:21.177Z" },
 ]
 
 [[package]]
@@ -2305,7 +2305,7 @@ docs = [
     { name = "dask-image", specifier = "==2024.5.3" },
     { name = "holoviews", specifier = "==1.21.0" },
     { name = "hvplot", specifier = "==0.12.1" },
-    { name = "impy-array", specifier = "==2.4.10" },
+    { name = "impy-array", specifier = "==2.5.0" },
     { name = "ipykernel", specifier = "==6.30.1" },
     { name = "jupyter", specifier = "==1.1.1" },
     { name = "nbsphinx", specifier = "==0.9.7" },

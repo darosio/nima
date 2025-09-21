@@ -57,7 +57,7 @@ docs = [
   "dask-image==2024.5.3",
   "holoviews==1.21.0",
   "hvplot==0.12.1",
-  "impy-array==2.4.10",
+  "impy-array==2.5.0",
   "ipykernel==6.30.1",
   "jupyter==1.1.1",
   "nbsphinx==0.9.7",
