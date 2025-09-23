@@ -18,37 +18,36 @@ analysis tasks using scipy.ndimage and scikit-image.
 
 ## Installation
 
-You can get the library directly from [PyPI](https://pypi.org/project/nima/)
-using `pip`:
+From PyPI with pip:
 
 ```
 pip install nima
 ```
 
-Alternatively, you can use [pipx](https://pypa.github.io/pipx/) to install it in
-an isolated environment:
+Or isolate with pipx:
 
 ```
 pipx install nima
 ```
 
-To enable auto completion for the `nima` command, follow these steps:
+Shell completion (Click/Typer):
 
-1. Generate the completion script by running the following command:
+- Bash:
 
-   ```
-   _CLOP_COMPLETE=bash_source nima > ~/.local/bin/nima-complete.bash
-   ```
+  ```
+  _NIMA_COMPLETE=bash_source nima > ~/.local/bin/nima-complete.bash
+  source ~/.local/bin/nima-complete.bash
+  ```
 
-1. Source the generated completion script to enable auto completion:
+- Fish:
 
-   ```
-   source ~/.local/bin/nima-complete.bash
-   ```
+```bash
+  _NIMA_COMPLETE=fish_source nima | source
+```
 
 ## Usage
 
-### Library
+Docs: https://nima.readthedocs.io/
 
 To use nima in your python code, import it as follows:
 
