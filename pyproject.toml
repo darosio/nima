@@ -69,7 +69,7 @@ docs = [
   "selenium>=4.35.0",
   "sphinx-autodoc-typehints>=3.0.1,<3.2; python_version < '3.14'", # TODO: wait nbsphinx
   "sphinx-click>=6.1.0",
-  "sphinx>=8.1.3,<8.2; python_version < '3.14'", # TODO: wait nbsphinx
+  "sphinx>=8.2.3,<8.3; python_version < '3.14'", # TODO: wait nbsphinx
   "statsmodels>=0.14.5",
 ]
 lint = [
