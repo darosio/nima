@@ -20,6 +20,7 @@ ARGS       ?=
 
 .PHONY: docs docs-clean docs-serve lint test cov type xdoc all ch bump clean
 
+# Documentation
 docs:
 	$(SPHINXBUILD) $(SPHINXOPTS) $(DOCS_SRC) $(DOCS_OUT)
 
@@ -29,12 +30,15 @@ docs-clean:
 docs-serve:
 	$(PYTHON) -m http.server 8000 -d $(DOCS_OUT)
 
+# Development setup
 init:
 	$(PRECOMMIT) install
 
+# Code quality
 lint:
 	$(PRECOMMIT) run --all-files --show-diff-on-failure $(ARGS)
 
+# Testing
 test:
 	$(COVERAGE) run -p -m pytest -v
 
@@ -51,14 +55,14 @@ xdoc:
 
 all: test type xdoc cov
 
-
-# git cliff --bump --unreleased --prepend CHANGELOG.md
+# Release management
 ch:
 	set -euo pipefail; \
 	git cliff --bump --unreleased -o RELEASE.md; \
 	$(UV) run python scripts/update_changelog.py --raw RELEASE.md --changelog CHANGELOG.md; \
 	rm -f RELEASE.md; \
 	echo "CHANGELOG.md updated."
+	# git cliff --bump --unreleased --prepend CHANGELOG.md
 
 bump:
 	set -euo pipefail; \
@@ -73,6 +77,6 @@ bump:
 	# git push; \
 	# git push --tags
 
-# Project cleanup
+# Cleanup
 clean:
 	rm -rf ./build .coverage ./__pycache__ ./.mypy_cache ./.pytest_cache ./docs/_build ./tests/__pycache__ ./dist ./src/nima/__pycache__
