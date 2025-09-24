@@ -120,6 +120,51 @@ ImSequence: TypeAlias = Float32[Array, "time height width"]  # noqa: F722
 DIm: TypeAlias = dict[str, ImSequence]
 ```
 
+## Dependency updates (Renovate)
+
+We use Renovate to keep dependencies current.
+
+Enable Renovate:
+
+1. Install the GitHub App: https://github.com/apps/renovate (Settings → Integrations → GitHub Apps → Configure → select this repo/org).
+1. This repo includes a `renovate.json` policy. Renovate will open a “Dependency Dashboard” issue and PRs accordingly.
+
+Notes:
+
+- Commit style: `build(deps): bump <dep> from <old> to <new>`
+- Pre-commit hooks are grouped and labeled; Python version bumps in `pyproject.toml` are disabled by policy.
+
+Migrating from Dependabot:
+
+- You may keep “Dependabot alerts” ON for vulnerability visibility, but disable Dependabot security PRs.
+
+## Template updates (Cruft)
+
+This project is linked to its Cookiecutter template with Cruft.
+
+- Check for updates: `cruft check`
+- Apply updates: `cruft update -y` (resolve conflicts, then commit)
+
+CI runs a weekly job to open a PR when template updates are available.
+
+First-time setup if you didn’t generate with Cruft:
+
+```bash
+pipx install cruft  # or: pip install --user cruft
+cruft link --checkout main https://github.com/darosio/cookiecutter-python.git
+```
+
+Notes:
+
+- The CI workflow skips if `.cruft.json` is absent.
+- If you maintain a stable template branch (e.g., `v1`), link with `--checkout v1`. You can also update within that line using `cruft update -y --checkout v1`.
+
+## License
+
+We use a shared copyright model that enables all contributors to maintain the
+copyright on their contributions - see the [revised BSD license](LICENSE.txt)
+for details.
+
 ## Contributing
 
 Contributions to the project are welcome!
@@ -130,14 +175,3 @@ and [development
 environment](https://darosio.github.io/ClopHfit/references/development.html)
 guides, which outline the guidelines and conventions that we follow for
 contributing code, documentation, and other resources.
-
-## License
-
-We use a shared copyright model that enables all contributors to maintain the
-copyright on their contributions - see the [revised BSD license](LICENSE.txt)
-for details.
-
-## Acknowledgments
-
-Special thanks to the developers of scipy.ndimage and scikit-image for their
-invaluable contributions to image processing in Python.

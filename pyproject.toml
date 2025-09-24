@@ -139,6 +139,10 @@ strict = true
 warn_unreachable = true
 warn_unused_configs = true
 
+# TODO: check
+[tool.pydoclint]
+check-class-attributes = false
+
 [tool.pylsp-mypy]
 dmypy = false
 enabled = true
@@ -231,9 +235,13 @@ split-on-trailing-comma = true
 max-complexity = 12
 
 [tool.ruff.lint.per-file-ignores]
-"*.ipynb" = ["ANN001", "ANN201", "D103", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF", "T20"]
-"tests/*" = ["PLR2004", "S101"]
+"__init__.py" = ["I002"] # don't need annotations
 "docs/*" = ["INP"]
+"*.ipynb" = ["ANN001", "ANN201", "D103", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF", "T20"]
+"src/nima/__main__.py" = [
+  "ANN001", # params are annotated using click
+]
+"tests/*" = ["PLR2004", "S101"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
