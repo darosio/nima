@@ -5,6 +5,9 @@
 [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/darosio/nima/main.svg)](https://results.pre-commit.ci/latest/github/darosio/nima/main)
 [![codecov](https://codecov.io/gh/darosio/nima/branch/main/graph/badge.svg?token=OU6F9VFUQ6)](https://codecov.io/gh/darosio/nima)
 [![RtD](https://readthedocs.org/projects/nima/badge/)](https://nima.readthedocs.io/)
+[![](https://img.shields.io/badge/Pages-blue?logo=github)](https://darosio.github.io/nima/)
+
+<!-- [![](https://img.shields.io/badge/docs-GitHub%20Pages-blue?logo=github)](https://darosio.github.io/nima/) -->
 
 A library and a command-line interface (CLI) designed to assist with image
 analysis tasks using scipy.ndimage and scikit-image.
@@ -162,8 +165,9 @@ Notes:
 ## License
 
 We use a shared copyright model that enables all contributors to maintain the
-copyright on their contributions - see the [revised BSD license](LICENSE.txt)
-for details.
+copyright on their contributions.
+
+All code is licensed under the terms of the [revised BSD license](LICENSE.txt).
 
 ## Contributing
 
