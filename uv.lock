@@ -2412,13 +2412,13 @@ dev = [
     { name = "mdformat-gfm", specifier = ">=0.4.1" },
     { name = "pylsp-mypy", specifier = ">=0.7.0" },
     { name = "python-lsp-ruff", specifier = ">=2.2.2" },
-    { name = "ruff", specifier = ">=0.13.1" },
+    { name = "ruff", specifier = ">=0.13.2" },
 ]
 lint = [{ name = "pre-commit", specifier = "==4.3.0" }]
 tests = [
     { name = "coverage", extras = ["toml"], specifier = ">=7.10.7" },
     { name = "mypy", specifier = ">=1.18.2" },
-    { name = "pandas-stubs", specifier = ">=2.3.2.250827" },
+    { name = "pandas-stubs", specifier = ">=2.3.2.250926" },
     { name = "pygments", specifier = ">=2.19.2" },
     { name = "pypdf", specifier = ">=6.1.0" },
     { name = "pytest", specifier = ">=8.4.2" },
