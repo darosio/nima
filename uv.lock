@@ -2399,7 +2399,7 @@ requires-dist = [
     { name = "sphinx-autodoc-typehints", marker = "python_full_version < '3.14' and extra == 'docs'", specifier = ">=3.0.1,<3.2" },
     { name = "sphinx-click", marker = "extra == 'docs'", specifier = ">=6.1.0" },
     { name = "statsmodels", marker = "extra == 'docs'", specifier = ">=0.14.5" },
-    { name = "tifffile", specifier = ">=2025.9.20" },
+    { name = "tifffile", specifier = ">=2025.9.30" },
     { name = "xmltodict", specifier = ">=1.0.2" },
 ]
 provides-extras = ["docs"]
@@ -4041,14 +4041,14 @@ wheels = [
 
 [[package]]
 name = "tifffile"
-version = "2025.9.20"
+version = "2025.9.30"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e4/1d/99d2eb1d50f0832d6e6e057f7d3239b77210d663a048780b029d10324b14/tifffile-2025.9.20.tar.gz", hash = "sha256:a0fed4c613ff728979cb6abfd40832b6f36dc9da8183e52840418a25a00552eb", size = 368988, upload-time = "2025-09-20T17:24:43.498Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2a/6e/82f9e07290e1c5270f295f22e32ffd0d86bef31494b004b2a247530a449a/tifffile-2025.9.30.tar.gz", hash = "sha256:1a259f11e94489a9ab599e4e9f40a0e72b17cad206587097209f630768dfcdf3", size = 369276, upload-time = "2025-09-29T20:36:50.356Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c8/15/e38bf2234e8c09fccc6ec53a7a4374e38a86f7a9d8394fb9c06e1a0f25a5/tifffile-2025.9.20-py3-none-any.whl", hash = "sha256:549dda2f2c65cc63b3d946942b9b43c09ae50caaae0aa7ea3d91a915acd45444", size = 230101, upload-time = "2025-09-20T17:24:41.831Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/af/14e1f7dd76a735495293a82fb2dea3f3769812ca95cb1383c929173d0884/tifffile-2025.9.30-py3-none-any.whl", hash = "sha256:0b2c42b6821583335407a8c48686358fcfee6e9e94f38895cbf9b111a6186c86", size = 230238, upload-time = "2025-09-29T20:36:48.475Z" },
 ]
 
 [package.optional-dependencies]
@@ -4571,7 +4571,7 @@ wheels = [
 
 [[package]]
 name = "zarr"
-version = "3.0.8"
+version = "3.1.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "donfig" },
@@ -4580,9 +4580,9 @@ dependencies = [
     { name = "packaging" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/52/60/9652fd0536fbaca8d08cbc1a5572c52e0ce01773297df75da8bb47e45907/zarr-3.0.8.tar.gz", hash = "sha256:88505d095af899a88ae8ac4db02f4650ef0801d2ff6f65b6d1f0a45dcf760a6d", size = 256825, upload-time = "2025-05-19T14:19:00.123Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d6/67/14be68a7bad15eecda09b1e81fca2420f7533645fe187bf4d6104c1aad52/zarr-3.1.3.tar.gz", hash = "sha256:01342f3e26a02ed5670db608a5576fbdb8d76acb5c280bd2d0082454b1ba6f79", size = 349125, upload-time = "2025-09-18T19:32:41.688Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/3b/e20bdf84088c11f2c396d034506cbffadd53e024111c1aa4585c2aba1523/zarr-3.0.8-py3-none-any.whl", hash = "sha256:7f81e7aec086437d98882aa432209107114bd7f3a9f4958b2af9c6b5928a70a7", size = 205364, upload-time = "2025-05-19T14:18:58.789Z" },
+    { url = "https://files.pythonhosted.org/packages/1a/71/9de7229515a53d1cc5705ca9c411530f711a2242f962214d9dbfe2741aa4/zarr-3.1.3-py3-none-any.whl", hash = "sha256:45f67f87f65f14fa453f99dd8110a5936b7ac69f3a21981d33e90407c80c302a", size = 276427, upload-time = "2025-09-18T19:32:40.042Z" },
 ]
 
 [[package]]
