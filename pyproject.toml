@@ -240,9 +240,6 @@ max-complexity = 12
 "__init__.py" = ["I002"] # don't need annotations
 "docs/*" = ["INP"]
 "*.ipynb" = ["ANN001", "ANN201", "D103", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF", "T20"]
-"src/nima/__main__.py" = [
-  "ANN001", # params are annotated using click
-]
 "tests/*" = ["PLR2004", "S101"]
 
 [tool.ruff.lint.pydocstyle]
