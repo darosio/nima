@@ -31,7 +31,7 @@ dependencies = [
   "scikit-image>=0.25.2",
   "scipy>=1.16.2",
   "sigfig>=1.3.19",
-  "tifffile>=2025.9.30", # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
+  "tifffile>=2025.10.4", # changed >2019.7.2 an OME recognition check and "IYX" -> "TCYX"
   "xmltodict>=1.0.2",
 ]
 description = "Numerical IMage Analyses."
