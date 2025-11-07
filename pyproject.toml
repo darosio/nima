@@ -45,7 +45,7 @@ version = "0.11.9"
 [project.optional-dependencies]
 docs = [
   "autodocsumm>=0.2.14",
-  "bokeh>=3.8.0",
+  "bokeh>=3.8.1",
   "dask-image>=2024.5.3",
   "holoviews>=1.21.0",
   "hvplot>=0.12.1",
