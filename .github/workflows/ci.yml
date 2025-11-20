@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -60,7 +60,7 @@ jobs:
         tests: [test, type, xdoc]
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -94,7 +94,7 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v2
       - run: echo "# Test" | pandoc -t html
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -144,7 +144,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Merge PR
         uses: pascalgn/automerge-action@v0.16.4
         env:
