@@ -329,7 +329,7 @@ def d_mask_label(  # noqa: PLR0913
     mask = []
     for _, im in enumerate(ga_wiener):
         m = im > threshold_function(im)  # type: ignore[no-untyped-call]
-        m = morphology.remove_small_objects(m, min_size=min_size)  # type: ignore[no-untyped-call]
+        m = morphology.remove_small_objects(m, min_size=min_size)
         m = morphology.closing(m)
         # clear border always
         if clear_border:

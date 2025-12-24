@@ -201,10 +201,7 @@ def _bg_li_adaptive(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, N
     li = filters.threshold_li(im)  # type: ignore[no-untyped-call]
     m = im < li
     if bg_params.erosion_disk:
-        m = skimage.morphology.binary_erosion(
-            m,
-            morphology.disk(bg_params.erosion_disk),  # type: ignore[no-untyped-call]
-        )
+        m = skimage.morphology.erosion(m, morphology.disk(bg_params.erosion_disk))  # type: ignore[no-untyped-call]
     imm = im * m
     if bg_params.clip:
         imm = imm.clip(np.min(im))
@@ -218,10 +215,7 @@ def _bg_li_li(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
     li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
     m = im < li
     if bg_params.erosion_disk:
-        m = skimage.morphology.binary_erosion(
-            m,
-            morphology.disk(bg_params.erosion_disk),  # type: ignore[no-untyped-call]
-        )
+        m = skimage.morphology.erosion(m, morphology.disk(bg_params.erosion_disk))  # type: ignore[no-untyped-call]
     imm = im * m
     # To avoid zeros generated after first thesholding, clipping to the
     # min value of original image is needed before second threshold.
