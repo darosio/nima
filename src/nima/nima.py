@@ -669,9 +669,9 @@ def plt_img_profile(  # noqa: PLR0915
         ax.tick_params(axis="y", labelleft=False, right=True)
         ax.tick_params(axis="x", top=True, labelbottom=False)
         if vmin is None:
-            vmin = float(np.percentile(im, [18.4]))  # 1/e (66.6 %)
+            vmin = float(np.percentile(im, 18.4))  # 1/e (66.6 %)
         elif vmax is None:
-            vmax = float(np.percentile(im, [81.6]))  # 1/e (66.6 %)
+            vmax = float(np.percentile(im, 81.6))  # 1/e (66.6 %)
         img = ax.imshow(im, vmin=vmin, vmax=vmax, cmap="turbo")
         ax_px.plot(im.mean(axis=0), lw=4, alpha=0.5)
         ymin = round(im.shape[0] / 2 * 0.67)
@@ -779,8 +779,8 @@ def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
     m = bias > (ave + n_sd * std)
     n_hpix = m.sum()
     while True:
-        m_ave = np.ma.masked_array(bias, m).mean()  # type: ignore[no-untyped-call]
-        m_std = np.ma.masked_array(bias, m).std()  # type: ignore[no-untyped-call]
+        m_ave = np.ma.masked_array(bias, m).mean()
+        m_std = np.ma.masked_array(bias, m).std()
         m = bias > m_ave + n_sd * m_std
         if n_hpix == m.sum():
             break
