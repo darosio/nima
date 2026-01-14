@@ -2728,8 +2728,8 @@ docs = [
     { name = "pympler" },
     { name = "seaborn" },
     { name = "selenium" },
-    { name = "sphinx", marker = "python_full_version < '3.14'" },
-    { name = "sphinx-autodoc-typehints", marker = "python_full_version < '3.14'" },
+    { name = "sphinx" },
+    { name = "sphinx-autodoc-typehints" },
     { name = "sphinx-click" },
     { name = "statsmodels" },
 ]
@@ -2786,8 +2786,8 @@ requires-dist = [
     { name = "seaborn", marker = "extra == 'docs'", specifier = ">=0.13.2" },
     { name = "selenium", marker = "extra == 'docs'", specifier = ">=4.39.0" },
     { name = "sigfig", specifier = ">=1.3.19" },
-    { name = "sphinx", marker = "python_full_version < '3.14' and extra == 'docs'", specifier = ">=8.1.3,<8.2" },
-    { name = "sphinx-autodoc-typehints", marker = "python_full_version < '3.14' and extra == 'docs'", specifier = ">=3.0.1,<3.2" },
+    { name = "sphinx", marker = "extra == 'docs'", specifier = ">=8.1.3,<8.2" },
+    { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'", specifier = ">=3.0.1,<3.2" },
     { name = "sphinx-click", marker = "extra == 'docs'", specifier = ">=6.2.0" },
     { name = "statsmodels", marker = "extra == 'docs'", specifier = ">=0.14.6" },
     { name = "tifffile", specifier = ">=2025.12.20" },
@@ -4552,7 +4552,7 @@ name = "sphinx-autodoc-typehints"
 version = "3.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "sphinx", marker = "python_full_version < '3.14'" },
+    { name = "sphinx" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/26/f0/43c6a5ff3e7b08a8c3b32f81b859f1b518ccc31e45f22e2b41ced38be7b9/sphinx_autodoc_typehints-3.0.1.tar.gz", hash = "sha256:b9b40dd15dee54f6f810c924f863f9cf1c54f9f3265c495140ea01be7f44fa55", size = 36282, upload-time = "2025-01-16T18:25:30.958Z" }
 wheels = [

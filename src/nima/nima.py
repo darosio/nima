@@ -779,8 +779,8 @@ def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
     m = bias > (ave + n_sd * std)
     n_hpix = m.sum()
     while True:
-        m_ave = np.ma.masked_array(bias, m).mean()  # type: ignore[no-untyped-call]
-        m_std = np.ma.masked_array(bias, m).std()  # type: ignore[no-untyped-call]
+        m_ave = np.ma.masked_array(bias, m).mean()
+        m_std = np.ma.masked_array(bias, m).std()
         m = bias > m_ave + n_sd * m_std
         if n_hpix == m.sum():
             break

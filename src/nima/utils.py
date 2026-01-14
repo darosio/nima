@@ -92,7 +92,7 @@ def ave(img: ImFrame, bgmax: float, prob_value: float = 0.001) -> float:
     sd = min(sd, 10)
     mask = prob(img, float(av), sd) < prob_value
     # MAYBE: plot the mask
-    return np.ma.masked_array(img, ~mask).mean() - av  # type: ignore[no-untyped-call, no-any-return]
+    return np.ma.masked_array(img, ~mask).mean() - av  # type: ignore[no-any-return]
 
 
 def channel_mean(img: ImFrame) -> pd.DataFrame:
