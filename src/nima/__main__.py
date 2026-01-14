@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import Any
 
 import click
+import dask
 import dask.array as da
 import numpy as np
 import pandas as pd
 import sigfig  # type: ignore[import-untyped]
 import tifffile
 from dask.diagnostics.progress import ProgressBar
-from dask.distributed import Client, progress
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
@@ -398,22 +398,20 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
     image_sequence = tifffile.TiffSequence(globpath)
     sequence_info = f"{image_sequence.axes} {image_sequence.shape}"
     click.secho(sequence_info, fg="green")
-    # Start a local client without assignment
-    Client()  # type: ignore[no-untyped-call]
-    # Stack TIFF files as a Dask array
-    dask_array = da.stack(  # type: ignore[no-untyped-call]
-        [
-            da.from_array(tifffile.imread(file), chunks="auto")  # type: ignore[no-untyped-call]
-            for file in image_sequence
-        ],
-        axis=0,
-    )
-    # Compute mean projection
-    mean_projection = da.mean(dask_array, axis=0)
-    persisted_result = mean_projection.persist()
-    progress(persisted_result)  # type: ignore[no-untyped-call]
-    # Compute the mean projection
-    tprojection = persisted_result.compute()
+    # Use synchronous scheduler to avoid distributed client issues in tests
+    with dask.config.set(scheduler="synchronous"):
+        # Stack TIFF files as a Dask array
+        dask_array = da.stack(  # type: ignore[no-untyped-call]
+            [
+                da.from_array(tifffile.imread(file), chunks="auto")  # type: ignore[no-untyped-call]
+                for file in image_sequence
+            ],
+            axis=0,
+        )
+        # Compute mean projection
+        mean_projection = da.mean(dask_array, axis=0)
+        # Compute the mean projection
+        tprojection = mean_projection.compute()
     # Determine the output file path
     output_path = (
         ctx.obj["output"]
