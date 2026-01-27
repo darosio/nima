@@ -11,11 +11,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path("../..").resolve()))
-
+import os
 
 # -- Project information -----------------------------------------------------
 
@@ -34,19 +30,12 @@ extensions = [
     "autodocsumm",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
-    "nbsphinx",
+    "myst_nb",
     "sphinx_click",
 ]
+
 # Napoleon settings to Default
-napoleon_use_ivar = True
-napoleon_use_param = False
-# Use __init__ docstring
-napoleon_include_init_with_doc = False
-# Use _private docstring
-napoleon_include_private_with_doc = False
-# Use __special__ docstring
-napoleon_include_special_with_doc = True
-nbsphinx_allow_errors = True
+napoleon_use_ivar = False
 
 autodoc_default_options = {
     "members": True,
@@ -82,9 +71,30 @@ exclude_patterns = [
     "_build",
     "Thumbs.db",
     ".DS_Store",
-    "**/.ipynb_checkpoints/**",
-    "**/.virtual_documents/**",
+    "jupyter_execute",
+    "**/.virtual_documents",
+    "**/.ipynb_checkpoints",
 ]
+
+# -- nbsphinx / myst-nb -----------------------------------------------------
+# myst-nb configuration
+nb_execution_mode = os.environ.get(
+    "NB_EXECUTION_MODE", os.environ.get("NBSPHINX_EXECUTE", "auto")
+)
+nb_execution_timeout = 300  # Increase timeout to 5 minutes
+nb_execution_allow_errors = False
+nb_execution_raise_on_error = True
+nb_execution_show_tb = True
+
+# Avoid multiprocessing in notebooks during Sphinx builds (pickling issues with
+# functions defined in notebook cells under newer Python versions).
+os.environ.setdefault("CLOPHFIT_EMCEE_WORKERS", "1")
+
+# Keep notebooks fast when executed by Sphinx.
+os.environ.setdefault("CLOPHFIT_DOCS_EMCEE_STEPS", "300")
+os.environ.setdefault("CLOPHFIT_DOCS_EMCEE_BURN", "50")
+os.environ.setdefault("CLOPHFIT_DOCS_EMCEE_THIN", "10")
+os.environ.setdefault("CLOPHFIT_DOCS_EMCEE_NWALKERS", "10")
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -93,9 +103,6 @@ exclude_patterns = [
 # a list of builtin themes.
 #
 html_theme = "pydata_sphinx_theme"
-html_theme_options = {
-    "navigation_with_keys": False,
-}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
