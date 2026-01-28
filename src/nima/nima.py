@@ -366,10 +366,10 @@ def process_watershed(
     pr = measure.regionprops(  # type: ignore[no-untyped-call]
         d_im["labels"][0], intensity_image=d_im[channels[0]][0]
     )
-    max_diameter = pr[0].equivalent_diameter
+    max_diameter = pr[0].equivalent_diameter_area
     size = max_diameter * 2.20
     for p in pr[1:]:
-        max_diameter = max(max_diameter, p.equivalent_diameter)
+        max_diameter = max(max_diameter, p.equivalent_diameter_area)
     print(max_diameter)
     for time, (d, lbl) in enumerate(zip(distance, d_im["labels"], strict=True)):
         local_maxi = feature.peak_local_max(  # type: ignore[call-arg, no-untyped-call]
@@ -489,7 +489,7 @@ def d_meas_props(  # noqa: PLR0913
                 i_label = [prop.label == lbl for prop in props].index(True)
                 prop_ch0 = props[i_label]
                 idx.append(time)
-                d["equivalent_diameter"].append(prop_ch0.equivalent_diameter)
+                d["equivalent_diameter"].append(prop_ch0.equivalent_diameter_area)
                 d["eccentricity"].append(prop_ch0.eccentricity)
                 d["area"].append(prop_ch0.area)
                 for ch in pr:
