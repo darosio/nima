@@ -150,6 +150,7 @@ class Metadata:
     """
 
     ome: InitVar[OME]
+    _ome: OME = field(init=False, repr=False)
     size_s: int = 1
     size_x: list[int] = field(default_factory=list)
     size_y: list[int] = field(default_factory=list)
@@ -191,7 +192,7 @@ class Metadata:
             self.size_c.append(pixels.size_c)
             self.size_t.append(pixels.size_t)
             self.dimension_order.append(str(pixels.dimension_order.value))
-            self.bits.append(pixels.significant_bits)
+            self.bits.append(pixels.significant_bits or 0)
             self.name.append(image.id)
             self.objective.append(
                 image.objective_settings.id if image.objective_settings else None
@@ -210,13 +211,13 @@ class Metadata:
             self.channels.append(
                 [
                     Channel(
-                        int(channel.light_source_settings.wavelength)
+                        int(channel.light_source_settings.wavelength or 0)
                         if channel.light_source_settings
                         else 0,
-                        channel.light_source_settings.attenuation
+                        channel.light_source_settings.attenuation or 0.0
                         if channel.light_source_settings
                         else 0.0,
-                        float(channel.detector_settings.gain)
+                        float(channel.detector_settings.gain or 0.0)
                         if channel.detector_settings
                         else 0.0,
                         str(channel.detector_settings.binning.value)
@@ -242,12 +243,12 @@ class Metadata:
                         plane.the_t,
                         plane.the_c,
                         plane.the_z,
-                        plane.delta_t,
+                        plane.delta_t or 0.0,
                     )
                     for plane in pixels.planes
                 ]
             )
-        self.ome = ome
+        self._ome = ome
         for attribute in [
             "size_x",
             "size_y",

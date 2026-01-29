@@ -5,7 +5,7 @@ import os
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import click
 import dask
@@ -168,12 +168,12 @@ def main(  # noqa: PLR0913
     if verbose > _VerbosityLevel.SILENT:
         click.echo(f"  Times: {t}")
     if hotpixels:
-        d_im = nima.d_median(d_im)
+        d_im = cast("DIm", nima.d_median(d_im))
     if flat_f:
         # XXX: this is imperfect: dark must be present of flat
         dark_im, _, _ = nima.read_tiff(Path(dark_f), channels)
         flat_im, _, _ = nima.read_tiff(Path(flat_f), channels)
-        d_im = nima.d_shading(d_im, dark_im, flat_im, clip=True)
+        d_im = cast("DIm", nima.d_shading(d_im, dark_im, flat_im, clip=True))
     # Process background
     kwargs_bg: dict[str, Any] = {"kind": bg_method}
     optional_keys = {
@@ -185,6 +185,7 @@ def main(  # noqa: PLR0913
     }
     kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
     d_im_bg, bgs, ff = nima.d_bg(d_im, BgParams(**kwargs_bg), downscale=bg_downscale)
+    d_im_bg = cast("DIm", d_im_bg)
     print(BgParams(**kwargs_bg))
     # Segment
     kwargs_mask_label: dict[str, Any] = {
