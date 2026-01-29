@@ -41,13 +41,8 @@ Modernize the IO module of `nima` by replacing ad-hoc `tifffile` parsing with th
 ### Step 3: Lazy Loading
 
 - Leverage `BioImage`'s automatic Dask wrapping.
+
 - Remove manual `TiffReader.aszarr()` boilerplate.
-
-### Step 4: Cleanup Dependencies
-
-- **Remove**:
-
-  - `xmltodict` (used in `nima.py`).
 
   Next Steps:
 
