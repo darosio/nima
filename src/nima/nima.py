@@ -16,6 +16,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import xarray as xr
 from dask.array import Array
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
@@ -122,21 +123,59 @@ def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
     return fig
 
 
-def d_median(d_im: DIm) -> DIm:
-    """Median filter on dictionary of image (d_im).
+def _d_median_xarray(d_im: xr.DataArray) -> xr.DataArray:
+    """Median filter on xarray.DataArray.
+
+    Applies median filter with disk(1) footprint on Y, X dimensions.
+
+    Parameters
+    ----------
+    d_im : xr.DataArray
+        Input image data array.
+
+    Returns
+    -------
+    xr.DataArray
+        Filtered data array preserving dtype of input.
+
+    """
+    disk_footprint = morphology.disk(1)  # type: ignore[no-untyped-call]
+
+    def apply_median(img: NDArray[Any]) -> NDArray[Any]:
+        """Apply median filter to 2D image."""
+        return cast(
+            "NDArray[Any]", ndimage.median_filter(img, footprint=disk_footprint)
+        )
+
+    return cast(
+        "xr.DataArray",
+        xr.apply_ufunc(
+            apply_median,
+            d_im,
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[d_im.dtype],
+        ),
+    )
+
+
+def d_median(d_im: DIm | xr.DataArray) -> DIm | xr.DataArray:
+    """Median filter on dictionary of image (d_im) or xarray.DataArray.
 
     Same to skimage.morphology.disk(1) and to median filter of Fiji/ImageJ
     with radius=0.5.
 
     Parameters
     ----------
-    d_im : DIm
-        dict of images
+    d_im : DIm | xr.DataArray
+        dict of images or xarray.DataArray
 
     Return
     ------
-    DIm
-        dict of images preserve dtype of input
+    DIm | xr.DataArray
+        dict of images or DataArray preserve dtype of input
 
     Raises
     ------
@@ -144,6 +183,9 @@ def d_median(d_im: DIm) -> DIm:
         When ImArray is neither a single image nor a stack.
 
     """
+    if isinstance(d_im, xr.DataArray):
+        return _d_median_xarray(d_im)
+
     d_out = {}
     for k, im in d_im.items():
         if im.ndim not in [AXES_LENGTH_2D, AXES_LENGTH_3D]:
@@ -158,10 +200,55 @@ def d_median(d_im: DIm) -> DIm:
     return d_out
 
 
+def _d_shading_xarray(
+    d_im: xr.DataArray,
+    dark: xr.DataArray | object,
+    flat: xr.DataArray | object,
+    *,
+    clip: bool = True,
+) -> xr.DataArray:
+    """Shading correction on xarray.DataArray.
+
+    Subtract dark; then divide by flat.
+
+    Parameters
+    ----------
+    d_im : xr.DataArray
+        Input image data array.
+    dark : xr.DataArray | object
+        Dark image (DataArray or broadcastable array/scalar).
+    flat : xr.DataArray | object
+        Flat image (DataArray or broadcastable array/scalar).
+    clip : bool
+        Boolean for clipping values >=0.
+
+    Returns
+    -------
+    xr.DataArray
+        Corrected data array.
+
+    """
+    # Cast to float
+    d_cor = d_im.astype(float)
+
+    # Subtract dark and divide by flat
+    d_cor = (d_cor - dark) / flat
+
+    # Clip if requested
+    if clip:
+        d_cor = d_cor.clip(min=0)
+
+    return d_cor
+
+
 def d_shading(
-    d_im: DIm, dark: DIm | ImFrame, flat: DIm | ImFrame, *, clip: bool = True
-) -> DIm:
-    """Shading correction on d_im.
+    d_im: DIm | xr.DataArray,
+    dark: DIm | ImFrame | xr.DataArray | object,
+    flat: DIm | ImFrame | xr.DataArray | object,
+    *,
+    clip: bool = True,
+) -> DIm | xr.DataArray:
+    """Shading correction on d_im or xarray.DataArray.
 
     Subtract dark; then divide by flat.
 
@@ -171,21 +258,24 @@ def d_shading(
 
     Parameters
     ----------
-    d_im : DIm
-        Dictionary of images.
-    dark : DIm | ImFrame
-        Dark image (either a 2D image or 2D d_im).
-    flat : DIm | ImFrame
-        Flat image (either a 2D image or 2D d_im).
+    d_im : DIm | xr.DataArray
+        Dictionary of images or xarray.DataArray.
+    dark : DIm | ImFrame | xr.DataArray | object
+        Dark image (either a 2D image, 2D d_im, or DataArray).
+    flat : DIm | ImFrame | xr.DataArray | object
+        Flat image (either a 2D image, 2D d_im, or DataArray).
     clip : bool
         Boolean for clipping values >=0.
 
     Returns
     -------
-    DIm
-        Corrected d_im.
+    DIm | xr.DataArray
+        Corrected d_im or DataArray.
 
     """
+    if isinstance(d_im, xr.DataArray):
+        return _d_shading_xarray(d_im, dark, flat, clip=clip)
+
     # TODO inplace=True tosave memory
     # assertion type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg
     # assertion type(flat) == np.ndarray or flat.keys() == d_im.keys(),
@@ -204,19 +294,19 @@ def d_shading(
     return d_cor
 
 
-def d_bg(
-    d_im: DIm,
+def _d_bg_xarray(
+    d_im: xr.DataArray,
     bg_params: BgParams,
     downscale: tuple[int, int] | None = None,
     *,
     clip: bool = True,
-) -> tuple[DIm, pd.DataFrame, dict[str, list[list[Figure]]]]:
-    """Bg segmentation for d_im.
+) -> tuple[xr.DataArray, pd.DataFrame, dict[str, list[list[Figure]]]]:
+    """Bg segmentation for xarray.DataArray.
 
     Parameters
     ----------
-    d_im : DIm
-        desc
+    d_im : xr.DataArray
+        Input image data array with dimensions including C (channels) and T (time).
     bg_params : BgParams
         An instance of BgParams containing the parameters for the segmentation.
     downscale : tuple[int, int] | None
@@ -226,8 +316,8 @@ def d_bg(
 
     Returns
     -------
-    d_cor : DIm
-        Dictionary of images subtracted for the estimated bg.
+    d_cor : xr.DataArray
+        DataArray subtracted for the estimated bg.
     bgs : pd.DataFrame
         Median of the estimated bg; columns for channels and index for time
         points.
@@ -235,6 +325,82 @@ def d_bg(
         List of (list ?) of figures.
 
     """
+    bgs_data = defaultdict(list)
+    figs_data = defaultdict(list)
+
+    channels = d_im.coords["C"].to_numpy()
+    times = d_im.coords["T"].to_numpy()
+
+    for ch in channels:
+        ch_bgs = []
+        for t in range(len(times)):
+            frame_da = d_im.sel(C=ch).isel(T=t)
+            if "Z" in d_im.dims and d_im.sizes["Z"] == 1:
+                frame_da = frame_da.squeeze("Z")
+
+            frame_np = frame_da.compute().to_numpy()
+
+            if downscale:
+                frame_for_bg = transform.downscale_local_mean(frame_np, downscale)  # type: ignore[no-untyped-call]
+            else:
+                frame_for_bg = frame_np
+
+            bg_result = calculate_bg(frame_for_bg, bg_params)
+            med = bg_result.iqr[1]
+            ch_bgs.append(med)
+
+            if bg_result.figures:
+                figs_data[str(ch)].append(bg_result.figures)
+
+        bgs_data[str(ch)] = ch_bgs
+
+    bgs_df = pd.DataFrame(bgs_data, index=times)
+    bg_da = xr.DataArray(bgs_df, dims=("T", "C"), coords={"T": times, "C": channels})
+
+    d_cor_da = d_im - bg_da
+
+    if clip:
+        d_cor_da = d_cor_da.clip(min=0)
+
+    return d_cor_da, bgs_df, dict(figs_data)
+
+
+def d_bg(
+    d_im: DIm | xr.DataArray,
+    bg_params: BgParams,
+    downscale: tuple[int, int] | None = None,
+    *,
+    clip: bool = True,
+) -> tuple[DIm | xr.DataArray, pd.DataFrame, dict[str, list[list[Figure]]]]:
+    """Bg segmentation for d_im.
+
+    Parameters
+    ----------
+    d_im : DIm | xr.DataArray
+        Dictionary of images or xarray DataArray.
+    bg_params : BgParams
+        An instance of BgParams containing the parameters for the segmentation.
+    downscale : tuple[int, int] | None
+        Tupla, x, y are downscale factors for rows, cols (default=None).
+    clip : bool, optional
+        Boolean (default=True) for clipping values >=0.
+
+    Returns
+    -------
+    d_cor : DIm | xr.DataArray
+        Dictionary of images or DataArray subtracted for the estimated bg.
+    bgs : pd.DataFrame
+        Median of the estimated bg; columns for channels and index for time
+        points.
+    figs : dict[str, list[list[Figure]]]
+        List of (list ?) of figures.
+
+    """
+    # Handle xarray.DataArray input
+    if isinstance(d_im, xr.DataArray):
+        return _d_bg_xarray(d_im, bg_params, downscale, clip=clip)
+
+    # Handle legacy DIm (dict) input
     d_bg = defaultdict(list)
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
@@ -258,8 +424,8 @@ def d_bg(
     return dd_cor, bgs, d_fig
 
 
-def d_mask_label(  # noqa: PLR0913
-    d_im: DIm,
+def _d_mask_label_xarray(  # noqa: PLR0913, C901
+    d_im: xr.DataArray,
     min_size: int | None = 640,
     channels: tuple[str, ...] = ("C", "G", "R"),
     threshold_method: str = "yen",
@@ -267,9 +433,9 @@ def d_mask_label(  # noqa: PLR0913
     wiener: bool = False,
     watershed: bool = False,
     clear_border: bool = False,
-    randomwalk: bool = False,
-) -> None:
-    """Label cells in d_im. Add two keys, mask and label.
+    _randomwalk: bool = False,
+) -> tuple[xr.DataArray, xr.DataArray]:
+    """Label cells in xarray DataArray. Returns mask and labels as separate DataArrays.
 
     Perform plane-by-plane (2D image):
 
@@ -284,8 +450,192 @@ def d_mask_label(  # noqa: PLR0913
 
     Parameters
     ----------
-    d_im : DIm
-        desc
+    d_im : xr.DataArray
+        Input image with dimensions (T, C, Z, Y, X).
+    min_size : int | None, optional
+        Objects smaller than min_size (default=640 pixels) are discarded from mask.
+    channels : tuple[str, ...], optional
+        List a name for each channel.
+    threshold_method : str, optional
+        Threshold method applied to the geometric average plane-by-plane (default=yen).
+    wiener : bool, optional
+        Boolean for wiener filter (default=False).
+    watershed : bool, optional
+        Boolean for watershed on labels (default=False).
+    clear_border :  bool, optional
+        Whether to filter out objects near the 2D image edge (default=False).
+    _randomwalk :  bool, optional
+        Use random_walker instead of watershed post-ndimage-EDT (default=False).
+
+    Returns
+    -------
+    mask : xr.DataArray
+        Binary mask with dimensions (T, Z, Y, X).
+    labels : xr.DataArray
+        Labeled regions with dimensions (T, Z, Y, X).
+
+    Raises
+    ------
+    ValueError
+        If threshold_method is not one of ['yen', 'li'].
+    NotImplementedError
+        If watershed is True (not yet implemented for DataArray).
+
+    """
+    if threshold_method not in threshold_method_choices:
+        msg = f"threshold_method must be one of {threshold_method_choices}"
+        raise ValueError(msg)
+
+    if watershed:
+        msg = "Watershed not yet supported for DataArray input"
+        raise NotImplementedError(msg)
+
+    # Compute geometric average across channels
+    # Select the specified channels
+    ga = d_im.sel(C=list(channels))
+    # Geometric mean: product raised to 1/n
+    ga = ga.prod(dim="C") ** (1 / len(channels))
+
+    # Apply wiener filter if requested
+    if wiener:
+        # Apply wiener filter plane-by-plane (Y, X are core dims)
+        def apply_wiener(im: NDArray[Any]) -> NDArray[Any]:
+            """Apply 2D Wiener filter."""
+            return signal.wiener(im, (3, 3))  # type: ignore[no-any-return]
+
+        ga_wiener = xr.apply_ufunc(
+            apply_wiener,
+            ga,
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[ga.dtype],
+        )
+    else:
+        ga_wiener = ga
+
+    # Choose threshold function
+    threshold_function: Any
+    if threshold_method == "li":
+        threshold_function = filters.threshold_li
+    else:
+        threshold_function = filters.threshold_yen
+
+    # Apply thresholding plane-by-plane
+    def apply_threshold(im: NDArray[Any]) -> NDArray[np.bool_]:
+        """Apply threshold to 2D plane."""
+        threshold = threshold_function(im)
+        return im > threshold  # type: ignore[no-any-return]
+
+    mask = xr.apply_ufunc(
+        apply_threshold,
+        ga_wiener,
+        input_core_dims=[["Y", "X"]],
+        output_core_dims=[["Y", "X"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[bool],
+    )
+
+    # Remove small objects if requested
+    if min_size:
+
+        def remove_small(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
+            """Remove small objects from binary mask."""
+            return morphology.remove_small_objects(m, max_size=min_size - 1)  # type: ignore[no-any-return]
+
+        mask = xr.apply_ufunc(
+            remove_small,
+            mask,
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[bool],
+        )
+
+    # Apply binary closing
+    def apply_closing(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
+        """Apply binary closing morphology."""
+        return morphology.closing(m)  # type: ignore[no-any-return]
+
+    mask = xr.apply_ufunc(
+        apply_closing,
+        mask,
+        input_core_dims=[["Y", "X"]],
+        output_core_dims=[["Y", "X"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[bool],
+    )
+
+    # Clear border if requested
+    if clear_border:
+
+        def apply_clear_border(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
+            """Clear objects touching the border."""
+            return segmentation.clear_border(m)  # type: ignore[no-untyped-call, no-any-return]
+
+        mask = xr.apply_ufunc(
+            apply_clear_border,
+            mask,
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[bool],
+        )
+
+    # Label connected components
+    def apply_label(m: NDArray[np.bool_]) -> NDArray[np.int32]:
+        """Label connected components in binary mask."""
+        labeled, _ = ndimage.label(m)
+        return labeled.astype(np.int32)  # type: ignore[no-any-return]
+
+    labels = xr.apply_ufunc(
+        apply_label,
+        mask,
+        input_core_dims=[["Y", "X"]],
+        output_core_dims=[["Y", "X"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[np.int32],
+    )
+
+    return mask, labels
+
+
+def d_mask_label(  # noqa: PLR0913
+    d_im: DIm | xr.DataArray,
+    min_size: int | None = 640,
+    channels: tuple[str, ...] = ("C", "G", "R"),
+    threshold_method: str = "yen",
+    *,
+    wiener: bool = False,
+    watershed: bool = False,
+    clear_border: bool = False,
+    randomwalk: bool = False,
+) -> tuple[xr.DataArray, xr.DataArray] | None:
+    """Label cells in d_im.
+
+    Add two keys, mask and label (for DIm) or return tuple (for DataArray).
+
+    Perform plane-by-plane (2D image):
+
+    - geometric average of all channels;
+    - optional wiener filter (3,3);
+    - mask using threshold_method;
+    - remove objects smaller than **min_size**;
+    - binary closing;
+    - optionally remove any object on borders;
+    - label each ROI;
+    - optionally perform watershed on labels.
+
+    Parameters
+    ----------
+    d_im : DIm | xr.DataArray
+        Input image dictionary (legacy) or DataArray with dimensions (T, C, Z, Y, X).
     min_size : int | None, optional
         Objects smaller than min_size (default=640 pixels) are discarded from mask.
     channels : tuple[str, ...], optional
@@ -301,6 +651,12 @@ def d_mask_label(  # noqa: PLR0913
     randomwalk :  bool, optional
         Use random_walker instead of watershed post-ndimage-EDT (default=False).
 
+    Returns
+    -------
+    tuple[xr.DataArray, xr.DataArray] | None
+        If d_im is DataArray: returns (mask, labels).
+        If d_im is DIm: modifies d_im in place and returns None.
+
     Raises
     ------
     ValueError
@@ -308,10 +664,24 @@ def d_mask_label(  # noqa: PLR0913
 
     Notes
     -----
-    Side effects:
+    Side effects (DIm input only):
         Add a 'label' key to the d_im.
 
     """
+    # Dispatch to xarray implementation if input is DataArray
+    if isinstance(d_im, xr.DataArray):
+        return _d_mask_label_xarray(
+            d_im,
+            min_size=min_size,
+            channels=channels,
+            threshold_method=threshold_method,
+            wiener=wiener,
+            watershed=watershed,
+            clear_border=clear_border,
+            randomwalk=randomwalk,
+        )
+
+    # Legacy DIm implementation
     if threshold_method not in threshold_method_choices:
         msg = f"threshold_method must be one of {threshold_method_choices}"
         raise ValueError(msg)
@@ -349,6 +719,8 @@ def d_mask_label(  # noqa: PLR0913
 
     if watershed:
         process_watershed(d_im, channels, randomwalk=randomwalk)
+
+    return None
 
 
 def process_watershed(
