@@ -6,6 +6,7 @@ of microscopy formats (TIFF, CZI, LIF, etc.) and returns data as
 lazy-loaded xarray.DataArrays with standard dimensional metadata (TCZYX).
 """
 
+import warnings
 from collections.abc import Sequence
 from dataclasses import InitVar, dataclass, field
 from pathlib import Path
@@ -348,6 +349,40 @@ def read_image(fp: Path, channels: Sequence[str] | None = None) -> DataArray:
                 f"provided {len(channels)}"
             )
             raise ValueError(msg)
+
+        # Validate C, G, R wavelength ordering if all three are present
+        if "metadata" in data.attrs:
+            md = data.attrs["metadata"]
+            # md.channels is list[list[Channel]], one list per series.
+            # We're reading the first series (scene 0) by default.
+            if md and md.channels:
+                # Get channels for the first series
+                current_channels_meta = md.channels[0]
+
+                if len(current_channels_meta) == len(channels):
+                    # Map provided channel name to metadata wavelength
+                    # The order matches: channels[i] renames current_channels_meta[i]
+                    name_to_wave = {
+                        name: ch_meta.wavelength
+                        for name, ch_meta in zip(
+                            channels, current_channels_meta, strict=False
+                        )
+                    }
+
+                    # Check if C, G, R are all present in the channel names
+                    if {"C", "G", "R"}.issubset(name_to_wave.keys()):
+                        w_c = name_to_wave["C"]
+                        w_g = name_to_wave["G"]
+                        w_r = name_to_wave["R"]
+
+                        # Validate wavelength ordering: lambda_C < lambda_G < lambda_R
+                        if not (w_c < w_g < w_r):
+                            msg = (
+                                f"Channel wavelength validation failed: "
+                                f"Expected λ_C < λ_G < λ_R. "
+                                f"Got C={w_c}nm, G={w_g}nm, R={w_r}nm."
+                            )
+                            warnings.warn(msg, UserWarning, stacklevel=2)
 
         # Assign new channel names to the 'C' coordinate
         data = data.assign_coords(C=list(channels))
