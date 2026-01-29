@@ -7,10 +7,281 @@ lazy-loaded xarray.DataArrays with standard dimensional metadata (TCZYX).
 """
 
 from collections.abc import Sequence
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
+from pprint import pformat
+from typing import Any
 
+import numpy as np
 from bioio import BioImage
+from ome_types import OME
 from xarray import DataArray
+
+
+@dataclass()
+class Channel:
+    """Represent illumination-detection channel.
+
+    Attributes
+    ----------
+    wavelength : int
+        Illumination wavelength.
+    attenuation : float
+        Illumination attenuation.
+    gain : float
+        Detector gain.
+    binning : str
+        Detector binning.
+    filters : list[str]
+        List of filters.
+    """
+
+    wavelength: int
+    attenuation: float
+    gain: float
+    binning: str
+    filters: list[str]
+
+    def __repr__(self) -> str:
+        """Represent most relevant metadata."""
+        return (
+            f"Channel(λ={self.wavelength}, attenuation={self.attenuation}, "
+            f"gain={self.gain}, binning={self.binning}, "
+            f"filters hash={np.array([hash(f) for f in self.filters]).sum()})"
+        )
+
+
+@dataclass(eq=True, frozen=True)
+class StagePosition:
+    """Dataclass representing stage position.
+
+    Attributes
+    ----------
+    x : float | None
+        Position in the X dimension.
+    y : float | None
+        Position in the Y dimension.
+    z : float | None
+        Position in the Z dimension.
+    """
+
+    x: float | None
+    y: float | None
+    z: float | None
+
+    def __hash__(self) -> int:
+        """Generate a hash value for the object based on its attributes."""
+        return hash((self.x, self.y, self.z))
+
+    def __repr__(self) -> str:
+        """Represent most relevant metadata."""
+        return f"\t\tXYZ={pformat((self.x, self.y, self.z))}"
+
+
+@dataclass(eq=True)
+class VoxelSize:
+    """Dataclass representing voxel size.
+
+    Attributes
+    ----------
+    x : float | None
+        Size in the X dimension.
+    y : float | None
+        Size in the Y dimension.
+    z : float | None
+        Size in the Z dimension.
+    """
+
+    x: float | None
+    y: float | None
+    z: float | None
+
+    def __hash__(self) -> int:
+        """Generate a hash value for the object based on its attributes."""
+        return hash((self.x, self.y, self.z))
+
+
+class MultiplePositionsError(Exception):
+    """Exception raised when a series contains multiple stage positions."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+
+
+@dataclass
+class Metadata:
+    """Dataclass representing core metadata.
+
+    Attributes
+    ----------
+    rdr : InitVar[TiffReader]
+        TiffReader parameter to initialize class.
+    size_s : int
+        Number of series (size in the S dimension).
+    size_x : list[int]
+        List of sizes in the X dimension.
+    size_y : list[int]
+        List of sizes in the Y dimension.
+    size_z : list[int]
+        List of sizes in the Z dimension.
+    size_c : list[int]
+        List of sizes in the C dimension.
+    size_t : list[int]
+        List of sizes in the T dimension.
+    dimension_order : list[str]
+        List of dimension order for each pixels.
+    bits : list[int]
+        List of bits per pixel.
+    objective : list[str]
+        List of objectives.
+    name : list[str]
+        List of series names.
+    date : list[str]
+        List of acquisition dates.
+    stage_position : list[dict[StagePosition, tuple[int, int, int]]]
+        List of {StagePosition: (T,C,Z)} for each `S`.
+    voxel_size : list[VoxelSize]
+        List of voxel sizes.
+    channels : list[list[Channel]]
+        Channels settings.
+    tcz_deltat : list[list[tuple[int, int, int, float]]]
+        Delta time for each T C Z.
+    """
+
+    ome: InitVar[OME]
+    size_s: int = 1
+    size_x: list[int] = field(default_factory=list)
+    size_y: list[int] = field(default_factory=list)
+    size_z: list[int] = field(default_factory=list)
+    size_c: list[int] = field(default_factory=list)
+    size_t: list[int] = field(default_factory=list)
+    dimension_order: list[str] = field(default_factory=list)
+    bits: list[int] = field(default_factory=list)
+    objective: list[str | None] = field(default_factory=list)
+    name: list[str] = field(default_factory=list)
+    date: list[str | None] = field(default_factory=list)
+    stage_position: list[dict[StagePosition, tuple[int, int, int]]] = field(
+        default_factory=list
+    )
+    voxel_size: list[VoxelSize] = field(default_factory=list)
+    channels: list[list[Channel]] = field(default_factory=list)
+    tcz_deltat: list[list[tuple[int, int, int, float]]] = field(default_factory=list)
+
+    def __repr__(self) -> str:
+        """Represent most relevant metadata."""
+        return (
+            f"Metadata(S={self.size_s}, T={self.size_t}, C={self.size_c}, "
+            f"Z={self.size_z}, Y={self.size_y}, X={self.size_x}, "
+            f"order={self.dimension_order}\n"
+            f"         Bits={self.bits}, Obj={self.objective}\n"
+            f"         voxel size={pformat(self.voxel_size)}\n"
+            f"         stage=\n{pformat(self.stage_position)}\n"
+            f"         channels=\n{pformat(self.channels)})"
+        )
+
+    def __post_init__(self, ome: OME) -> None:
+        """Consolidate all core metadata."""
+        self.size_s = len(ome.images)
+        for image in ome.images:
+            pixels = image.pixels
+            self.size_x.append(pixels.size_x)
+            self.size_y.append(pixels.size_y)
+            self.size_z.append(pixels.size_z)
+            self.size_c.append(pixels.size_c)
+            self.size_t.append(pixels.size_t)
+            self.dimension_order.append(str(pixels.dimension_order.value))
+            self.bits.append(pixels.significant_bits)
+            self.name.append(image.id)
+            self.objective.append(
+                image.objective_settings.id if image.objective_settings else None
+            )
+            self.date.append(
+                str(image.acquisition_date) if image.acquisition_date else None
+            )
+            self.stage_position.append(self._get_stage_position(pixels.planes))
+            self.voxel_size.append(
+                VoxelSize(
+                    pixels.physical_size_x,
+                    pixels.physical_size_y,
+                    pixels.physical_size_z,
+                )
+            )
+            self.channels.append(
+                [
+                    Channel(
+                        int(channel.light_source_settings.wavelength)
+                        if channel.light_source_settings
+                        else 0,
+                        channel.light_source_settings.attenuation
+                        if channel.light_source_settings
+                        else 0.0,
+                        float(channel.detector_settings.gain)
+                        if channel.detector_settings
+                        else 0.0,
+                        str(channel.detector_settings.binning.value)
+                        if channel.detector_settings
+                        and channel.detector_settings.binning
+                        else "1x1",
+                        [
+                            d.id.replace("Filter:", "")
+                            for d in (
+                                channel.light_path.excitation_filters
+                                if channel.light_path
+                                else []
+                            )
+                        ],
+                    )
+                    for channel in pixels.channels
+                ]
+            )
+
+            self.tcz_deltat.append(
+                [
+                    (
+                        plane.the_t,
+                        plane.the_c,
+                        plane.the_z,
+                        plane.delta_t,
+                    )
+                    for plane in pixels.planes
+                ]
+            )
+        self.ome = ome
+        for attribute in [
+            "size_x",
+            "size_y",
+            "size_z",
+            "size_c",
+            "size_t",
+            "dimension_order",
+            "bits",
+            "name",
+            "objective",
+            "date",
+            "voxel_size",
+        ]:
+            if len(set(getattr(self, attribute))) == 1:
+                setattr(self, attribute, list(set(getattr(self, attribute))))
+        for channel in self.channels[1:]:
+            if channel != self.channels[0]:
+                break
+            self.channels = [channel]
+
+    def _get_stage_position(
+        self, planes: list[Any]
+    ) -> dict[StagePosition, tuple[int, int, int]]:
+        """Retrieve the stage positions from the given pixels."""
+        pos_dict: dict[StagePosition, tuple[int, int, int]] = {}
+        for plane in planes:
+            x, y, z = plane.position_x, plane.position_y, plane.position_z
+            pos = StagePosition(
+                float(x) if x is not None else None,
+                float(y) if y is not None else None,
+                float(z) if z is not None else None,
+            )
+            t, c, z_idx = plane.the_t, plane.the_c, plane.the_z
+            pos_dict.update({pos: (int(t), int(c), int(z_idx))})
+        return pos_dict
 
 
 def read_image(fp: Path, channels: Sequence[str] | None = None) -> DataArray:
@@ -61,9 +332,13 @@ def read_image(fp: Path, channels: Sequence[str] | None = None) -> DataArray:
     if ps:
         data.attrs["physical_pixel_sizes"] = ps
 
-    # Also good to keep original metadata for reference
+    # Parse and attach structured metadata
     if img.metadata:
-        data.attrs["metadata"] = img.metadata
+        # Store the raw OME metadata
+        data.attrs["ome_metadata"] = img.metadata
+        # Parse and attach the structured Metadata object
+        md = Metadata(img.metadata)
+        data.attrs["metadata"] = md
 
     if channels:
         n_channels_data = data.sizes["C"]
