@@ -36,6 +36,14 @@ AXES_LENGTH_3D = 3
 AXES_LENGTH_2D = 2
 
 
+def _compute_d_im(d_im: DIm) -> DIm:
+    """Compute values in d_im if they are lazy (dask)."""
+    for k, v in d_im.items():
+        if hasattr(v, "compute"):
+            d_im[k] = v.compute()
+    return d_im
+
+
 def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[DIm, int, int]:
     """Read multichannel TIFF timelapse image.
 
@@ -92,13 +100,14 @@ def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[DIm, int, int]:
         if img.sizes["Z"] == 1:
             # Squeeze Z dim (index 1 in TZYX)
             data = da.squeeze(data, axis=1)
-        d_im[ch] = data.compute()
+        d_im[ch] = data
 
     return d_im, n_channels, n_times
 
 
 def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
     """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
+    d_im = _compute_d_im(d_im)
     max_rows = 9
     n_channels = len(d_im.keys())
     first_channel = d_im[next(iter(d_im.keys()))]
@@ -186,6 +195,7 @@ def d_median(d_im: DIm | xr.DataArray) -> DIm | xr.DataArray:
     if isinstance(d_im, xr.DataArray):
         return _d_median_xarray(d_im)
 
+    d_im = _compute_d_im(d_im)
     d_out = {}
     for k, im in d_im.items():
         if im.ndim not in [AXES_LENGTH_2D, AXES_LENGTH_3D]:
@@ -401,6 +411,7 @@ def d_bg(
         return _d_bg_xarray(d_im, bg_params, downscale, clip=clip)
 
     # Handle legacy DIm (dict) input
+    d_im = _compute_d_im(d_im)
     d_bg = defaultdict(list)
     d_cor = defaultdict(list)
     d_fig = defaultdict(list)
@@ -631,7 +642,7 @@ def _process_watershed_xarray(
         # lbl is initial labels
         # msk is binary mask
 
-        pr = measure.regionprops(lbl, intensity_image=intensity)
+        pr = measure.regionprops(lbl, intensity_image=intensity)  # type: ignore[no-untyped-call]
         if not pr:
             return lbl
 
@@ -641,7 +652,7 @@ def _process_watershed_xarray(
 
         size = max_diameter * 2.20
 
-        coords = feature.peak_local_max(
+        coords = feature.peak_local_max(  # type: ignore[no-untyped-call]
             dist,
             labels=lbl,
             footprint=np.ones((int(size), int(size))),
@@ -651,15 +662,15 @@ def _process_watershed_xarray(
         local_maxi = np.zeros_like(dist, dtype=bool)
         local_maxi[tuple(coords.T)] = True
 
-        markers = measure.label(local_maxi)
+        markers = measure.label(local_maxi)  # type: ignore[no-untyped-call]
 
         if randomwalk:
             markers[~msk] = -1
             labels_ws = segmentation.random_walker(msk, markers, mode="bf")
         else:
-            labels_ws = segmentation.watershed(-dist, markers, mask=lbl)
+            labels_ws = segmentation.watershed(-dist, markers, mask=lbl)  # type: ignore[no-untyped-call]
 
-        return labels_ws.astype(np.int32)
+        return labels_ws.astype(np.int32)  # type: ignore[no-any-return]
 
     # We need intensity image of channel 0.
     ch0 = d_im.sel(C=channels[0])
@@ -765,6 +776,7 @@ def d_mask_label(  # noqa: PLR0913
         msg = f"threshold_method must be one of {threshold_method_choices}"
         raise ValueError(msg)
 
+    d_im = _compute_d_im(d_im)
     ga = d_im[channels[0]].copy()
     for ch in channels[1:]:
         ga *= d_im[ch]
@@ -1135,6 +1147,7 @@ def d_meas_props(  # noqa: PLR0913, PLR0912, C901
             ratios_from_image=ratios_from_image,
         )
 
+    d_im = _compute_d_im(d_im)
     pr: dict[str, list[list[Any]]] = defaultdict(list)
     for ch in channels:
         pr[ch] = []
