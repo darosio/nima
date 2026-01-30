@@ -769,12 +769,56 @@ def process_watershed(
     d_im["labels"][time] = labels_ws
 
 
+def _d_ratio_xarray(
+    d_im: xr.DataArray,
+    channels: tuple[str, str],
+    radii: Sequence[int],
+    mask: xr.DataArray | None = None,
+) -> xr.DataArray:
+    """Compute ratio image for xarray.DataArray."""
+    num = d_im.sel(C=channels[0])
+    den = d_im.sel(C=channels[1])
+
+    # Compute ratio, handling division by zero and NaNs
+    ratio = num / den
+    ratio = ratio.where(np.isfinite(ratio), 0)
+
+    # Apply median filters if requested
+    if radii:
+
+        def apply_median_filters(
+            im: NDArray[Any], radii_seq: Sequence[int]
+        ) -> NDArray[Any]:
+            filtered = im
+            for radius in radii_seq:
+                filtered = ndimage.median_filter(filtered, radius)
+            return filtered
+
+        ratio = xr.apply_ufunc(
+            apply_median_filters,
+            ratio,
+            kwargs={"radii_seq": radii},
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[ratio.dtype],
+        )
+
+    # Apply mask if provided
+    if mask is not None:
+        ratio = ratio * mask
+
+    return ratio
+
+
 def d_ratio(
-    d_im: DIm,
+    d_im: DIm | xr.DataArray,
     name: str = "r_cl",
     channels: tuple[str, str] = ("C", "R"),
-    radii: tuple[int, int] = (7, 3),
-) -> None:
+    radii: Sequence[int] = (7, 3),
+    mask: xr.DataArray | None = None,
+) -> xr.DataArray | None:
     """Ratio image between 2 channels in d_im.
 
     Add masked (bg=0; fg=ratio) median-filtered ratio for 2 channels. So, d_im
@@ -787,20 +831,31 @@ def d_ratio(
 
     Parameters
     ----------
-    d_im : DIm
-        desc
+    d_im : DIm | xr.DataArray
+        Dictionary of images or xarray DataArray.
     name : str, optional
-        Name (default='r_cl') for the new key.
+        Name (default='r_cl') for the new key (DIm only).
     channels : tuple[str, str], optional
         Names for the two channels (Numerator, Denominator) (default=('C', 'R')).
-    radii : tuple[int, int], optional
+    radii : Sequence[int], optional
         Each element contain a radius value for a median filter cycle (default=(7, 3)).
+    mask : xr.DataArray | None, optional
+        Binary mask to apply to the ratio image (xarray only).
+
+    Returns
+    -------
+    xr.DataArray | None
+        If d_im is DataArray: returns the ratio DataArray.
+        If d_im is DIm: modifies d_im in place and returns None.
 
     Notes
     -----
     Add a key named "name" and containing the calculated ratio to d_im.
 
     """
+    if isinstance(d_im, xr.DataArray):
+        return _d_ratio_xarray(d_im, channels, radii, mask)
+
     with np.errstate(divide="ignore", invalid="ignore"):
         # 0/0 and num/0 can both happen.
         ratio = np.array(d_im[channels[0]] / d_im[channels[1]], dtype=float)
@@ -811,6 +866,7 @@ def d_ratio(
             filtered_r = ndimage.median_filter(filtered_r, radius)
         ratio[i] = filtered_r * d_im["mask"][i]
     d_im[name] = ratio
+    return None
 
 
 def d_meas_props(  # noqa: PLR0913
@@ -880,11 +936,12 @@ def d_meas_props(  # noqa: PLR0913
         res_df["r_pH"] = res_df[channels_ph[0]] / res_df[channels_ph[1]]
         meas[int(lbl)] = res_df
     if ratios_from_image:
-        kwargs = {}
         if radii:
-            kwargs["radii"] = radii
-        d_ratio(d_im, "r_cl", channels=channels_cl, **kwargs)
-        d_ratio(d_im, "r_pH", channels=channels_ph, **kwargs)
+            d_ratio(d_im, "r_cl", channels=channels_cl, radii=radii)
+            d_ratio(d_im, "r_pH", channels=channels_ph, radii=radii)
+        else:
+            d_ratio(d_im, "r_cl", channels=channels_cl)
+            d_ratio(d_im, "r_pH", channels=channels_ph)
         r_ph = []
         r_cl = []
         for time, (ph, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"], strict=True)):
