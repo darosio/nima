@@ -869,31 +869,162 @@ def d_ratio(
     return None
 
 
-def d_meas_props(  # noqa: PLR0913
-    d_im: DIm,
+def _d_meas_props_xarray(  # noqa: PLR0913
+    d_im: xr.DataArray,
+    labels: xr.DataArray,
+    channels: Sequence[str],
+    channels_cl: tuple[str, str],
+    channels_ph: tuple[str, str],
+    radii: Sequence[int] | None = None,
+    *,
+    ratios_from_image: bool = True,
+) -> tuple[dict[int, pd.DataFrame], dict[str, list[list[Any]]]]:
+    """Measure properties for xarray.DataArray."""
+    pr: dict[str, list[list[Any]]] = defaultdict(list)
+    # Ensure dimensions order for iteration (T, ...)
+    # If d_im has Z, we expect labels to have Z.
+    # We iterate over T.
+
+    times = d_im.coords["T"].to_numpy()
+
+    for ch in channels:
+        pr[ch] = []
+        for t in range(len(times)):
+            im_frame = d_im.sel(C=ch).isel(T=t)
+            lbl_frame = labels.isel(T=t)
+
+            # Convert to numpy for regionprops
+            im_np = im_frame.to_numpy()
+            lbl_np = lbl_frame.to_numpy()
+
+            props = measure.regionprops(lbl_np, intensity_image=im_np)  # type: ignore[no-untyped-call]
+            pr[ch].append(props)
+
+    meas: dict[int, pd.DataFrame] = {}
+    # labels unique values (0 is background)
+    # We can get unique labels from the labels DataArray (could be slow if large)
+    # Alternatively, we iterate based on what regionprops found.
+    # But we need consistent label IDs across time.
+    # The legacy code assumes we know the labels from d_im['labels'].
+    unique_labels = np.unique(labels.compute().to_numpy())
+    unique_labels = unique_labels[unique_labels > 0]
+
+    for lbl in unique_labels:
+        idx = []
+        d = defaultdict(list)
+        for t, _ in enumerate(times):
+            # Check properties for channel 0 to see if label exists
+            props = pr[channels[0]][t]
+            try:
+                # Find the prop with this label
+                # This search might be inefficient for many labels
+                prop = next(p for p in props if p.label == lbl)
+                idx.append(t)
+                d["equivalent_diameter"].append(prop.equivalent_diameter_area)
+                d["eccentricity"].append(prop.eccentricity)
+                d["area"].append(prop.area)
+
+                # Get mean intensity for all channels
+                # We assume consistent ordering/existence of props across channels
+                # But safer to find by label again or assume same index if sorted
+                # regionprops returns properties sorted by label.
+                # So if label exists in ch0, it exists in others (same label image)
+                i_label = [p.label for p in props].index(lbl)
+
+                for ch in channels:
+                    d[ch].append(pr[ch][t][i_label].intensity_mean)
+
+            except StopIteration:
+                pass  # Label absent at this time
+
+        res_df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
+        res_df["r_cl"] = res_df[channels_cl[0]] / res_df[channels_cl[1]]
+        res_df["r_pH"] = res_df[channels_ph[0]] / res_df[channels_ph[1]]
+        meas[int(lbl)] = res_df
+
+    if ratios_from_image:
+        # Calculate ratio images (DataArray)
+        r_cl_da = d_ratio(
+            d_im, channels=channels_cl, radii=radii or (), mask=labels > 0
+        )
+        r_ph_da = d_ratio(
+            d_im, channels=channels_ph, radii=radii or (), mask=labels > 0
+        )
+
+        # d_ratio returns DataArray if input is DataArray (and we know it is here)
+        # However, d_ratio is typed to return DataArray | None.
+        if r_cl_da is None or r_ph_da is None:
+            msg = "d_ratio returned None for DataArray input"
+            raise RuntimeError(msg)
+
+        r_ph_list = []
+        r_cl_list = []
+
+        # Iterate time and calculate median within labels
+        for t in range(len(times)):
+            r_ph_frame = r_ph_da.isel(T=t).to_numpy()
+            r_cl_frame = r_cl_da.isel(T=t).to_numpy()
+            lbl_frame_np = labels.isel(T=t).to_numpy()
+
+            # ndimage.median works with labels and index list
+            r_ph_list.append(
+                ndimage.median(r_ph_frame, lbl_frame_np, index=unique_labels)
+            )
+            r_cl_list.append(
+                ndimage.median(r_cl_frame, lbl_frame_np, index=unique_labels)
+            )
+
+        ratios_ph = np.array(r_ph_list)
+        ratios_cl = np.array(r_cl_list)
+
+        for i, lbl in enumerate(unique_labels):
+            # For xarray implementation, let's be safer.
+            # We have ratios_ph[:, i]. This corresponds to unique_labels[i].
+
+            # We need to align with meas[lbl] which has specific time indices.
+
+            res_df = pd.DataFrame(
+                {
+                    "r_pH_median": ratios_ph[:, i],
+                    "r_cl_median": ratios_cl[:, i],
+                },
+                index=range(len(times)),  # Default index 0..T-1
+            )
+            # meas[lbl] has index=idx (subset of times).
+            # Join inner will select matching times.
+            meas[int(lbl)] = pd.concat([meas[int(lbl)], res_df], axis=1, join="inner")
+
+    return meas, pr
+
+
+def d_meas_props(  # noqa: PLR0913, PLR0912, C901
+    d_im: DIm | xr.DataArray,
     channels: Sequence[str] = ("C", "G", "R"),
     channels_cl: tuple[str, str] = ("C", "R"),
     channels_ph: tuple[str, str] = ("G", "C"),
-    radii: tuple[int, int] | None = None,
+    radii: Sequence[int] | None = None,
     *,
     ratios_from_image: bool = True,
+    labels: xr.DataArray | None = None,
 ) -> tuple[dict[int, pd.DataFrame], dict[str, list[list[Any]]]]:
     """Calculate pH and cl ratios and labelprops.
 
     Parameters
     ----------
-    d_im : DIm
-        desc
+    d_im : DIm | xr.DataArray
+        Dictionary of images or xarray DataArray.
     channels : Sequence[str], optional
         All d_im channels (default=('C', 'G', 'R')).
     channels_cl : tuple[str, str], optional
         Numerator and denominator channels for cl ratio (default=('C', 'R')).
     channels_ph : tuple[str, str], optional
         Numerator and denominator channels for pH ratio (default=('G', 'C')).
-    radii : tuple[int, int] | None, optional
+    radii : Sequence[int] | None, optional
         Radii of the optional median average performed on ratio images (default=None).
     ratios_from_image : bool, optional
         Boolean for executing d_ratio i.e. compute ratio images (default=True).
+    labels : xr.DataArray | None, optional
+        Labeled image (xarray only). Required if d_im is xarray.DataArray.
 
     Returns
     -------
@@ -905,7 +1036,26 @@ def d_meas_props(  # noqa: PLR0913
     pr : dict[str, list[list[Any]]]
         For each channel: {'channel': [props]} i.e. {'channel': [time][label]}.
 
+    Raises
+    ------
+    ValueError
+        If d_im is xarray.DataArray and labels is not provided.
+
     """
+    if isinstance(d_im, xr.DataArray):
+        if labels is None:
+            msg = "labels must be provided when d_im is xarray.DataArray"
+            raise ValueError(msg)
+        return _d_meas_props_xarray(
+            d_im,
+            labels,
+            channels,
+            channels_cl,
+            channels_ph,
+            radii,
+            ratios_from_image=ratios_from_image,
+        )
+
     pr: dict[str, list[list[Any]]] = defaultdict(list)
     for ch in channels:
         pr[ch] = []
@@ -915,8 +1065,8 @@ def d_meas_props(  # noqa: PLR0913
             pr[ch].append(props)
     meas: dict[int, pd.DataFrame] = {}
     # labels are 3D and "0" is always label for background
-    labels = np.unique(d_im["labels"])[1:]
-    for lbl in labels:
+    labels_np = np.unique(d_im["labels"])[1:]
+    for lbl in labels_np:
         idx = []
         d = defaultdict(list)
         for time, props in enumerate(pr[channels[0]]):
@@ -945,8 +1095,8 @@ def d_meas_props(  # noqa: PLR0913
         r_ph = []
         r_cl = []
         for time, (ph, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"], strict=True)):
-            r_ph.append(ndimage.median(ph, d_im["labels"][time], index=labels))
-            r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels))
+            r_ph.append(ndimage.median(ph, d_im["labels"][time], index=labels_np))
+            r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels_np))
         ratios_ph: ImSequence = np.array(r_ph)
         ratios_cl: ImSequence = np.array(r_cl)
         for ilbl, value in meas.items():
