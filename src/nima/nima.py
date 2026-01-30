@@ -478,23 +478,19 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
     ------
     ValueError
         If threshold_method is not one of ['yen', 'li'].
-    NotImplementedError
-        If watershed is True (not yet implemented for DataArray).
 
     """
     if threshold_method not in threshold_method_choices:
         msg = f"threshold_method must be one of {threshold_method_choices}"
         raise ValueError(msg)
 
-    if watershed:
-        msg = "Watershed not yet supported for DataArray input"
-        raise NotImplementedError(msg)
-
     # Compute geometric average across channels
-    # Select the specified channels
-    ga = d_im.sel(C=list(channels))
-    # Geometric mean: product raised to 1/n
-    ga = ga.prod(dim="C") ** (1 / len(channels))
+    if len(channels) == 1:
+        ga = d_im.sel(C=channels[0])
+    else:
+        ga = d_im.sel(C=list(channels)).astype(float).prod(dim="C") ** (
+            1 / len(channels)
+        )
 
     # Apply wiener filter if requested
     if wiener:
@@ -603,7 +599,90 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
         output_dtypes=[np.int32],
     )
 
+    if watershed:
+        return _process_watershed_xarray(
+            d_im,
+            mask,
+            labels,
+            channels=channels,
+            randomwalk=_randomwalk,
+        )
+
     return mask, labels
+
+
+def _process_watershed_xarray(
+    d_im: xr.DataArray,
+    mask: xr.DataArray,
+    labels: xr.DataArray,
+    channels: tuple[str, ...],
+    *,
+    randomwalk: bool = False,
+) -> tuple[xr.DataArray, xr.DataArray]:
+    """Apply watershed to xarray DataArray."""
+
+    def apply_watershed_2d(
+        dist: NDArray[Any],
+        lbl: NDArray[np.int32],
+        msk: NDArray[np.bool_],
+        intensity: NDArray[Any],
+    ) -> NDArray[np.int32]:
+        # dist is distance transform of mask
+        # lbl is initial labels
+        # msk is binary mask
+
+        pr = measure.regionprops(lbl, intensity_image=intensity)
+        if not pr:
+            return lbl
+
+        max_diameter = pr[0].equivalent_diameter_area
+        for p in pr[1:]:
+            max_diameter = max(max_diameter, p.equivalent_diameter_area)
+
+        size = max_diameter * 2.20
+
+        coords = feature.peak_local_max(
+            dist,
+            labels=lbl,
+            footprint=np.ones((int(size), int(size))),
+            min_distance=int(size),
+            exclude_border=False,
+        )
+        local_maxi = np.zeros_like(dist, dtype=bool)
+        local_maxi[tuple(coords.T)] = True
+
+        markers = measure.label(local_maxi)
+
+        if randomwalk:
+            markers[~msk] = -1
+            labels_ws = segmentation.random_walker(msk, markers, mode="bf")
+        else:
+            labels_ws = segmentation.watershed(-dist, markers, mask=lbl)
+
+        return labels_ws.astype(np.int32)
+
+    # We need intensity image of channel 0.
+    ch0 = d_im.sel(C=channels[0])
+
+    def wrapper(
+        msk: NDArray[np.bool_], lbl: NDArray[np.int32], intensity: NDArray[Any]
+    ) -> NDArray[np.int32]:
+        dist = ndimage.distance_transform_edt(msk)
+        return apply_watershed_2d(dist, lbl, msk, intensity)
+
+    new_labels = xr.apply_ufunc(
+        wrapper,
+        mask,
+        labels,
+        ch0,
+        input_core_dims=[["Y", "X"], ["Y", "X"], ["Y", "X"]],
+        output_core_dims=[["Y", "X"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[np.int32],
+    )
+
+    return mask, new_labels
 
 
 def d_mask_label(  # noqa: PLR0913
