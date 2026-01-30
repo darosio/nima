@@ -303,3 +303,32 @@ class TestDMeasProps:
             pytest.fail(f"d_meas_props failed with xarray: {e}")
         except NotImplementedError:
             pytest.fail("d_meas_props xarray support not implemented")
+
+
+class TestDMaskLabelXarray:
+    """Tests for d_mask_label function with xarray."""
+
+    def test_d_mask_label_watershed(self) -> None:
+        """Test that watershed works with xarray."""
+        # Create DataArray (T, C, Y, X)
+        data = np.zeros((1, 3, 20, 20))
+        # Add two objects close to each other
+        data[:, :, 5:15, 5:10] = 100.0
+        data[:, :, 5:15, 12:17] = 100.0
+
+        da = xr.DataArray(
+            data, dims=("T", "C", "Y", "X"), coords={"C": ["C", "G", "R"]}
+        )
+
+        # Should return (mask, labels) tuple
+        res = nima.d_mask_label(da, watershed=True, min_size=10)
+        assert res is not None
+        mask, labels = res
+
+        assert isinstance(mask, xr.DataArray)
+        assert isinstance(labels, xr.DataArray)
+
+        # Check that we have labels
+        assert labels.max() >= 1
+        # Mask should be boolean
+        assert mask.dtype == bool

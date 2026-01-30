@@ -49,15 +49,3 @@ Modernize the IO module of `nima` by replacing ad-hoc `tifffile` parsing with th
   - You can now proceed with migrating the internal logic of nima.py to use xarray/dask natively, eventually removing the .compute() call in the read_tiff shim.
 
 ❯ would dask_image be better than ndimage.median_filter?
-
-Summary of Changes:
-
-```
-- Implemented _d_mask_label_xarray using xr.apply_ufunc to vectorize operations (Wiener filter, thresholding, morphological operations, labeling) over Y and X dimensions.
-- Updated d_mask_label to dispatch:
-  - Legacy DIm: Modifies in-place, returns None.
-  - New DataArray: Returns tuple[xr.DataArray, xr.DataArray] (mask, labels).
-- Limitation: watershed=True currently raises NotImplementedError for DataArray inputs, as requested, to keep the refactoring manageable.
-```
-
-This completes the migration for the core segmentation function. Next would be d_ratio, d_meas_props, and potentially implementing the watershed logic if needed.
