@@ -202,8 +202,8 @@ def d_median(d_im: DIm | xr.DataArray) -> DIm | xr.DataArray:
 
 def _d_shading_xarray(
     d_im: xr.DataArray,
-    dark: xr.DataArray | object,
-    flat: xr.DataArray | object,
+    dark: xr.DataArray | Any,  # noqa: ANN401
+    flat: xr.DataArray | Any,  # noqa: ANN401
     *,
     clip: bool = True,
 ) -> xr.DataArray:
@@ -215,9 +215,9 @@ def _d_shading_xarray(
     ----------
     d_im : xr.DataArray
         Input image data array.
-    dark : xr.DataArray | object
+    dark : xr.DataArray | Any
         Dark image (DataArray or broadcastable array/scalar).
-    flat : xr.DataArray | object
+    flat : xr.DataArray | Any
         Flat image (DataArray or broadcastable array/scalar).
     clip : bool
         Boolean for clipping values >=0.
@@ -678,7 +678,7 @@ def d_mask_label(  # noqa: PLR0913
             wiener=wiener,
             watershed=watershed,
             clear_border=clear_border,
-            randomwalk=randomwalk,
+            _randomwalk=randomwalk,
         )
 
     # Legacy DIm implementation
