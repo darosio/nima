@@ -218,8 +218,10 @@ def bg(
 
         bgs_data[str(ch)] = ch_bgs
 
-    bgs_df = pd.DataFrame(bgs_data, index=times)
-    bg_da = xr.DataArray(bgs_df, dims=("T", "C"), coords={"T": times, "C": channels})
+    bgs_df = pd.DataFrame(bgs_data, index=range(len(times)))
+    bg_da = xr.DataArray(
+        bgs_df.values, dims=("T", "C"), coords={"T": times, "C": channels}
+    )
 
     im_subtracted = im - bg_da
 
@@ -229,8 +231,43 @@ def bg(
     return im_subtracted, bgs_df, dict(figs_data)
 
 
-def _d_mask_label_xarray(  # noqa: PLR0913, C901
-    d_im: xr.DataArray,
+def _wiener_2d(im: NDArray[Any]) -> NDArray[Any]:
+    """Apply 2D Wiener filter."""
+    return signal.wiener(im, (3, 3))  # type: ignore[no-any-return]
+
+
+def _threshold_2d(im: NDArray[Any], method: str) -> NDArray[np.bool_]:
+    """Apply threshold to 2D plane."""
+    if method == "li":
+        threshold = filters.threshold_li(im)  # type: ignore[no-untyped-call]
+    else:
+        threshold = filters.threshold_yen(im)  # type: ignore[no-untyped-call]
+    return im > threshold  # type: ignore[no-any-return]
+
+
+def _remove_small_2d(m: NDArray[np.bool_], min_size: int) -> NDArray[np.bool_]:
+    """Remove small objects from binary mask."""
+    return morphology.remove_small_objects(m, max_size=min_size - 1)  # type: ignore[no-any-return]
+
+
+def _closing_2d(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
+    """Apply binary closing morphology."""
+    return morphology.closing(m)  # type: ignore[no-any-return]
+
+
+def _clear_border_2d(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
+    """Clear objects touching the border."""
+    return segmentation.clear_border(m)  # type: ignore[no-untyped-call, no-any-return]
+
+
+def _label_2d(m: NDArray[np.bool_]) -> NDArray[np.int32]:
+    """Label connected components in binary mask."""
+    labeled, _ = ndimage.label(m)
+    return labeled.astype(np.int32)  # type: ignore[no-any-return]
+
+
+def segment(  # noqa: PLR0913
+    im: xr.DataArray,
     min_size: int | None = 640,
     channels: tuple[str, ...] = ("C", "G", "R"),
     threshold_method: str = "yen",
@@ -238,9 +275,9 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
     wiener: bool = False,
     watershed: bool = False,
     clear_border: bool = False,
-    _randomwalk: bool = False,
+    randomwalk: bool = False,
 ) -> tuple[xr.DataArray, xr.DataArray]:
-    """Label cells in xarray DataArray. Returns mask and labels as separate DataArrays.
+    """Segment cells in xarray DataArray. Returns mask and labels.
 
     Perform plane-by-plane (2D image):
 
@@ -255,7 +292,7 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
 
     Parameters
     ----------
-    d_im : xr.DataArray
+    im : xr.DataArray
         Input image with dimensions (T, C, Z, Y, X).
     min_size : int | None, optional
         Objects smaller than min_size (default=640 pixels) are discarded from mask.
@@ -269,7 +306,7 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
         Boolean for watershed on labels (default=False).
     clear_border :  bool, optional
         Whether to filter out objects near the 2D image edge (default=False).
-    _randomwalk :  bool, optional
+    randomwalk :  bool, optional
         Use random_walker instead of watershed post-ndimage-EDT (default=False).
 
     Returns
@@ -291,21 +328,15 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
 
     # Compute geometric average across channels
     if len(channels) == 1:
-        ga = d_im.sel(C=channels[0])
+        ga = im.sel(C=channels[0])
     else:
-        ga = d_im.sel(C=list(channels)).astype(float).prod(dim="C") ** (
-            1 / len(channels)
-        )
+        ga = im.sel(C=list(channels)).astype(float).prod(dim="C") ** (1 / len(channels))
 
     # Apply wiener filter if requested
+    ga_wiener = ga
     if wiener:
-        # Apply wiener filter plane-by-plane (Y, X are core dims)
-        def apply_wiener(im: NDArray[Any]) -> NDArray[Any]:
-            """Apply 2D Wiener filter."""
-            return signal.wiener(im, (3, 3))  # type: ignore[no-any-return]
-
         ga_wiener = xr.apply_ufunc(
-            apply_wiener,
+            _wiener_2d,
             ga,
             input_core_dims=[["Y", "X"]],
             output_core_dims=[["Y", "X"]],
@@ -313,25 +344,12 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
             dask="parallelized",
             output_dtypes=[ga.dtype],
         )
-    else:
-        ga_wiener = ga
 
-    # Choose threshold function
-    threshold_function: Any
-    if threshold_method == "li":
-        threshold_function = filters.threshold_li
-    else:
-        threshold_function = filters.threshold_yen
-
-    # Apply thresholding plane-by-plane
-    def apply_threshold(im: NDArray[Any]) -> NDArray[np.bool_]:
-        """Apply threshold to 2D plane."""
-        threshold = threshold_function(im)
-        return im > threshold  # type: ignore[no-any-return]
-
+    # Apply thresholding
     mask = xr.apply_ufunc(
-        apply_threshold,
+        _threshold_2d,
         ga_wiener,
+        kwargs={"method": threshold_method},
         input_core_dims=[["Y", "X"]],
         output_core_dims=[["Y", "X"]],
         vectorize=True,
@@ -341,14 +359,10 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
 
     # Remove small objects if requested
     if min_size:
-
-        def remove_small(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
-            """Remove small objects from binary mask."""
-            return morphology.remove_small_objects(m, max_size=min_size - 1)  # type: ignore[no-any-return]
-
         mask = xr.apply_ufunc(
-            remove_small,
+            _remove_small_2d,
             mask,
+            kwargs={"min_size": min_size},
             input_core_dims=[["Y", "X"]],
             output_core_dims=[["Y", "X"]],
             vectorize=True,
@@ -357,12 +371,8 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
         )
 
     # Apply binary closing
-    def apply_closing(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
-        """Apply binary closing morphology."""
-        return morphology.closing(m)  # type: ignore[no-any-return]
-
     mask = xr.apply_ufunc(
-        apply_closing,
+        _closing_2d,
         mask,
         input_core_dims=[["Y", "X"]],
         output_core_dims=[["Y", "X"]],
@@ -373,13 +383,8 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
 
     # Clear border if requested
     if clear_border:
-
-        def apply_clear_border(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
-            """Clear objects touching the border."""
-            return segmentation.clear_border(m)  # type: ignore[no-untyped-call, no-any-return]
-
         mask = xr.apply_ufunc(
-            apply_clear_border,
+            _clear_border_2d,
             mask,
             input_core_dims=[["Y", "X"]],
             output_core_dims=[["Y", "X"]],
@@ -389,13 +394,8 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
         )
 
     # Label connected components
-    def apply_label(m: NDArray[np.bool_]) -> NDArray[np.int32]:
-        """Label connected components in binary mask."""
-        labeled, _ = ndimage.label(m)
-        return labeled.astype(np.int32)  # type: ignore[no-any-return]
-
     labels = xr.apply_ufunc(
-        apply_label,
+        _label_2d,
         mask,
         input_core_dims=[["Y", "X"]],
         output_core_dims=[["Y", "X"]],
@@ -405,18 +405,18 @@ def _d_mask_label_xarray(  # noqa: PLR0913, C901
     )
 
     if watershed:
-        return _process_watershed_xarray(
-            d_im,
+        return process_watershed(
+            im,
             mask,
             labels,
             channels=channels,
-            randomwalk=_randomwalk,
+            randomwalk=randomwalk,
         )
 
     return mask, labels
 
 
-def _process_watershed_xarray(
+def process_watershed(
     d_im: xr.DataArray,
     mask: xr.DataArray,
     labels: xr.DataArray,
@@ -424,7 +424,29 @@ def _process_watershed_xarray(
     *,
     randomwalk: bool = False,
 ) -> tuple[xr.DataArray, xr.DataArray]:
-    """Apply watershed to xarray DataArray."""
+    """Apply watershed to xarray DataArray.
+
+    Parameters
+    ----------
+    d_im : xr.DataArray
+        Input image.
+    mask : xr.DataArray
+        Binary mask.
+    labels : xr.DataArray
+        Labeled regions.
+    channels : tuple[str, ...]
+        Channel names (first channel used for intensity).
+    randomwalk : bool, optional
+        Use random walker instead of watershed (default=False).
+
+    Returns
+    -------
+    mask : xr.DataArray
+        Updated mask (not modified in current implementation, returned as is).
+    labels : xr.DataArray
+        Updated labels after watershed.
+
+    """
 
     def apply_watershed_2d(
         dist: NDArray[Any],
@@ -488,170 +510,6 @@ def _process_watershed_xarray(
     )
 
     return mask, new_labels
-
-
-def d_mask_label(  # noqa: PLR0913
-    d_im: DIm | xr.DataArray,
-    min_size: int | None = 640,
-    channels: tuple[str, ...] = ("C", "G", "R"),
-    threshold_method: str = "yen",
-    *,
-    wiener: bool = False,
-    watershed: bool = False,
-    clear_border: bool = False,
-    randomwalk: bool = False,
-) -> tuple[xr.DataArray, xr.DataArray] | None:
-    """Label cells in d_im.
-
-    Add two keys, mask and label (for DIm) or return tuple (for DataArray).
-
-    Perform plane-by-plane (2D image):
-
-    - geometric average of all channels;
-    - optional wiener filter (3,3);
-    - mask using threshold_method;
-    - remove objects smaller than **min_size**;
-    - binary closing;
-    - optionally remove any object on borders;
-    - label each ROI;
-    - optionally perform watershed on labels.
-
-    Parameters
-    ----------
-    d_im : DIm | xr.DataArray
-        Input image dictionary (legacy) or DataArray with dimensions (T, C, Z, Y, X).
-    min_size : int | None, optional
-        Objects smaller than min_size (default=640 pixels) are discarded from mask.
-    channels : tuple[str, ...], optional
-        List a name for each channel.
-    threshold_method : str, optional
-        Threshold method applied to the geometric average plane-by-plane (default=yen).
-    wiener : bool, optional
-        Boolean for wiener filter (default=False).
-    watershed : bool, optional
-        Boolean for watershed on labels (default=False).
-    clear_border :  bool, optional
-        Whether to filter out objects near the 2D image edge (default=False).
-    randomwalk :  bool, optional
-        Use random_walker instead of watershed post-ndimage-EDT (default=False).
-
-    Returns
-    -------
-    tuple[xr.DataArray, xr.DataArray] | None
-        If d_im is DataArray: returns (mask, labels).
-        If d_im is DIm: modifies d_im in place and returns None.
-
-    Raises
-    ------
-    ValueError
-        If threshold_method is not one of ['yen', 'li'].
-
-    Notes
-    -----
-    Side effects (DIm input only):
-        Add a 'label' key to the d_im.
-
-    """
-    # Dispatch to xarray implementation if input is DataArray
-    if isinstance(d_im, xr.DataArray):
-        return _d_mask_label_xarray(
-            d_im,
-            min_size=min_size,
-            channels=channels,
-            threshold_method=threshold_method,
-            wiener=wiener,
-            watershed=watershed,
-            clear_border=clear_border,
-            _randomwalk=randomwalk,
-        )
-
-    # Legacy DIm implementation
-    if threshold_method not in threshold_method_choices:
-        msg = f"threshold_method must be one of {threshold_method_choices}"
-        raise ValueError(msg)
-
-    d_im = _compute_d_im(d_im)
-    ga = d_im[channels[0]].copy()
-    for ch in channels[1:]:
-        ga *= d_im[ch]
-    ga = np.power(ga, 1 / len(channels))
-
-    if wiener:
-        ga_wiener = np.zeros_like(d_im["G"])
-        shape = (3, 3)  # for 3D (1, 4, 4)
-        for i, im in enumerate(ga):
-            ga_wiener[i] = signal.wiener(im, shape)
-    else:
-        ga_wiener = ga
-    if threshold_method == "li":
-        threshold_function = filters.threshold_li
-    else:
-        threshold_function = filters.threshold_yen  # type: ignore[assignment]
-    mask = []
-    for _, im in enumerate(ga_wiener):
-        m = im > threshold_function(im)  # type: ignore[no-untyped-call]
-        if min_size:
-            m = morphology.remove_small_objects(m, max_size=min_size - 1)
-        m = morphology.closing(m)
-        # clear border always
-        if clear_border:
-            m = segmentation.clear_border(m)  # type: ignore[no-untyped-call]
-        mask.append(m)
-    d_im["mask"] = np.array(mask)
-    labels, _ = ndimage.label(mask)
-    # TODO if any timepoint mask is empty cluster labels
-    d_im["labels"] = labels
-
-    if watershed:
-        process_watershed(d_im, channels, randomwalk=randomwalk)
-
-    return None
-
-
-def process_watershed(
-    d_im: DIm,
-    channels: tuple[str, ...],
-    *,
-    randomwalk: bool = False,
-) -> None:
-    """Apply watershed segmentation algorithm to a given image.
-
-    This function takes a pre-processed image `d_im`, a sequence of channels `channels`
-    to be used for the segmentation, a structuring element `ga_wiener`, a mask `mask`,
-    a time step `time`, and an optional `randomwalk` function or string to specify the
-    random walker method. If `labels` is not provided, it is initialized as an empty
-    numpy array.
-
-    """
-    # TODO: label can change from time to time, Need more robust here. may
-    # use props[0].label == 1
-    # TODO: Voronoi? depends critically on max_diameter.
-    distance = ndimage.distance_transform_edt(d_im["mask"][0])
-    pr = measure.regionprops(  # type: ignore[no-untyped-call]
-        d_im["labels"][0], intensity_image=d_im[channels[0]][0]
-    )
-    max_diameter = pr[0].equivalent_diameter_area
-    size = max_diameter * 2.20
-    for p in pr[1:]:
-        max_diameter = max(max_diameter, p.equivalent_diameter_area)
-    print(max_diameter)
-    for time, (d, lbl) in enumerate(zip(distance, d_im["labels"], strict=True)):
-        local_maxi = feature.peak_local_max(  # type: ignore[call-arg, no-untyped-call]
-            d,
-            labels=lbl,
-            footprint=np.ones((size, size)),
-            min_distance=size,
-            indices=False,
-            exclude_border=False,
-        )
-        markers = measure.label(local_maxi)  # type: ignore[no-untyped-call]
-        print(np.unique(markers))
-        if randomwalk:
-            markers[~d_im["mask"][time]] = -1
-            labels_ws = segmentation.random_walker(d_im["mask"][time], markers)
-        else:
-            labels_ws = segmentation.watershed(-d, markers, mask=lbl)  # type: ignore[no-untyped-call]
-    d_im["labels"][time] = labels_ws
 
 
 def _d_ratio_xarray(
