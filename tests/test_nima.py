@@ -11,7 +11,6 @@ from numpy.testing import assert_array_equal
 from numpy.typing import NDArray
 
 from nima import nima, segmentation
-from nima.nima_types import DIm, ImFrame
 
 data_fp = "./tests/data/1b_c16_15.tif"
 
@@ -52,41 +51,102 @@ def flat_setup() -> NDArray[np.float64]:
     return (np.ones((5, 5)) * 2).astype(np.float64)
 
 
-class TestDShading:
-    """Test d_shading."""
+class TestShading:
+    """Test shading."""
 
-    def test_single_dark_and_single_flat(
-        self,
-        d_im: DIm,
-        dark: ImFrame,
-        flat: ImFrame,
-    ) -> None:
-        """Test d_shading using single dark and single flat images."""
-        d_cor = nima.d_shading(d_im, dark, flat, clip=True)
-        assert_array_equal(d_cor["C"], np.ones((5, 5, 5)) / 2)
-        assert_array_equal(d_cor["C2"], np.ones((5, 5, 5)) * 1.5)
+    def test_shading_broadcast(self) -> None:
+        """Test shading with broadcastable dark and flat."""
+        # Create DataArray (T, C, Y, X)
+        # 5 timepoints, 2 channels (C, C2), 5x5 images
+        data = np.zeros((5, 2, 5, 5))
+        data[:, 0, :, :] = 2.0  # C
+        data[:, 1, :, :] = 4.0  # C2
 
-    def test_single_dark_and_d_flat(
-        self,
-        d_im: DIm,
-        dark: ImFrame,
-        d_flat: DIm,
-    ) -> None:
-        """Test d_shading using single dark and a stack of flat images."""
-        d_cor = nima.d_shading(d_im, dark, d_flat, clip=True)
-        assert_array_equal(d_cor["C"], np.ones((5, 5, 5)) / 2)
-        assert_array_equal(d_cor["C2"], np.ones((5, 5, 5)))
+        im = xr.DataArray(data, dims=("T", "C", "Y", "X"), coords={"C": ["C", "C2"]})
 
-    def test_d_dark_and_d_flat(
-        self,
-        d_im: DIm,
-        d_dark: DIm,
-        d_flat: DIm,
-    ) -> None:
-        """Test d_shading using stacks of dark and flat images."""
-        d_cor = nima.d_shading(d_im, d_dark, d_flat, clip=True)
-        assert_array_equal(d_cor["C"], np.ones((5, 5, 5)) / 2)
-        assert_array_equal(d_cor["C2"], np.ones((5, 5, 5)) * 2 / 3)
+        dark = 1.0
+        flat = 2.0
+
+        cor = nima.shading(im, dark, flat, clip=True)
+
+        # when C: (2 - 1) / 2 = 0.5
+        np.testing.assert_allclose(cor.sel(C="C").values, 0.5)
+        # when C2: (4 - 1) / 2 = 1.5
+        np.testing.assert_allclose(cor.sel(C="C2").values, 1.5)
+
+    def test_shading_per_channel_flat(self) -> None:
+        """Test shading with per-channel flat."""
+        data = np.zeros((5, 2, 5, 5))
+        data[:, 0, :, :] = 2.0
+        data[:, 1, :, :] = 4.0
+        im = xr.DataArray(data, dims=("T", "C", "Y", "X"), coords={"C": ["C", "C2"]})
+
+        dark = 1.0
+        # flat: C=2, C2=3
+        flat_data = np.zeros((2, 5, 5))
+        flat_data[0, :, :] = 2.0
+        flat_data[1, :, :] = 3.0
+        flat = xr.DataArray(flat_data, dims=("C", "Y", "X"), coords={"C": ["C", "C2"]})
+
+        cor = nima.shading(im, dark, flat, clip=True)
+
+        # when C: (2 - 1) / 2 = 0.5
+        np.testing.assert_allclose(cor.sel(C="C").values, 0.5)
+        # when C2: (4 - 1) / 3 = 1.0
+        np.testing.assert_allclose(cor.sel(C="C2").values, 1.0)
+
+    def test_shading_time_broadcasting(self) -> None:
+        """Test shading when im has multiple timepoints and dark/flat have one."""
+        # im: 3 timepoints
+        im_data = np.ones((3, 1, 10, 10)) * 10.0
+        im = xr.DataArray(
+            im_data, dims=("T", "C", "Y", "X"), coords={"T": [0, 1, 2], "C": ["Ch1"]}
+        )
+
+        # dark: 1 timepoint (e.g. read from file)
+        dark_data = np.ones((1, 1, 10, 10)) * 2.0
+        dark = xr.DataArray(
+            dark_data, dims=("T", "C", "Y", "X"), coords={"T": [0], "C": ["Ch1"]}
+        )
+
+        # flat: 1 timepoint
+        flat_data = np.ones((1, 1, 10, 10)) * 2.0
+        flat = xr.DataArray(
+            flat_data, dims=("T", "C", "Y", "X"), coords={"T": [0], "C": ["Ch1"]}
+        )
+
+        # This failed if xarray aligns on T without squeezing
+        cor = nima.shading(im, dark, flat)
+
+        # Expected result: (10 - 2) / 2 = 4.0 for ALL timepoints
+        assert cor.sizes["T"] == 3
+        np.testing.assert_allclose(cor.values, 4.0)
+
+    def test_shading_per_channel_dark_flat(self) -> None:
+        """Test shading with per-channel dark and flat."""
+        data = np.zeros((5, 2, 5, 5))
+        data[:, 0, :, :] = 2.0
+        data[:, 1, :, :] = 4.0
+        im = xr.DataArray(data, dims=("T", "C", "Y", "X"), coords={"C": ["C", "C2"]})
+
+        # dark: C=1, C2=2
+        dark_data = np.zeros((2, 5, 5))
+        dark_data[0, :, :] = 1.0
+        dark_data[1, :, :] = 2.0
+        dark = xr.DataArray(dark_data, dims=("C", "Y", "X"), coords={"C": ["C", "C2"]})
+
+        # flat: C=2, C2=3
+        flat_data = np.zeros((2, 5, 5))
+        flat_data[0, :, :] = 2.0
+        flat_data[1, :, :] = 3.0
+        flat = xr.DataArray(flat_data, dims=("C", "Y", "X"), coords={"C": ["C", "C2"]})
+
+        cor = nima.shading(im, dark, flat, clip=True)
+
+        # when C: (2 - 1) / 2 = 0.5
+        np.testing.assert_allclose(cor.sel(C="C").values, 0.5)
+        # when C2: (4 - 2) / 3 = 2/3
+        np.testing.assert_allclose(cor.sel(C="C2").values, 2.0 / 3.0)
 
 
 @pytest.fixture(name="im")
