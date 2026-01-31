@@ -5,7 +5,7 @@ import os
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import click
 import dask
@@ -20,10 +20,13 @@ from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 from scipy import ndimage  # type: ignore[import-untyped]
 
-from nima import nima
+from nima import io, nima
 
 from .nima_types import DIm, ImFrame, ImSequence
 from .segmentation import BgParams
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 __version__ = importlib.metadata.version("nima")
 __out_dir__ = f"nima-{__version__}"
@@ -164,16 +167,25 @@ def main(  # noqa: PLR0913
     if verbose > _VerbosityLevel.SILENT:
         click.echo(tiffstk)
         click.echo(channels)
-    d_im, _, t = nima.read_tiff(tiffstk, channels)
+    im = io.read_image(tiffstk, channels)
+    t = int(im.sizes["T"])
     if verbose > _VerbosityLevel.SILENT:
         click.echo(f"  Times: {t}")
     if hotpixels:
-        d_im = cast("DIm", nima.d_median(d_im))
+        im = nima.median(im)
     if flat_f:
         # XXX: this is imperfect: dark must be present of flat
-        dark_im, _, _ = nima.read_tiff(Path(dark_f), channels)
-        flat_im, _, _ = nima.read_tiff(Path(flat_f), channels)
-        d_im = cast("DIm", nima.d_shading(d_im, dark_im, flat_im, clip=True))
+        dark_im = io.read_image(Path(dark_f), channels)
+        flat_im = io.read_image(Path(flat_f), channels)
+        im = cast("xr.DataArray", nima.d_shading(im, dark_im, flat_im, clip=True))
+    # Convert back to legacy DIm
+    d_im = {}
+    for ch in channels:
+        data = im.sel(C=ch).data
+        if im.sizes["Z"] == 1:
+            data = da.squeeze(data, axis=1)
+        d_im[ch] = data
+
     # Process background
     kwargs_bg: dict[str, Any] = {"kind": bg_method}
     optional_keys = {

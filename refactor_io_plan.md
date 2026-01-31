@@ -49,3 +49,12 @@ Modernize the IO module of `nima` by replacing ad-hoc `tifffile` parsing with th
   - You can now proceed with migrating the internal logic of nima.py to use xarray/dask natively, eventually removing the .compute() call in the read_tiff shim.
 
 ❯ would dask_image be better than ndimage.median_filter?
+
+- Add more comprehensive tests for edge cases
+- Document performance characteristics with dask
+
+1. Add comprehensive unit tests specifically for xarray functionality
+1. Performance benchmarking with large dask arrays
+1. Consider adding Dataset input/output option
+
+add lxml and check metadata

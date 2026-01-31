@@ -44,67 +44,6 @@ def _compute_d_im(d_im: DIm) -> DIm:
     return d_im
 
 
-def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[DIm, int, int]:
-    """Read multichannel TIFF timelapse image.
-
-    DEPRECATED: Use `nima.io.read_image` instead.
-
-    Parameters
-    ----------
-    fp : Path
-        File (TIF format) to be opened.
-    channels: Sequence[str]
-        List a name for each channel.
-
-    Returns
-    -------
-    d_im : DIm
-        Dictionary of images. Each keyword represents a channel, named
-        according to `channels` string list.
-    n_channels : int
-        Number of channels.
-    n_times : int
-        Number of timepoints.
-
-    Examples
-    --------
-    >>> d_im, n_channels, n_times = read_tiff('tests/data/1b_c16_15.tif', \
-            channels=['G', 'R', 'C'])
-    >>> n_channels, n_times
-    (3, 4)
-
-    """
-    n_channels = len(channels)
-    img = io.read_image(fp, channels)
-    n_times = int(img.sizes["T"])
-    # Raises
-    #     ------
-    #     ValueError
-    #         When number of channels and total length of TIFF sequence does not match.
-
-    # Convert back to legacy dictionary format
-    d_im = {}
-    for ch in channels:
-        # Extract channel data
-        # Note: read_image guarantees TCZYX. Old read_tiff returned:
-        # 4D: (T, Z*Y*X?) -> No, it was (T, Y, X) for 2D T-series
-        # Let's check dimensions of legacy output.
-        # Legacy: im[:, i] where im is usually TCYX or ZCYX.
-        # If the file is TCZYX, we need to handle Z.
-        # For now, assuming test data is TCYX (Z=1).
-        # img.sel(C=ch) is TZYX.
-        # Legacy d_im[ch] was often T,Y,X.
-        # We need to squeeze Z if it's 1.
-        data = img.sel(C=ch).data
-        # Handle Z dimension for compatibility
-        if img.sizes["Z"] == 1:
-            # Squeeze Z dim (index 1 in TZYX)
-            data = da.squeeze(data, axis=1)
-        d_im[ch] = data
-
-    return d_im, n_channels, n_times
-
-
 def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
     """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
     d_im = _compute_d_im(d_im)
@@ -132,15 +71,16 @@ def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
     return fig
 
 
-def _d_median_xarray(d_im: xr.DataArray) -> xr.DataArray:
+def median(im: xr.DataArray) -> xr.DataArray:
     """Median filter on xarray.DataArray.
 
-    Applies median filter with disk(1) footprint on Y, X dimensions.
+    Same to skimage.morphology.disk(1) and to median filter of Fiji/ImageJ
+    with radius=0.5.
 
     Parameters
     ----------
-    d_im : xr.DataArray
-        Input image data array.
+    im : xr.DataArray
+        Input image data array (usually TCZYX).
 
     Returns
     -------
@@ -160,54 +100,14 @@ def _d_median_xarray(d_im: xr.DataArray) -> xr.DataArray:
         "xr.DataArray",
         xr.apply_ufunc(
             apply_median,
-            d_im,
+            im,
             input_core_dims=[["Y", "X"]],
             output_core_dims=[["Y", "X"]],
             vectorize=True,
             dask="parallelized",
-            output_dtypes=[d_im.dtype],
+            output_dtypes=[im.dtype],
         ),
     )
-
-
-def d_median(d_im: DIm | xr.DataArray) -> DIm | xr.DataArray:
-    """Median filter on dictionary of image (d_im) or xarray.DataArray.
-
-    Same to skimage.morphology.disk(1) and to median filter of Fiji/ImageJ
-    with radius=0.5.
-
-    Parameters
-    ----------
-    d_im : DIm | xr.DataArray
-        dict of images or xarray.DataArray
-
-    Return
-    ------
-    DIm | xr.DataArray
-        dict of images or DataArray preserve dtype of input
-
-    Raises
-    ------
-    ValueError
-        When ImArray is neither a single image nor a stack.
-
-    """
-    if isinstance(d_im, xr.DataArray):
-        return _d_median_xarray(d_im)
-
-    d_im = _compute_d_im(d_im)
-    d_out = {}
-    for k, im in d_im.items():
-        if im.ndim not in [AXES_LENGTH_2D, AXES_LENGTH_3D]:
-            msg = "Only for single image or stack (3D)."
-            raise ValueError(msg)
-        disk = morphology.disk(1)  # type: ignore[no-untyped-call]
-        if im.ndim == AXES_LENGTH_3D:
-            sel = np.conj((np.zeros((3, 3)), disk, np.zeros((3, 3))))
-            d_out[k] = ndimage.median_filter(im, footprint=sel)
-        elif im.ndim == AXES_LENGTH_2D:
-            d_out[k] = ndimage.median_filter(im, footprint=disk)
-    return d_out
 
 
 def _d_shading_xarray(
