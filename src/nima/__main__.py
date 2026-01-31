@@ -211,7 +211,13 @@ def main(  # noqa: PLR0913
     }
     kwargs_mask_label.update({k: v for k, v in optional_keys.items() if v})
     click.secho(kwargs_mask_label)
-    nima.d_mask_label(d_im_bg, **kwargs_mask_label)
+    mask, labels = nima.segment(im, **kwargs_mask_label)
+    if im.sizes["Z"] == 1:
+        mask = mask.squeeze(dim="Z")
+        labels = labels.squeeze(dim="Z")
+    d_im_bg["mask"] = mask.to_numpy()
+    d_im_bg["labels"] = labels.to_numpy()
+
     # Measure
     kwargs_meas_props: dict[str, Any] = {"channels": channels}
     kwargs_meas_props["ratios_from_image"] = image_ratios

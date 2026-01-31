@@ -415,10 +415,10 @@ class TestBg:
         assert bgs.shape == (2, 2)  # T x C
 
 
-class TestDMaskLabelXarray:
-    """Tests for d_mask_label function with xarray."""
+class TestSegment:
+    """Tests for segment function with xarray."""
 
-    def test_d_mask_label_watershed(self) -> None:
+    def test_segment_watershed(self) -> None:
         """Test that watershed works with xarray."""
         # Create DataArray (T, C, Y, X)
         data = np.zeros((1, 3, 20, 20))
@@ -431,9 +431,7 @@ class TestDMaskLabelXarray:
         )
 
         # Should return (mask, labels) tuple
-        res = nima.d_mask_label(da, watershed=True, min_size=10)
-        assert res is not None
-        mask, labels = res
+        mask, labels = nima.segment(da, watershed=True, min_size=10)
 
         assert isinstance(mask, xr.DataArray)
         assert isinstance(labels, xr.DataArray)
@@ -442,6 +440,54 @@ class TestDMaskLabelXarray:
         assert labels.max() >= 1
         # Mask should be boolean
         assert mask.dtype == bool
+
+    def test_segment_options(self) -> None:
+        """Test various options for segment to cover private helper functions."""
+        # Create DataArray (T, C, Y, X)
+        data = np.zeros((1, 3, 50, 50))
+
+        # 1. Object in center (large)
+        data[:, :, 20:30, 20:30] = 100.0
+        # 2. Object at border (should be cleared if clear_border=True)
+        data[:, :, 0:10, 20:30] = 100.0
+        # 3. Small object (should be removed if min_size is set high enough)
+        # Size 2x2 = 4 pixels
+        data[:, :, 40:42, 40:42] = 100.0
+
+        da = xr.DataArray(
+            data, dims=("T", "C", "Y", "X"), coords={"C": ["C", "G", "R"]}
+        )
+
+        # Test 1: clear_border=True
+        # _clear_border_2d
+        mask, _ = nima.segment(da, clear_border=True, min_size=0, watershed=False)
+        # Center object should remain
+        assert mask.isel(T=0, Y=25, X=25)
+        # Border object should be gone
+        assert not mask.isel(T=0, Y=5, X=25)
+
+        # Test 2: min_size
+        # _remove_small_2d
+        # Small object is 4 pixels. Set min_size=5.
+        mask, _ = nima.segment(da, min_size=5, clear_border=False, watershed=False)
+        # Small object should be gone
+        assert not mask.isel(T=0, Y=40, X=40)
+        # Center object (10x10=100) should remain
+        assert mask.isel(T=0, Y=25, X=25)
+
+        # Test 3: wiener=True
+        # _wiener_2d
+        # Hard to deterministic check noise reduction without complex setup,
+        # but we can ensure it runs without error.
+        mask, _ = nima.segment(da, wiener=True, min_size=0, watershed=False)
+        assert mask.any()
+
+        # Test 4: threshold_method='li'
+        # _threshold_2d with Li
+        mask, _labels = nima.segment(
+            da, threshold_method="li", min_size=0, watershed=False
+        )
+        assert mask.any()
 
 
 class TestMedian:
