@@ -110,8 +110,8 @@ def median(im: xr.DataArray) -> xr.DataArray:
     )
 
 
-def _d_shading_xarray(
-    d_im: xr.DataArray,
+def shading(
+    im: xr.DataArray,
     dark: xr.DataArray | Any,  # noqa: ANN401
     flat: xr.DataArray | Any,  # noqa: ANN401
     *,
@@ -123,7 +123,7 @@ def _d_shading_xarray(
 
     Parameters
     ----------
-    d_im : xr.DataArray
+    im : xr.DataArray
         Input image data array.
     dark : xr.DataArray | Any
         Dark image (DataArray or broadcastable array/scalar).
@@ -139,68 +139,22 @@ def _d_shading_xarray(
 
     """
     # Cast to float
-    d_cor = d_im.astype(float)
+    d_cor = im.astype(float)
 
+    # Handle broadcasting for single-frame dark/flat (e.g. T=1 or Z=1)
+    if isinstance(dark, xr.DataArray):
+        for dim in dark.dims:
+            if dark.sizes[dim] == 1 and dim in im.dims and im.sizes[dim] > 1:
+                dark = dark.squeeze(dim)
+    if isinstance(flat, xr.DataArray):
+        for dim in flat.dims:
+            if flat.sizes[dim] == 1 and dim in im.dims and im.sizes[dim] > 1:
+                flat = flat.squeeze(dim)
     # Subtract dark and divide by flat
     d_cor = (d_cor - dark) / flat
-
     # Clip if requested
     if clip:
         d_cor = d_cor.clip(min=0)
-
-    return d_cor
-
-
-def d_shading(
-    d_im: DIm | xr.DataArray,
-    dark: DIm | ImFrame | xr.DataArray | object,
-    flat: DIm | ImFrame | xr.DataArray | object,
-    *,
-    clip: bool = True,
-) -> DIm | xr.DataArray:
-    """Shading correction on d_im or xarray.DataArray.
-
-    Subtract dark; then divide by flat.
-
-    Works either with flat or d_flat
-    Need also dark for each channel because it can be different when using
-    different acquisition times.
-
-    Parameters
-    ----------
-    d_im : DIm | xr.DataArray
-        Dictionary of images or xarray.DataArray.
-    dark : DIm | ImFrame | xr.DataArray | object
-        Dark image (either a 2D image, 2D d_im, or DataArray).
-    flat : DIm | ImFrame | xr.DataArray | object
-        Flat image (either a 2D image, 2D d_im, or DataArray).
-    clip : bool
-        Boolean for clipping values >=0.
-
-    Returns
-    -------
-    DIm | xr.DataArray
-        Corrected d_im or DataArray.
-
-    """
-    if isinstance(d_im, xr.DataArray):
-        return _d_shading_xarray(d_im, dark, flat, clip=clip)
-
-    # TODO inplace=True tosave memory
-    # assertion type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg
-    # assertion type(flat) == np.ndarray or flat.keys() == d_im.keys(),
-    # raise_msg will be replaced by type checking.
-    d_cor = {}
-
-    for key, value in d_im.items():
-        d_cor[key] = value.astype(float)
-        # Subtract dark frame (per key or globally)
-        d_cor[key] -= dark[key] if isinstance(dark, dict) else dark
-        # Divide by flat field (per key or globally), avoid division by zero
-        d_cor[key] /= flat[key] if isinstance(flat, dict) else flat
-    if clip:
-        for key, value in d_cor.items():
-            d_cor[key] = value.clip(min=0)
     return d_cor
 
 

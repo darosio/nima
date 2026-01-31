@@ -5,7 +5,7 @@ import os
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 import click
 import dask
@@ -24,9 +24,6 @@ from nima import io, nima
 
 from .nima_types import DIm, ImFrame, ImSequence
 from .segmentation import BgParams
-
-if TYPE_CHECKING:
-    import xarray as xr
 
 __version__ = importlib.metadata.version("nima")
 __out_dir__ = f"nima-{__version__}"
@@ -177,7 +174,7 @@ def main(  # noqa: PLR0913
         # XXX: this is imperfect: dark must be present of flat
         dark_im = io.read_image(Path(dark_f), channels)
         flat_im = io.read_image(Path(flat_f), channels)
-        im = cast("xr.DataArray", nima.d_shading(im, dark_im, flat_im, clip=True))
+        im = nima.shading(im, dark_im, flat_im, clip=True)
     # Convert back to legacy DIm
     d_im = {}
     for ch in channels:
