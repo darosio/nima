@@ -58,3 +58,5 @@ Modernize the IO module of `nima` by replacing ad-hoc `tifffile` parsing with th
 1. Consider adding Dataset input/output option
 
 add lxml and check metadata
+
+bg can be redesigned?

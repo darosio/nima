@@ -5,7 +5,7 @@ import os
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 import click
 import dask
@@ -175,13 +175,6 @@ def main(  # noqa: PLR0913
         dark_im = io.read_image(Path(dark_f), channels)
         flat_im = io.read_image(Path(flat_f), channels)
         im = nima.shading(im, dark_im, flat_im, clip=True)
-    # Convert back to legacy DIm
-    d_im = {}
-    for ch in channels:
-        data = im.sel(C=ch).data
-        if im.sizes["Z"] == 1:
-            data = da.squeeze(data, axis=1)
-        d_im[ch] = data
 
     # Process background
     kwargs_bg: dict[str, Any] = {"kind": bg_method}
@@ -193,9 +186,17 @@ def main(  # noqa: PLR0913
         "arcsinh_perc": bg_percentile_filter,
     }
     kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
-    d_im_bg, bgs, ff = nima.d_bg(d_im, BgParams(**kwargs_bg), downscale=bg_downscale)
-    d_im_bg = cast("DIm", d_im_bg)
+    im, bgs, ff = nima.bg(im, BgParams(**kwargs_bg), downscale=bg_downscale)
     print(BgParams(**kwargs_bg))
+
+    # Convert back to legacy DIm
+    d_im_bg: DIm = {}
+    for ch in channels:
+        data = im.sel(C=ch).data
+        if im.sizes["Z"] == 1:
+            data = da.squeeze(data, axis=1)
+        d_im_bg[ch] = data
+
     # Segment
     kwargs_mask_label: dict[str, Any] = {
         "channels": channels,

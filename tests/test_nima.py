@@ -365,6 +365,56 @@ class TestDMeasProps:
             pytest.fail("d_meas_props xarray support not implemented")
 
 
+class TestBg:
+    """Tests for bg function."""
+
+    def test_bg_xarray(self) -> None:
+        """Test bg with xarray.DataArray."""
+        # Create DataArray (T, C, Y, X)
+        data = np.zeros((2, 2, 20, 20))
+        # Background 10
+        data += 10.0
+        # Object 100
+        data[:, :, 5:10, 5:10] = 100.0
+
+        da = xr.DataArray(
+            data, dims=("T", "C", "Y", "X"), coords={"T": [0, 1], "C": ["C1", "C2"]}
+        )
+
+        bg_params = segmentation.BgParams(kind="arcsinh")
+
+        # d_cor, bgs, figs
+        d_cor, bgs, figs = nima.bg(da, bg_params)
+
+        assert isinstance(d_cor, xr.DataArray)
+        assert isinstance(bgs, pd.DataFrame)
+        assert isinstance(figs, dict)
+
+        # Check bgs
+        # Median of background should be approx 10
+        # arcsinh method approximates mode/median
+        assert np.allclose(bgs.values, 10.0, atol=1.0)
+
+        # Check correction
+        # 100 - 10 = 90
+        # 10 - 10 = 0
+        expected_obj = 90.0
+        expected_bg = 0.0
+
+        # Check object region
+        assert np.allclose(
+            d_cor.isel(Y=slice(5, 10), X=slice(5, 10)).values, expected_obj, atol=1.0
+        )
+        # Check bg region
+        assert np.allclose(
+            d_cor.isel(Y=slice(0, 4), X=slice(0, 4)).values, expected_bg, atol=1.0
+        )
+
+        # Check shapes
+        assert d_cor.shape == da.shape
+        assert bgs.shape == (2, 2)  # T x C
+
+
 class TestDMaskLabelXarray:
     """Tests for d_mask_label function with xarray."""
 
