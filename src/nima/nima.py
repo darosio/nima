@@ -158,8 +158,8 @@ def shading(
     return d_cor
 
 
-def _d_bg_xarray(
-    d_im: xr.DataArray,
+def bg(
+    im: xr.DataArray,
     bg_params: BgParams,
     downscale: tuple[int, int] | None = None,
     *,
@@ -169,7 +169,7 @@ def _d_bg_xarray(
 
     Parameters
     ----------
-    d_im : xr.DataArray
+    im : xr.DataArray
         Input image data array with dimensions including C (channels) and T (time).
     bg_params : BgParams
         An instance of BgParams containing the parameters for the segmentation.
@@ -192,14 +192,14 @@ def _d_bg_xarray(
     bgs_data = defaultdict(list)
     figs_data = defaultdict(list)
 
-    channels = d_im.coords["C"].to_numpy()
-    times = d_im.coords["T"].to_numpy()
+    channels = im.coords["C"].to_numpy()
+    times = im.coords["T"].to_numpy()
 
     for ch in channels:
         ch_bgs = []
         for t in range(len(times)):
-            frame_da = d_im.sel(C=ch).isel(T=t)
-            if "Z" in d_im.dims and d_im.sizes["Z"] == 1:
+            frame_da = im.sel(C=ch).isel(T=t)
+            if "Z" in im.dims and im.sizes["Z"] == 1:
                 frame_da = frame_da.squeeze("Z")
 
             frame_np = frame_da.compute().to_numpy()
@@ -221,72 +221,12 @@ def _d_bg_xarray(
     bgs_df = pd.DataFrame(bgs_data, index=times)
     bg_da = xr.DataArray(bgs_df, dims=("T", "C"), coords={"T": times, "C": channels})
 
-    d_cor_da = d_im - bg_da
+    im_subtracted = im - bg_da
 
     if clip:
-        d_cor_da = d_cor_da.clip(min=0)
+        im_subtracted = im_subtracted.clip(min=0)
 
-    return d_cor_da, bgs_df, dict(figs_data)
-
-
-def d_bg(
-    d_im: DIm | xr.DataArray,
-    bg_params: BgParams,
-    downscale: tuple[int, int] | None = None,
-    *,
-    clip: bool = True,
-) -> tuple[DIm | xr.DataArray, pd.DataFrame, dict[str, list[list[Figure]]]]:
-    """Bg segmentation for d_im.
-
-    Parameters
-    ----------
-    d_im : DIm | xr.DataArray
-        Dictionary of images or xarray DataArray.
-    bg_params : BgParams
-        An instance of BgParams containing the parameters for the segmentation.
-    downscale : tuple[int, int] | None
-        Tupla, x, y are downscale factors for rows, cols (default=None).
-    clip : bool, optional
-        Boolean (default=True) for clipping values >=0.
-
-    Returns
-    -------
-    d_cor : DIm | xr.DataArray
-        Dictionary of images or DataArray subtracted for the estimated bg.
-    bgs : pd.DataFrame
-        Median of the estimated bg; columns for channels and index for time
-        points.
-    figs : dict[str, list[list[Figure]]]
-        List of (list ?) of figures.
-
-    """
-    # Handle xarray.DataArray input
-    if isinstance(d_im, xr.DataArray):
-        return _d_bg_xarray(d_im, bg_params, downscale, clip=clip)
-
-    # Handle legacy DIm (dict) input
-    d_im = _compute_d_im(d_im)
-    d_bg = defaultdict(list)
-    d_cor = defaultdict(list)
-    d_fig = defaultdict(list)
-    dd_cor: DIm = {}
-    for key, time_frames in d_im.items():
-        for frame in time_frames:
-            im_for_bg = cast("ImFrame", frame)
-            if downscale:
-                im_for_bg = transform.downscale_local_mean(frame, downscale)  # type: ignore[no-untyped-call]
-            bg_result = calculate_bg(im_for_bg, bg_params=bg_params)
-            med = bg_result.iqr[1]
-            if bg_result.figures:
-                d_fig[key].append(bg_result.figures)
-            d_bg[key].append(med)
-            d_cor[key].append(frame - med)
-        dd_cor[key] = cast("ImSequence", np.array(d_cor[key]))
-    if clip:
-        for key in d_cor:
-            dd_cor[key] = dd_cor[key].clip(0)
-    bgs = pd.DataFrame({k: np.array(v) for k, v in d_bg.items()})
-    return dd_cor, bgs, d_fig
+    return im_subtracted, bgs_df, dict(figs_data)
 
 
 def _d_mask_label_xarray(  # noqa: PLR0913, C901
@@ -1068,7 +1008,7 @@ def d_plot_meas(
     Parameters
     ----------
     bgs : pd.DataFrame
-        Estimated bg returned from d_bg()
+        Estimated bg returned from bg()
     meas : dict[int, pd.DataFrame]
         meas object returned from d_meas_props().
     channels : Sequence[str]
