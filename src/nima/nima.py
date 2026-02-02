@@ -6,7 +6,7 @@ statistics for each label; compute ratio and ratio images between channels.
 """
 
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from itertools import chain
 from pathlib import Path
 from typing import Any, cast
@@ -33,7 +33,7 @@ from skimage import (
 
 from . import io
 from .io import Metadata
-from .nima_types import DIm, ImFrame, ImSequence
+from .nima_types import ImFrame, ImSequence
 from .segmentation import BgParams, calculate_bg
 
 Kwargs = dict[str, str | int | float | bool | None]
@@ -43,21 +43,38 @@ AXES_LENGTH_3D = 3
 AXES_LENGTH_2D = 2
 
 
-def _compute_d_im(d_im: DIm) -> DIm:
-    """Compute values in d_im if they are lazy (dask)."""
-    for k, v in d_im.items():
-        if hasattr(v, "compute"):
-            d_im[k] = v.compute()
-    return d_im
+def plot_img(
+    im: xr.DataArray,
+    labels: xr.DataArray | None = None,
+    channels: Sequence[str] | None = None,
+    **kws: Any,  # noqa: ANN401
+) -> Figure:
+    """Plot channels and optionally labels.
 
+    Parameters
+    ----------
+    im : xr.DataArray
+        Input image.
+    labels : xr.DataArray | None
+        Labeled image (optional).
+    channels : Sequence[str] | None
+        Channels to plot. If None, plots all channels.
+    **kws : Any
+        Keyword arguments for plt.imshow.
 
-def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
-    """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
-    d_im = _compute_d_im(d_im)
+    Returns
+    -------
+    Figure
+        The matplotlib figure.
+
+    """
+    if channels is None:
+        channels = im.coords["C"].to_numpy().tolist()
+    n_channels = len(channels) + (1 if labels is not None else 0)
+    n_times = im.sizes["T"]
+
     max_rows = 9
-    n_channels = len(d_im.keys())
-    first_channel = d_im[next(iter(d_im.keys()))]
-    n_times = len(first_channel)
+
     if n_times <= max_rows:
         rng = range(n_times)
         n_rows = n_times
@@ -65,15 +82,32 @@ def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
         step = np.ceil(n_times / max_rows).astype(int)
         rng = range(0, n_times, step)
         n_rows = len(rng)
+
     fig = plt.figure(figsize=(16, 16))
-    for n, ch in enumerate(sorted(d_im.keys())):
+
+    def get_data(t: int, c: str) -> NDArray[Any]:
+        d = im.sel(C=c).isel(T=t)
+        if "Z" in d.dims:
+            d = d.squeeze("Z") if d.sizes["Z"] == 1 else d.max(dim="Z")
+        return d.to_numpy()
+
+    plot_items: list[tuple[str, Callable[[int], NDArray[Any]]]] = [
+        (ch, lambda t, c=ch: get_data(t, c))  # type: ignore[misc]
+        for ch in channels
+    ]
+
+    if labels is not None:
+        plot_items.append(("labels", lambda t: labels.isel(T=t).to_numpy()))
+
+    for n, (name, getter) in enumerate(plot_items):
         for i, r in enumerate(rng):
             ax = fig.add_subplot(n_rows, n_channels, i * n_channels + n + 1)
-            img0 = ax.imshow(d_im[ch][r], **kws)
+            img0 = ax.imshow(getter(r), **kws)
             plt.colorbar(img0, ax=ax, orientation="vertical", pad=0.02, shrink=0.85)
             plt.xticks([])
             plt.yticks([])
-            plt.ylabel(f"{ch} @ t = {r}")
+            plt.ylabel(f"{name} @ t = {r}")
+
     plt.subplots_adjust(wspace=0.2, hspace=0.02, top=0.9, bottom=0.1, left=0, right=1)
     return fig
 
@@ -548,7 +582,9 @@ def ratio(
     den = im.sel(C=channels[1])
 
     # Compute ratio, handling division by zero and NaNs
-    ratio = num / den
+    # Using .where(den != 0) prevents "RuntimeWarning: divide by zero"
+    # and "invalid value" by replacing zeros with NaNs before division.
+    ratio = num / den.where(den != 0)
     ratio = ratio.where(np.isfinite(ratio), 0)
 
     # Apply median filters if requested

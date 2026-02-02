@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import sigfig  # type: ignore[import-untyped]
 import tifffile
+import xarray as xr
 from dask.diagnostics.progress import ProgressBar
 from matplotlib import cm
 from matplotlib.backends.backend_pdf import PdfPages
@@ -22,7 +23,7 @@ from scipy import ndimage  # type: ignore[import-untyped]
 
 from nima import io, nima
 
-from .nima_types import DIm, ImFrame, ImSequence
+from .nima_types import ImFrame, ImSequence
 from .segmentation import BgParams
 
 __version__ = importlib.metadata.version("nima")
@@ -189,14 +190,6 @@ def main(  # noqa: PLR0913
     im, bgs, ff = nima.bg(im, BgParams(**kwargs_bg), downscale=bg_downscale)
     print(BgParams(**kwargs_bg))
 
-    # Convert back to legacy DIm
-    d_im_bg: DIm = {}
-    for ch in channels:
-        data = im.sel(C=ch).data
-        if im.sizes["Z"] == 1:
-            data = da.squeeze(data, axis=1)
-        d_im_bg[ch] = data
-
     # Segment
     kwargs_mask_label: dict[str, Any] = {
         "channels": channels,
@@ -215,8 +208,6 @@ def main(  # noqa: PLR0913
     if im.sizes["Z"] == 1:
         mask = mask.squeeze(dim="Z")
         labels = labels.squeeze(dim="Z")
-    d_im_bg["mask"] = mask.to_numpy()
-    d_im_bg["labels"] = labels.to_numpy()
 
     # Measure
     kwargs_meas_props: dict[str, Any] = {"channels": channels}
@@ -239,15 +230,29 @@ def main(  # noqa: PLR0913
         **kwargs_meas_props,
     )
 
+    r_cl_da = None
+    r_ph_da = None
     if image_ratios:
         radii = kwargs_meas_props.get("radii", (7, 3))
-        d_im_bg["r_cl"] = nima.ratio(
+        r_cl_da = nima.ratio(
             im_meas, channels=channels_cl, radii=radii, mask=labels > 0
-        ).to_numpy()
-        d_im_bg["r_pH"] = nima.ratio(
+        )
+        r_ph_da = nima.ratio(
             im_meas, channels=channels_ph, radii=radii, mask=labels > 0
-        ).to_numpy()
-    output_results(output, tiffstk, ff, meas, channels, d_im_bg, bg_method, bgs)
+        )
+    output_results(
+        output,
+        tiffstk,
+        ff,
+        meas,
+        channels,
+        bg_method,
+        bgs,
+        im_meas,
+        labels,
+        r_cl=r_cl_da,
+        r_ph=r_ph_da,
+    )
 
 
 def output_results(  # noqa: PLR0913
@@ -256,9 +261,12 @@ def output_results(  # noqa: PLR0913
     ff: dict[str, list[list[Figure]]],
     meas: dict[int, pd.DataFrame],
     channels: tuple[str, ...],
-    d_im_bg: DIm,
     bg_method: str,
     bgs: pd.DataFrame,
+    im: xr.DataArray,
+    labels: xr.DataArray,
+    r_cl: xr.DataArray | None = None,
+    r_ph: xr.DataArray | None = None,
 ) -> None:
     """Output results: csv tables and png images."""
     output_dir.mkdir(exist_ok=True)
@@ -280,9 +288,12 @@ def output_results(  # noqa: PLR0913
     f = nima.d_plot_meas(bgs, meas, channels=channels)
     f.savefig(bname.with_name(bname.name + "_meas.png"))
     # Show all channels and labels
-    d = {ch: d_im_bg[ch] for ch in channels}
-    d["labels"] = d_im_bg["labels"]
-    fig = nima.d_show(d, cmap=cm.inferno_r)  # type: ignore[attr-defined]
+    fig = nima.plot_img(
+        im,
+        labels=labels,
+        channels=sorted(channels),
+        cmap=cm.inferno_r,  # type: ignore[attr-defined]
+    )
     fig.savefig(bname.with_name(bname.name + "_dim.png"))
     # Create measurement CSV files
     for k, df in meas.items():
@@ -301,16 +312,17 @@ def output_results(  # noqa: PLR0913
         df[column_order].to_csv(bname / Path(f"label{k}.csv"))
     # XXX: labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
     # Create TIFF files
-    objs = ndimage.find_objects(d_im_bg["labels"])
-    for n, o in enumerate(objs):
-        name = bname / Path(f"label{n + 1}_rcl.tif")
-        tifffile.imwrite(
-            name, d_im_bg["r_cl"][o], compression="lzma", photometric="minisblack"
-        )
-        name = bname / Path(f"label{n + 1}_rpH.tif")
-        tifffile.imwrite(
-            name, d_im_bg["r_pH"][o], compression="lzma", photometric="minisblack"
-        )
+    if r_cl is not None and r_ph is not None:
+        objs = ndimage.find_objects(labels.to_numpy())
+        for n, o in enumerate(objs):
+            name = bname / Path(f"label{n + 1}_rcl.tif")
+            tifffile.imwrite(
+                name, r_cl.to_numpy()[o], compression="lzma", photometric="minisblack"
+            )
+            name = bname / Path(f"label{n + 1}_rpH.tif")
+            tifffile.imwrite(
+                name, r_ph.to_numpy()[o], compression="lzma", photometric="minisblack"
+            )
 
 
 ##  bima  ##################################################
