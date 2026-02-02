@@ -7,7 +7,6 @@ import pandas as pd
 import pytest
 import tifffile as tff
 import xarray as xr
-from numpy.testing import assert_array_equal
 from numpy.typing import NDArray
 
 from nima import nima, segmentation
@@ -215,26 +214,11 @@ def test_plot_img_profile() -> None:
     np.testing.assert_allclose(y_plot, ydata)
 
 
-class TestDRatio:
-    """Tests for d_ratio function."""
+class TestRatio:
+    """Tests for ratio function."""
 
-    def test_d_ratio_legacy(self) -> None:
-        """Test legacy dictionary-based d_ratio."""
-        # Create dummy DIm
-        d_im = {
-            "C": np.array([[[10.0, 10.0], [10.0, 10.0]]]),
-            "R": np.array([[[2.0, 2.0], [2.0, 2.0]]]),
-            "mask": np.array([[[1, 1], [0, 0]]]),
-        }
-        nima.d_ratio(d_im, channels=("C", "R"), radii=(1,))
-
-        assert "r_cl" in d_im
-        expected = np.array([[[5.0, 5.0], [0.0, 0.0]]])
-        # The mask should zero out the second row
-        assert_array_equal(d_im["r_cl"], expected)
-
-    def test_d_ratio_xarray(self) -> None:
-        """Test xarray-based d_ratio."""
+    def test_ratio(self) -> None:
+        """Test xarray-based ratio."""
         # data shapes: (1, 2, 2) -> (T, Y, X)
         data = np.array([[[10.0, 10.0], [10.0, 10.0]]])
         data2 = np.array([[[2.0, 2.0], [2.0, 2.0]]])
@@ -249,68 +233,15 @@ class TestDRatio:
         # We might need to pass mask if we want parity
         mask = xr.DataArray(np.array([[[1, 1], [0, 0]]]), dims=("T", "Y", "X"))
 
-        res = nima.d_ratio(da, channels=("C", "R"), radii=(1,), mask=mask)
-        assert res is not None
+        res = nima.ratio(da, channels=("C", "R"), radii=(1,), mask=mask)
         assert isinstance(res, xr.DataArray)
 
 
-class TestDMeasProps:
-    """Tests for d_meas_props function."""
+class TestMeasure:
+    """Tests for measure function."""
 
-    def test_d_meas_props_legacy(self) -> None:
-        """Test legacy dictionary-based d_meas_props."""
-        # Create dummy DIm
-        # 2 timepoints, 2 channels, 10x10 images
-        # Time 0: Label 1 present
-        # Time 1: Label 1 present
-        labels = np.zeros((2, 10, 10), dtype=int)
-        labels[0, 2:5, 2:5] = 1
-        labels[1, 2:5, 2:5] = 1
-
-        # C channel: constant 10
-        c_ch = np.ones((2, 10, 10)) * 10.0
-        # R channel: constant 2
-        r_ch = np.ones((2, 10, 10)) * 2.0
-        # G channel: constant 4
-        g_ch = np.ones((2, 10, 10)) * 4.0
-
-        d_im = {
-            "C": c_ch,
-            "R": r_ch,
-            "G": g_ch,
-            "labels": labels,
-            "mask": labels > 0,  # d_ratio needs mask
-        }
-
-        meas, _pr = nima.d_meas_props(
-            d_im,
-            channels=("C", "G", "R"),
-            channels_cl=("C", "R"),
-            channels_ph=("G", "C"),
-            radii=(1,),
-            ratios_from_image=True,
-        )
-
-        assert 1 in meas
-        df = meas[1]
-        assert isinstance(df, pd.DataFrame)
-        assert len(df) == 2  # 2 timepoints
-
-        # Check values
-        # C=10, R=2. r_cl = 10/2 = 5
-        # G=4, C=10. r_ph = 4/10 = 0.4
-
-        # Check calculated ratios (from mean intensities)
-        assert np.allclose(df["r_cl"], 5.0)
-        assert np.allclose(df["r_pH"], 0.4)
-
-        # Check ratios from image (median)
-        # The ratio image should be 5.0 everywhere (ideal case)
-        assert "r_cl_median" in df.columns
-        assert np.allclose(df["r_cl_median"], 5.0)
-
-    def test_d_meas_props_xarray(self) -> None:
-        """Test xarray-based d_meas_props."""
+    def test_measure(self) -> None:
+        """Test xarray-based measure."""
         # Create DataArray (T, C, Y, X)
         # 2 timepoints, 3 channels (C, G, R), 10x10
         data = np.zeros((2, 3, 10, 10))
@@ -325,44 +256,30 @@ class TestDMeasProps:
             data, dims=("T", "C", "Y", "X"), coords={"C": ["C", "G", "R"]}
         )
 
-        # Labels (T, Y, X) - note: legacy labels are usually just (T, Y, X) for 2D
-        # timeseries. d_mask_label returns (T, Z, Y, X) but let's handle 3D or 4D
-        # labels. If the input d_im is (T, C, Y, X), labels likely (T, Y, X).
-
         labels_np = np.zeros((2, 10, 10), dtype=int)
         labels_np[0, 2:5, 2:5] = 1
         labels_np[1, 2:5, 2:5] = 1
 
         labels = xr.DataArray(labels_np, dims=("T", "Y", "X"))
 
-        # Attempt to call d_meas_props
-        # Note: we need to pass labels explicitly or have them in d_im if it was a
-        # dataset (but we assume DA input)
+        meas, _pr = nima.measure(
+            da,
+            labels,
+            channels=("C", "G", "R"),
+            channels_cl=("C", "R"),
+            channels_ph=("G", "C"),
+            radii=(1,),
+            ratios_from_image=True,
+        )
 
-        try:
-            meas, _pr = nima.d_meas_props(
-                da,
-                channels=("C", "G", "R"),
-                channels_cl=("C", "R"),
-                channels_ph=("G", "C"),
-                radii=(1,),
-                ratios_from_image=True,
-                labels=labels,
-            )
+        assert 1 in meas
+        df = meas[1]
+        assert isinstance(df, pd.DataFrame)
+        assert len(df) == 2
 
-            assert 1 in meas
-            df = meas[1]
-            assert isinstance(df, pd.DataFrame)
-            assert len(df) == 2
-
-            assert np.allclose(df["r_cl"], 5.0)
-            assert np.allclose(df["r_pH"], 0.4)
-            assert np.allclose(df["r_cl_median"], 5.0)
-
-        except TypeError as e:
-            pytest.fail(f"d_meas_props failed with xarray: {e}")
-        except NotImplementedError:
-            pytest.fail("d_meas_props xarray support not implemented")
+        assert np.allclose(df["r_cl"], 5.0)
+        assert np.allclose(df["r_pH"], 0.4)
+        assert np.allclose(df["r_cl_median"], 5.0)
 
 
 class TestBg:
@@ -479,6 +396,9 @@ class TestSegment:
         # _wiener_2d
         # Hard to deterministic check noise reduction without complex setup,
         # but we can ensure it runs without error.
+        # Add small random noise to avoid divide by zero in wiener filter
+        rng = np.random.default_rng(42)
+        data += rng.random(data.shape) * 0.1
         mask, _ = nima.segment(da, wiener=True, min_size=0, watershed=False)
         assert mask.any()
 

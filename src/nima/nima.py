@@ -22,7 +22,14 @@ from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from scipy import ndimage, signal  # type: ignore[import-untyped]
-from skimage import feature, filters, measure, morphology, segmentation, transform
+from skimage import (
+    feature,
+    filters,
+    measure as skmeasure,
+    morphology,
+    segmentation,
+    transform,
+)
 
 from . import io
 from .io import Metadata
@@ -458,7 +465,7 @@ def process_watershed(
         # lbl is initial labels
         # msk is binary mask
 
-        pr = measure.regionprops(lbl, intensity_image=intensity)  # type: ignore[no-untyped-call]
+        pr = skmeasure.regionprops(lbl, intensity_image=intensity)  # type: ignore[no-untyped-call]
         if not pr:
             return lbl
 
@@ -478,7 +485,7 @@ def process_watershed(
         local_maxi = np.zeros_like(dist, dtype=bool)
         local_maxi[tuple(coords.T)] = True
 
-        markers = measure.label(local_maxi)  # type: ignore[no-untyped-call]
+        markers = skmeasure.label(local_maxi)  # type: ignore[no-untyped-call]
 
         if randomwalk:
             markers[~msk] = -1
@@ -512,15 +519,33 @@ def process_watershed(
     return mask, new_labels
 
 
-def _d_ratio_xarray(
-    d_im: xr.DataArray,
-    channels: tuple[str, str],
-    radii: Sequence[int],
+def ratio(
+    im: xr.DataArray,
+    channels: tuple[str, str] = ("C", "R"),
+    radii: Sequence[int] = (7, 3),
     mask: xr.DataArray | None = None,
 ) -> xr.DataArray:
-    """Compute ratio image for xarray.DataArray."""
-    num = d_im.sel(C=channels[0])
-    den = d_im.sel(C=channels[1])
+    """Compute ratio image for xarray.DataArray.
+
+    Parameters
+    ----------
+    im : xr.DataArray
+        Input image.
+    channels : tuple[str, str], optional
+        Names for the two channels (Numerator, Denominator) (default=('C', 'R')).
+    radii : Sequence[int], optional
+        Each element contain a radius value for a median filter cycle (default=(7, 3)).
+    mask : xr.DataArray | None, optional
+        Binary mask to apply to the ratio image.
+
+    Returns
+    -------
+    xr.DataArray
+        The ratio image.
+
+    """
+    num = im.sel(C=channels[0])
+    den = im.sel(C=channels[1])
 
     # Compute ratio, handling division by zero and NaNs
     ratio = num / den
@@ -555,92 +580,64 @@ def _d_ratio_xarray(
     return ratio
 
 
-def d_ratio(
-    d_im: DIm | xr.DataArray,
-    name: str = "r_cl",
-    channels: tuple[str, str] = ("C", "R"),
-    radii: Sequence[int] = (7, 3),
-    mask: xr.DataArray | None = None,
-) -> xr.DataArray | None:
-    """Ratio image between 2 channels in d_im.
-
-    Add masked (bg=0; fg=ratio) median-filtered ratio for 2 channels. So, d_im
-    must (already) contain keys for mask and the two channels.
-
-    After ratio computation any -inf, nan and inf values are replaced with 0.
-    These values should be generated (upon ratio) only in the bg. You can
-    check:
-    r_cl[d_im['labels']==4].min()
-
-    Parameters
-    ----------
-    d_im : DIm | xr.DataArray
-        Dictionary of images or xarray DataArray.
-    name : str, optional
-        Name (default='r_cl') for the new key (DIm only).
-    channels : tuple[str, str], optional
-        Names for the two channels (Numerator, Denominator) (default=('C', 'R')).
-    radii : Sequence[int], optional
-        Each element contain a radius value for a median filter cycle (default=(7, 3)).
-    mask : xr.DataArray | None, optional
-        Binary mask to apply to the ratio image (xarray only).
-
-    Returns
-    -------
-    xr.DataArray | None
-        If d_im is DataArray: returns the ratio DataArray.
-        If d_im is DIm: modifies d_im in place and returns None.
-
-    Notes
-    -----
-    Add a key named "name" and containing the calculated ratio to d_im.
-
-    """
-    if isinstance(d_im, xr.DataArray):
-        return _d_ratio_xarray(d_im, channels, radii, mask)
-
-    with np.errstate(divide="ignore", invalid="ignore"):
-        # 0/0 and num/0 can both happen.
-        ratio = np.array(d_im[channels[0]] / d_im[channels[1]], dtype=float)
-    for i, r in enumerate(ratio):
-        np.nan_to_num(r, copy=False, posinf=0, neginf=0)
-        filtered_r = r
-        for radius in radii:
-            filtered_r = ndimage.median_filter(filtered_r, radius)
-        ratio[i] = filtered_r * d_im["mask"][i]
-    d_im[name] = ratio
-    return None
-
-
-def _d_meas_props_xarray(  # noqa: PLR0913
-    d_im: xr.DataArray,
+def measure(  # noqa: PLR0913
+    im: xr.DataArray,
     labels: xr.DataArray,
-    channels: Sequence[str],
-    channels_cl: tuple[str, str],
-    channels_ph: tuple[str, str],
+    channels: Sequence[str] = ("C", "G", "R"),
+    channels_cl: tuple[str, str] = ("C", "R"),
+    channels_ph: tuple[str, str] = ("G", "C"),
     radii: Sequence[int] | None = None,
     *,
     ratios_from_image: bool = True,
 ) -> tuple[dict[int, pd.DataFrame], dict[str, list[list[Any]]]]:
-    """Measure properties for xarray.DataArray."""
+    """Measure properties for xarray.DataArray.
+
+    Parameters
+    ----------
+    im : xr.DataArray
+        Input image.
+    labels : xr.DataArray
+        Labeled image.
+    channels : Sequence[str], optional
+        All channels (default=('C', 'G', 'R')).
+    channels_cl : tuple[str, str], optional
+        Numerator and denominator channels for cl ratio (default=('C', 'R')).
+    channels_ph : tuple[str, str], optional
+        Numerator and denominator channels for pH ratio (default=('G', 'C')).
+    radii : Sequence[int] | None, optional
+        Radii of the optional median average performed on ratio images (default=None).
+    ratios_from_image : bool, optional
+        Boolean for executing ratio i.e. compute ratio images (default=True).
+
+    Returns
+    -------
+    meas : dict[int, pd.DataFrame]
+        For each label in labels: {'label': df}.
+        DataFrame columns are: mean intensity of all channels,
+        'equivalent_diameter', 'eccentricity', 'area', ratios from the mean
+        intensities and optionally ratios from ratio-image.
+    pr : dict[str, list[list[Any]]]
+        For each channel: {'channel': [props]} i.e. {'channel': [time][label]}.
+
+    """
     pr: dict[str, list[list[Any]]] = defaultdict(list)
     # Ensure dimensions order for iteration (T, ...)
-    # If d_im has Z, we expect labels to have Z.
+    # If im has Z, we expect labels to have Z.
     # We iterate over T.
 
-    times = d_im.coords["T"].to_numpy()
+    times = im.coords["T"].to_numpy()
 
     for ch in channels:
         pr[ch] = []
         for t in range(len(times)):
-            im_frame = d_im.sel(C=ch).isel(T=t)
+            im_frame = im.sel(C=ch).isel(T=t)
             lbl_frame = labels.isel(T=t)
 
             # Convert to numpy for regionprops
             im_np = im_frame.to_numpy()
             lbl_np = lbl_frame.to_numpy()
 
-            props = measure.regionprops(lbl_np, intensity_image=im_np)  # type: ignore[no-untyped-call]
+            props = skmeasure.regionprops(lbl_np, intensity_image=im_np)  # type: ignore[no-untyped-call]
             pr[ch].append(props)
 
     meas: dict[int, pd.DataFrame] = {}
@@ -648,7 +645,6 @@ def _d_meas_props_xarray(  # noqa: PLR0913
     # We can get unique labels from the labels DataArray (could be slow if large)
     # Alternatively, we iterate based on what regionprops found.
     # But we need consistent label IDs across time.
-    # The legacy code assumes we know the labels from d_im['labels'].
     unique_labels = np.unique(labels.compute().to_numpy())
     unique_labels = unique_labels[unique_labels > 0]
 
@@ -687,18 +683,18 @@ def _d_meas_props_xarray(  # noqa: PLR0913
 
     if ratios_from_image:
         # Calculate ratio images (DataArray)
-        r_cl_da = d_ratio(
-            d_im, channels=channels_cl, radii=radii or (), mask=labels > 0
+        r_cl_da = ratio(
+            im,
+            channels=channels_cl,
+            radii=radii if radii is not None else (7, 3),
+            mask=labels > 0,
         )
-        r_ph_da = d_ratio(
-            d_im, channels=channels_ph, radii=radii or (), mask=labels > 0
+        r_ph_da = ratio(
+            im,
+            channels=channels_ph,
+            radii=radii if radii is not None else (7, 3),
+            mask=labels > 0,
         )
-
-        # d_ratio returns DataArray if input is DataArray (and we know it is here)
-        # However, d_ratio is typed to return DataArray | None.
-        if r_cl_da is None or r_ph_da is None:
-            msg = "d_ratio returned None for DataArray input"
-            raise RuntimeError(msg)
 
         r_ph_list = []
         r_cl_list = []
@@ -737,121 +733,6 @@ def _d_meas_props_xarray(  # noqa: PLR0913
             # Join inner will select matching times.
             meas[int(lbl)] = pd.concat([meas[int(lbl)], res_df], axis=1, join="inner")
 
-    return meas, pr
-
-
-def d_meas_props(  # noqa: PLR0913, PLR0912, C901
-    d_im: DIm | xr.DataArray,
-    channels: Sequence[str] = ("C", "G", "R"),
-    channels_cl: tuple[str, str] = ("C", "R"),
-    channels_ph: tuple[str, str] = ("G", "C"),
-    radii: Sequence[int] | None = None,
-    *,
-    ratios_from_image: bool = True,
-    labels: xr.DataArray | None = None,
-) -> tuple[dict[int, pd.DataFrame], dict[str, list[list[Any]]]]:
-    """Calculate pH and cl ratios and labelprops.
-
-    Parameters
-    ----------
-    d_im : DIm | xr.DataArray
-        Dictionary of images or xarray DataArray.
-    channels : Sequence[str], optional
-        All d_im channels (default=('C', 'G', 'R')).
-    channels_cl : tuple[str, str], optional
-        Numerator and denominator channels for cl ratio (default=('C', 'R')).
-    channels_ph : tuple[str, str], optional
-        Numerator and denominator channels for pH ratio (default=('G', 'C')).
-    radii : Sequence[int] | None, optional
-        Radii of the optional median average performed on ratio images (default=None).
-    ratios_from_image : bool, optional
-        Boolean for executing d_ratio i.e. compute ratio images (default=True).
-    labels : xr.DataArray | None, optional
-        Labeled image (xarray only). Required if d_im is xarray.DataArray.
-
-    Returns
-    -------
-    meas : dict[int, pd.DataFrame]
-        For each label in labels: {'label': df}.
-        DataFrame columns are: mean intensity of all channels,
-        'equivalent_diameter', 'eccentricity', 'area', ratios from the mean
-        intensities and optionally ratios from ratio-image.
-    pr : dict[str, list[list[Any]]]
-        For each channel: {'channel': [props]} i.e. {'channel': [time][label]}.
-
-    Raises
-    ------
-    ValueError
-        If d_im is xarray.DataArray and labels is not provided.
-
-    """
-    if isinstance(d_im, xr.DataArray):
-        if labels is None:
-            msg = "labels must be provided when d_im is xarray.DataArray"
-            raise ValueError(msg)
-        return _d_meas_props_xarray(
-            d_im,
-            labels,
-            channels,
-            channels_cl,
-            channels_ph,
-            radii,
-            ratios_from_image=ratios_from_image,
-        )
-
-    d_im = _compute_d_im(d_im)
-    pr: dict[str, list[list[Any]]] = defaultdict(list)
-    for ch in channels:
-        pr[ch] = []
-        for time, label_im in enumerate(d_im["labels"]):
-            im = d_im[ch][time]
-            props = measure.regionprops(label_im, intensity_image=im)  # type: ignore[no-untyped-call]
-            pr[ch].append(props)
-    meas: dict[int, pd.DataFrame] = {}
-    # labels are 3D and "0" is always label for background
-    labels_np = np.unique(d_im["labels"])[1:]
-    for lbl in labels_np:
-        idx = []
-        d = defaultdict(list)
-        for time, props in enumerate(pr[channels[0]]):
-            try:
-                i_label = [prop.label == lbl for prop in props].index(True)
-                prop_ch0 = props[i_label]
-                idx.append(time)
-                d["equivalent_diameter"].append(prop_ch0.equivalent_diameter_area)
-                d["eccentricity"].append(prop_ch0.eccentricity)
-                d["area"].append(prop_ch0.area)
-                for ch in pr:
-                    d[ch].append(pr[ch][time][i_label].intensity_mean)
-            except ValueError:
-                pass  # label is absent in this timepoint
-        res_df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
-        res_df["r_cl"] = res_df[channels_cl[0]] / res_df[channels_cl[1]]
-        res_df["r_pH"] = res_df[channels_ph[0]] / res_df[channels_ph[1]]
-        meas[int(lbl)] = res_df
-    if ratios_from_image:
-        if radii:
-            d_ratio(d_im, "r_cl", channels=channels_cl, radii=radii)
-            d_ratio(d_im, "r_pH", channels=channels_ph, radii=radii)
-        else:
-            d_ratio(d_im, "r_cl", channels=channels_cl)
-            d_ratio(d_im, "r_pH", channels=channels_ph)
-        r_ph = []
-        r_cl = []
-        for time, (ph, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"], strict=True)):
-            r_ph.append(ndimage.median(ph, d_im["labels"][time], index=labels_np))
-            r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels_np))
-        ratios_ph: ImSequence = np.array(r_ph)
-        ratios_cl: ImSequence = np.array(r_cl)
-        for ilbl, value in meas.items():
-            res_df = pd.DataFrame(
-                {
-                    "r_pH_median": ratios_ph[:, ilbl - 1],
-                    "r_cl_median": ratios_cl[:, ilbl - 1],
-                }
-            )
-            # concat only on index that are present in both
-            meas[ilbl] = pd.concat([value, res_df], axis=1, join="inner")
     return meas, pr
 
 

@@ -226,9 +226,27 @@ def main(  # noqa: PLR0913
             int(r) for r in ratio_median_radii.split(",")
         )
     click.secho(kwargs_meas_props)
-    meas, _ = nima.d_meas_props(
-        d_im_bg, channels_cl=channels_cl, channels_ph=channels_ph, **kwargs_meas_props
+
+    im_meas = im
+    if im.sizes["Z"] == 1:
+        im_meas = im.squeeze(dim="Z")
+
+    meas, _ = nima.measure(
+        im_meas,
+        labels,
+        channels_cl=channels_cl,
+        channels_ph=channels_ph,
+        **kwargs_meas_props,
     )
+
+    if image_ratios:
+        radii = kwargs_meas_props.get("radii", (7, 3))
+        d_im_bg["r_cl"] = nima.ratio(
+            im_meas, channels=channels_cl, radii=radii, mask=labels > 0
+        ).to_numpy()
+        d_im_bg["r_pH"] = nima.ratio(
+            im_meas, channels=channels_ph, radii=radii, mask=labels > 0
+        ).to_numpy()
     output_results(output, tiffstk, ff, meas, channels, d_im_bg, bg_method, bgs)
 
 
