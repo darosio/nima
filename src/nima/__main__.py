@@ -204,10 +204,7 @@ def main(  # noqa: PLR0913
     }
     kwargs_mask_label.update({k: v for k, v in optional_keys.items() if v})
     click.secho(kwargs_mask_label)
-    mask, labels = nima.segment(im, **kwargs_mask_label)
-    if im.sizes["Z"] == 1:
-        mask = mask.squeeze(dim="Z")
-        labels = labels.squeeze(dim="Z")
+    labels = nima.segment(im, **kwargs_mask_label)
 
     # Measure
     kwargs_meas_props: dict[str, Any] = {"channels": channels}
@@ -218,12 +215,8 @@ def main(  # noqa: PLR0913
         )
     click.secho(kwargs_meas_props)
 
-    im_meas = im
-    if im.sizes["Z"] == 1:
-        im_meas = im.squeeze(dim="Z")
-
     meas, _ = nima.measure(
-        im_meas,
+        im,
         labels,
         channels_cl=channels_cl,
         channels_ph=channels_ph,
@@ -234,12 +227,8 @@ def main(  # noqa: PLR0913
     r_ph_da = None
     if image_ratios:
         radii = kwargs_meas_props.get("radii", (7, 3))
-        r_cl_da = nima.ratio(
-            im_meas, channels=channels_cl, radii=radii, mask=labels > 0
-        )
-        r_ph_da = nima.ratio(
-            im_meas, channels=channels_ph, radii=radii, mask=labels > 0
-        )
+        r_cl_da = nima.ratio(im, channels=channels_cl, radii=radii, mask=labels > 0)
+        r_ph_da = nima.ratio(im, channels=channels_ph, radii=radii, mask=labels > 0)
     output_results(
         output,
         tiffstk,
@@ -248,7 +237,7 @@ def main(  # noqa: PLR0913
         channels,
         bg_method,
         bgs,
-        im_meas,
+        im,
         labels,
         r_cl=r_cl_da,
         r_ph=r_ph_da,
@@ -285,7 +274,7 @@ def output_results(  # noqa: PLR0913
     bgs[column_order].to_csv(bname / "bg.csv")
     # TODO: plt.close('all') or control mpl warning
     # Create measurement plots
-    f = nima.d_plot_meas(bgs, meas, channels=channels)
+    f = nima.plot_meas(bgs, meas, channels=channels)
     f.savefig(bname.with_name(bname.name + "_meas.png"))
     # Show all channels and labels
     fig = nima.plot_img(

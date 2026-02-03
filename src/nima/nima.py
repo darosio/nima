@@ -8,16 +8,13 @@ statistics for each label; compute ratio and ratio images between channels.
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from itertools import chain
-from pathlib import Path
 from typing import Any, cast
 
-import dask.array as da
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from dask.array import Array
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
@@ -31,8 +28,6 @@ from skimage import (
     transform,
 )
 
-from . import io
-from .io import Metadata
 from .nima_types import ImFrame, ImSequence
 from .segmentation import BgParams, calculate_bg
 
@@ -317,7 +312,7 @@ def segment(  # noqa: PLR0913
     watershed: bool = False,
     clear_border: bool = False,
     randomwalk: bool = False,
-) -> tuple[xr.DataArray, xr.DataArray]:
+) -> xr.DataArray:
     """Segment cells in xarray DataArray. Returns mask and labels.
 
     Perform plane-by-plane (2D image):
@@ -352,8 +347,6 @@ def segment(  # noqa: PLR0913
 
     Returns
     -------
-    mask : xr.DataArray
-        Binary mask with dimensions (T, Z, Y, X).
     labels : xr.DataArray
         Labeled regions with dimensions (T, Z, Y, X).
 
@@ -446,7 +439,8 @@ def segment(  # noqa: PLR0913
     )
 
     if watershed:
-        return process_watershed(
+        # mask is not modified by process_watershed
+        labels = process_watershed(
             im,
             mask,
             labels,
@@ -454,7 +448,11 @@ def segment(  # noqa: PLR0913
             randomwalk=randomwalk,
         )
 
-    return mask, labels
+    # Squeeze Z dimension if singleton
+    if labels.sizes.get("Z") == 1:
+        labels = labels.squeeze("Z")
+
+    return cast("xr.DataArray", labels)
 
 
 def process_watershed(
@@ -464,7 +462,7 @@ def process_watershed(
     channels: tuple[str, ...],
     *,
     randomwalk: bool = False,
-) -> tuple[xr.DataArray, xr.DataArray]:
+) -> xr.DataArray:
     """Apply watershed to xarray DataArray.
 
     Parameters
@@ -482,8 +480,6 @@ def process_watershed(
 
     Returns
     -------
-    mask : xr.DataArray
-        Updated mask (not modified in current implementation, returned as is).
     labels : xr.DataArray
         Updated labels after watershed.
 
@@ -538,19 +534,20 @@ def process_watershed(
         dist = ndimage.distance_transform_edt(msk)
         return apply_watershed_2d(dist, lbl, msk, intensity)
 
-    new_labels = xr.apply_ufunc(
-        wrapper,
-        mask,
-        labels,
-        ch0,
-        input_core_dims=[["Y", "X"], ["Y", "X"], ["Y", "X"]],
-        output_core_dims=[["Y", "X"]],
-        vectorize=True,
-        dask="parallelized",
-        output_dtypes=[np.int32],
+    return cast(
+        "xr.DataArray",
+        xr.apply_ufunc(
+            wrapper,
+            mask,
+            labels,
+            ch0,
+            input_core_dims=[["Y", "X"], ["Y", "X"], ["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[np.int32],
+        ),
     )
-
-    return mask, new_labels
 
 
 def ratio(
@@ -578,6 +575,8 @@ def ratio(
         The ratio image.
 
     """
+    if "Z" in im.dims and im.sizes["Z"] == 1:
+        im = im.squeeze(dim="Z")
     num = im.sel(C=channels[0])
     den = im.sel(C=channels[1])
 
@@ -660,6 +659,9 @@ def measure(  # noqa: PLR0913
     # Ensure dimensions order for iteration (T, ...)
     # If im has Z, we expect labels to have Z.
     # We iterate over T.
+
+    if "Z" in im.dims and im.sizes["Z"] == 1:
+        im = im.squeeze(dim="Z")
 
     times = im.coords["T"].to_numpy()
 
@@ -772,7 +774,7 @@ def measure(  # noqa: PLR0913
     return meas, pr
 
 
-def d_plot_meas(
+def plot_meas(
     bgs: pd.DataFrame, meas: dict[int, pd.DataFrame], channels: Sequence[str]
 ) -> Figure:
     """Plot meas object.
@@ -785,7 +787,7 @@ def d_plot_meas(
     bgs : pd.DataFrame
         Estimated bg returned from bg()
     meas : dict[int, pd.DataFrame]
-        meas object returned from d_meas_props().
+        meas object returned from measure().
     channels : Sequence[str]
         All bgs and meas channels (default=['C', 'G', 'R']).
 
@@ -1062,20 +1064,3 @@ def correct_hotpixel(
         v4 = img[y, x + 1]
         correct = np.median([v1, v2, v3, v4])
         img[y, x] = correct
-
-
-def read_tiffmd(fp: Path, channels: Sequence[str]) -> tuple[Array, Metadata]:
-    """Read multichannel TIFF timelapse image."""
-    n_channels = len(channels)
-    img = io.read_image(fp, channels)
-    data = img.data
-    # Squeeze Z dimension if singleton, for backward compatibility
-    if img.sizes["Z"] == 1:
-        data = da.squeeze(data, axis=2)  # axis 2 is Z in TCZYX
-
-    # Get the pre-attached Metadata object from attrs
-    md = img.attrs["metadata"]
-    if md.size_c[0] % n_channels:
-        msg = "n_channel mismatch total length of TIFF sequence"
-        raise ValueError(msg)
-    return data.astype(np.int32), md

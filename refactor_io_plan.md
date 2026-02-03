@@ -60,3 +60,17 @@ Modernize the IO module of `nima` by replacing ad-hoc `tifffile` parsing with th
 add lxml and check metadata
 
 bg can be redesigned?
+
+Yes, dask-backed data types (and by extension xarray.DataArray wrapping them) would be more appropriate to maintain consistency with the library's move towards lazy evaluation and handling
+of large datasets.
+
+However, simply updating the type hint isn't enough. The functions in segmentation.py (like \_bg_arcsinh, \_bg_entropy) rely on scipy.ndimage and skimage.filters operations (e.g.,
+percentile_filter, rank.entropy, threshold_local) which typically expect in-memory NumPy arrays. Passing a Dask array currently fails (as verified with a test script) because these
+underlying libraries trigger immediate computation or don't support Dask arrays natively.
+
+To support Dask arrays properly, these functions would need to be refactored to use dask.array.map_blocks or xarray.apply_ufunc, allowing them to process the image in chunks (with
+appropriate overlaps/depth for filtering operations).
+
+NEXT:
+
+- bi.mosaic_tile_dims

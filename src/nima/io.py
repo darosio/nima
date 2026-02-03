@@ -328,12 +328,6 @@ def read_image(fp: Path, channels: Sequence[str] | None = None) -> DataArray:
     # This property returns a lazy-loaded DataArray with standard dimensions
     data = img.xarray_dask_data
 
-    # Preserve metadata in attrs
-    # BioImage returns PhysicalPixelSizes(Z, Y, X)
-    ps = img.physical_pixel_sizes
-    if ps:
-        data.attrs["physical_pixel_sizes"] = ps
-
     # Parse and attach structured metadata
     if img.metadata:
         # Store the raw OME metadata

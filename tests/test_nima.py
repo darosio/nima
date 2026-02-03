@@ -346,17 +346,21 @@ class TestSegment:
         da = xr.DataArray(
             data, dims=("T", "C", "Y", "X"), coords={"C": ["C", "G", "R"]}
         )
+        # Convert to dask to test lazy execution
+        da = da.chunk({"T": 1, "C": 1, "Y": 20, "X": 20})
 
-        # Should return (mask, labels) tuple
-        mask, labels = nima.segment(da, watershed=True, min_size=10)
+        # Should return labels only
+        labels = nima.segment(da, watershed=True, min_size=10)
 
-        assert isinstance(mask, xr.DataArray)
         assert isinstance(labels, xr.DataArray)
 
         # Check that we have labels
-        assert labels.max() >= 1
-        # Mask should be boolean
+        assert labels.compute().max() >= 1
+        # Check explicit mask
+        mask = labels > 0
         assert mask.dtype == bool
+        # Check it is a dask array (lazy)
+        assert labels.chunks is not None
 
     def test_segment_options(self) -> None:
         """Test various options for segment to cover private helper functions."""
@@ -377,7 +381,8 @@ class TestSegment:
 
         # Test 1: clear_border=True
         # _clear_border_2d
-        mask, _ = nima.segment(da, clear_border=True, min_size=0, watershed=False)
+        labels = nima.segment(da, clear_border=True, min_size=0, watershed=False)
+        mask = labels > 0
         # Center object should remain
         assert mask.isel(T=0, Y=25, X=25)
         # Border object should be gone
@@ -386,7 +391,8 @@ class TestSegment:
         # Test 2: min_size
         # _remove_small_2d
         # Small object is 4 pixels. Set min_size=5.
-        mask, _ = nima.segment(da, min_size=5, clear_border=False, watershed=False)
+        labels = nima.segment(da, min_size=5, clear_border=False, watershed=False)
+        mask = labels > 0
         # Small object should be gone
         assert not mask.isel(T=0, Y=40, X=40)
         # Center object (10x10=100) should remain
@@ -399,14 +405,14 @@ class TestSegment:
         # Add small random noise to avoid divide by zero in wiener filter
         rng = np.random.default_rng(42)
         data += rng.random(data.shape) * 0.1
-        mask, _ = nima.segment(da, wiener=True, min_size=0, watershed=False)
+        labels = nima.segment(da, wiener=True, min_size=0, watershed=False)
+        mask = labels > 0
         assert mask.any()
 
         # Test 4: threshold_method='li'
         # _threshold_2d with Li
-        mask, _labels = nima.segment(
-            da, threshold_method="li", min_size=0, watershed=False
-        )
+        labels = nima.segment(da, threshold_method="li", min_size=0, watershed=False)
+        mask = labels > 0
         assert mask.any()
 
 
