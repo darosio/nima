@@ -10,6 +10,8 @@ from collections.abc import Callable, Sequence
 from itertools import chain
 from typing import Any, cast
 
+import dask.array as da
+import dask_image.ndfilters  # type: ignore[import-untyped]
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,7 +27,6 @@ from skimage import (
     measure as skmeasure,
     morphology,
     segmentation,
-    transform,
 )
 
 from .nima_types import ImSequence
@@ -124,6 +125,35 @@ def median(im: xr.DataArray) -> xr.DataArray:
         Filtered data array preserving dtype of input.
 
     """
+    if isinstance(im.data, da.Array):
+        # Use dask-image for lazy evaluation
+        # We need to broadcast the footprint to the full dimensionality
+        # median_filter expects a footprint matching the arrayndim or
+        # it applies it to all dimensions?
+        # dask_image.ndfilters.median_filter signature:
+        # image, footprint=None, size=None, mode='reflect', cval=0.0, origin=0
+
+        # We want to apply 2D median filter (disk(1)) to the last two dimensions (Y, X)
+        # for every T, C, Z.
+        # Construct a footprint that is 1 only at the center for non-YX dims
+        # and disk(1) for YX dims.
+
+        # Access the disk footprint
+        disk = morphology.disk(1)  # type: ignore[no-untyped-call]
+
+        # Pad the footprint to match the number of dimensions of the input array
+        # Assuming the last two dimensions are Y and X
+        # For example, if im is TCZYX (5 dims), we need (1, 1, 1, 3, 3) footprint
+
+        full_footprint = disk.reshape((1,) * (im.ndim - 2) + disk.shape)
+
+        # dask_image median_filter
+        filtered_data = dask_image.ndfilters.median_filter(
+            im.data, footprint=full_footprint, mode="reflect"
+        )
+        return im.copy(data=filtered_data)
+
+    # Legacy/Numpy path using apply_ufunc or direct ndimage
     disk_footprint = morphology.disk(1)  # type: ignore[no-untyped-call]
 
     def apply_median(img: NDArray[Any]) -> NDArray[Any]:
@@ -238,12 +268,15 @@ def bg(
             if "Z" in im.dims and im.sizes["Z"] == 1:
                 frame_da = frame_da.squeeze("Z")
 
-            frame_np = frame_da.compute().to_numpy()
-
             if downscale:
-                frame_for_bg = transform.downscale_local_mean(frame_np, downscale)  # type: ignore[no-untyped-call]
+                # Downscale using coarsen (lazy)
+                # downscale is (Y, X) factors
+                coarsen_dict = {"Y": downscale[0], "X": downscale[1]}
+                frame_for_bg = (
+                    frame_da.coarsen(coarsen_dict, boundary="trim").mean()  # type: ignore[attr-defined]
+                )
             else:
-                frame_for_bg = frame_np
+                frame_for_bg = frame_da
 
             bg_result = calculate_bg(frame_for_bg, bg_params)
             med = bg_result.iqr[1]
@@ -590,25 +623,53 @@ def ratio(
 
     # Apply median filters if requested
     if radii:
+        # dask-image optimization
+        if isinstance(ratio.data, da.Array):
+            filtered = ratio.data
+            for radius in radii:
+                # Square footprint of size (radius, radius)?
+                # Original ndimage.median_filter(size=radius) implies a box filter of
+                # size 'radius' along all dimensions?
+                # No, ndimage.median_filter(input, size=scalar) applies it to all
+                # dimensions. But here we are processing 2D images (vectorized over
+                # others). Wait, the original code used apply_ufunc vectorized over Y,X.
+                # So ndimage.median_filter(im_2d, radius) -> size=radius means box
+                # filter (radius, radius).
+                # CAREFUL: ndimage.median_filter size parameter is the size of the box,
+                #  e.g. 3. If radius is actually 'size', then:
+                # Construct footprint for 2D box filter
+                # size should be integer
+                s = int(radius)
+                # Expand to full dimensions (Time, Channel etc are 1)
+                footprint_shape = (1,) * (ratio.ndim - 2) + (s, s)
+                # Box footprint
+                footprint = np.ones(footprint_shape, dtype=bool)
 
-        def apply_median_filters(
-            im: NDArray[Any], radii_seq: Sequence[int]
-        ) -> NDArray[Any]:
-            filtered = im
-            for radius in radii_seq:
-                filtered = ndimage.median_filter(filtered, radius)
-            return filtered
+                filtered = dask_image.ndfilters.median_filter(
+                    filtered, footprint=footprint, mode="reflect"
+                )
+            ratio = ratio.copy(data=filtered)
 
-        ratio = xr.apply_ufunc(
-            apply_median_filters,
-            ratio,
-            kwargs={"radii_seq": radii},
-            input_core_dims=[["Y", "X"]],
-            output_core_dims=[["Y", "X"]],
-            vectorize=True,
-            dask="parallelized",
-            output_dtypes=[ratio.dtype],
-        )
+        else:
+
+            def apply_median_filters(
+                im: NDArray[Any], radii_seq: Sequence[int]
+            ) -> NDArray[Any]:
+                filtered = im
+                for radius in radii_seq:
+                    filtered = ndimage.median_filter(filtered, radius)
+                return filtered
+
+            ratio = xr.apply_ufunc(
+                apply_median_filters,
+                ratio,
+                kwargs={"radii_seq": radii},
+                input_core_dims=[["Y", "X"]],
+                output_core_dims=[["Y", "X"]],
+                vectorize=True,
+                dask="parallelized",
+                output_dtypes=[ratio.dtype],
+            )
 
     # Apply mask if provided
     if mask is not None:

@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import cast
 
+import dask.array as da
 import numpy as np
 import pandas as pd
 import pytest
@@ -12,6 +13,48 @@ import xarray as xr
 from nima import io, nima, segmentation
 
 data_fp = "./tests/data/1b_c16_15.tif"
+
+
+class TestMedian:
+    """Test median filter."""
+
+    def test_median_xarray(self) -> None:
+        """Test median with xarray.DataArray."""
+        # Create a 3D image (T, C, Y, X) -> (1, 1, 10, 10)
+        # Median filter uses disk(1) which affects Y, X
+
+        # Create a simple image with a "hot pixel"
+        data = np.zeros((1, 1, 10, 10))
+        data[0, 0, 5, 5] = 100.0
+
+        da = xr.DataArray(data, dims=("T", "C", "Y", "X"), coords={"C": ["C1"]})
+
+        # Apply median
+        res = nima.median(da)
+
+        assert isinstance(res, xr.DataArray)
+        # The hot pixel should be removed by median filter (radius=1 means 3x3 window)
+        # 3x3 window around (5,5) has one 100 and eight 0s. Median is 0.
+        assert res.isel(T=0, C=0, Y=5, X=5) == 0.0
+
+        # Check dimensions are preserved
+        assert res.dims == da.dims
+
+    def test_median_dask(self) -> None:
+        """Test median filter with dask backend."""
+        # Create a dask-backed DataArray
+        rng = np.random.default_rng()
+        data = rng.random((2, 2, 10, 10))  # T, C, Y, X (simplified)
+        im = xr.DataArray(data, dims=("T", "C", "Y", "X")).chunk({"T": 1, "C": 1})
+
+        filtered = nima.median(im)
+
+        # Should remain lazy
+        assert isinstance(filtered.data, da.Array)
+
+        # Check computation
+        computed = filtered.compute()
+        assert computed.shape == data.shape
 
 
 class TestShading:
@@ -400,33 +443,6 @@ class TestSegment:
         labels = nima.segment(da, threshold_method="li", min_size=0, watershed=False)
         mask = labels > 0
         assert mask.any()
-
-
-class TestMedian:
-    """Tests for median function."""
-
-    def test_median_xarray(self) -> None:
-        """Test median with xarray.DataArray."""
-        # Create a 3D image (T, C, Y, X) -> (1, 1, 10, 10)
-        # Median filter uses disk(1) which affects Y, X
-
-        # Create a simple image with a "hot pixel"
-        data = np.zeros((1, 1, 10, 10))
-        data[0, 0, 5, 5] = 100.0
-
-        da = xr.DataArray(data, dims=("T", "C", "Y", "X"), coords={"C": ["C1"]})
-
-        # Apply median
-        res = nima.median(da)
-
-        assert isinstance(res, xr.DataArray)
-        # The hot pixel should be removed by median filter (radius=1 means 3x3 window)
-        # 3x3 window around (5,5) has one 100 and eight 0s. Median is 0.
-        assert res.isel(T=0, C=0, Y=5, X=5) == 0.0
-
-        # Check dimensions are preserved
-        assert res.dims == da.dims
-        assert res.shape == da.shape
 
     def test_median_xarray_value(self) -> None:
         """Test median values."""
