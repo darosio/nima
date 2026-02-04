@@ -28,7 +28,7 @@ from skimage import (
     transform,
 )
 
-from .nima_types import ImFrame, ImSequence
+from .nima_types import ImSequence
 from .segmentation import BgParams, calculate_bg
 
 Kwargs = dict[str, str | int | float | bool | None]
@@ -274,6 +274,8 @@ def _wiener_2d(im: NDArray[Any]) -> NDArray[Any]:
 
 def _threshold_2d(im: NDArray[Any], method: str) -> NDArray[np.bool_]:
     """Apply threshold to 2D plane."""
+    if np.all(im == im.flat[0]):
+        return np.zeros_like(im, dtype=bool)
     if method == "li":
         threshold = filters.threshold_li(im)  # type: ignore[no-untyped-call]
     else:
@@ -846,7 +848,7 @@ def plot_meas(
 
 
 def plt_img_profile(  # noqa: PLR0915
-    img: ImFrame,
+    img: xr.DataArray,
     title: str | None = None,
     hpix: pd.DataFrame | None = None,
     vmin: float | None = None,
@@ -856,7 +858,7 @@ def plt_img_profile(  # noqa: PLR0915
 
     Parameters
     ----------
-    img : ImFrame
+    img : xr.DataArray
         Image of Flat or Bias.
     title : str | None, optional
         Title of the figure (default=None).
@@ -873,8 +875,9 @@ def plt_img_profile(  # noqa: PLR0915
         Profile plot.
 
     """
+    img_arr = img.to_numpy()
     # definitions for the axes
-    ratio = img.shape[0] / img.shape[1]
+    ratio = img_arr.shape[0] / img_arr.shape[1]
     left, width = 0.05, 0.6
     bottom, height = 0.05, 0.6 * ratio
     spacing, marginal = 0.05, 0.25
@@ -951,7 +954,7 @@ def plt_img_profile(  # noqa: PLR0915
     if hpix is not None and not hpix.empty:
         ax.plot(hpix["x"], hpix["y"], "+", mfc="gray", mew=2, ms=14)
 
-    im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, vmin, vmax)
+    im2c = img_hist(img_arr, ax, ax_px, ax_py, ax_hist, vmin, vmax)
     ax_cm.axis("off")
     fig.colorbar(
         im2c, ax=ax_cm, fraction=0.99, shrink=0.99, aspect=4, orientation="horizontal"
@@ -959,12 +962,12 @@ def plt_img_profile(  # noqa: PLR0915
     return fig
 
 
-def plt_img_profile_2(img: ImFrame, title: str | None = None) -> Figure:
+def plt_img_profile_2(img: xr.DataArray, title: str | None = None) -> Figure:
     """Summary graphics for Flat-Bias images.
 
     Parameters
     ----------
-    img : ImFrame
+    img : xr.DataArray
         Image of Flat or Bias.
     title : str | None, optional
         Title of the figure  (default=None).
@@ -975,36 +978,43 @@ def plt_img_profile_2(img: ImFrame, title: str | None = None) -> Figure:
         Profile plot.
 
     """
+    img_arr = img.to_numpy()
     fig = plt.figure(constrained_layout=True)
     gs = fig.add_gridspec(3, 3)
     ax = fig.add_subplot(gs[0:2, 0:2])
-    vmin, vmax = [float(val) for val in np.percentile(img, [18.4, 81.6])]  # 66.6 %
-    ax.imshow(img, vmin=vmin, vmax=vmax, cmap="turbo")
-    ymin = round(img.shape[0] / 2 * 0.67)
-    ymax = round(img.shape[0] / 2 * 1.33)
-    xmin = round(img.shape[1] / 2 * 0.67)
-    xmax = round(img.shape[1] / 2 * 1.33)
+    vmin, vmax = [float(val) for val in np.percentile(img_arr, [18.4, 81.6])]  # 66.6 %
+    ax.imshow(img_arr, vmin=vmin, vmax=vmax, cmap="turbo")
+    ymin = round(img_arr.shape[0] / 2 * 0.67)
+    ymax = round(img_arr.shape[0] / 2 * 1.33)
+    xmin = round(img_arr.shape[1] / 2 * 0.67)
+    xmax = round(img_arr.shape[1] / 2 * 1.33)
     ax.axvline(xmin, c="k")
     ax.axvline(xmax, c="k")
     ax.axhline(ymin, c="k")
     ax.axhline(ymax, c="k")
     ax1 = fig.add_subplot(gs[2, 0:2])
-    ax1.plot(img.mean(axis=0))
-    ax1.plot(img[ymin:ymax, :].mean(axis=0), alpha=0.2, lw=2, c="k")
+    ax1.plot(img_arr.mean(axis=0))
+    ax1.plot(img_arr[ymin:ymax, :].mean(axis=0), alpha=0.2, lw=2, c="k")
     ax2 = fig.add_subplot(gs[0:2, 2])
     ax2.plot(
-        img[:, xmin:xmax].mean(axis=1), range(img.shape[0]), alpha=0.2, lw=2, c="k"
+        img_arr[:, xmin:xmax].mean(axis=1),
+        range(img_arr.shape[0]),
+        alpha=0.2,
+        lw=2,
+        c="k",
     )
-    ax2.plot(img.mean(axis=1), range(img.shape[0]))
+    ax2.plot(img_arr.mean(axis=1), range(img_arr.shape[0]))
     axh = fig.add_subplot(gs[2, 2])
-    axh.hist(img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True)
+    axh.hist(
+        img_arr.ravel(), bins=max(int(img_arr.max() - img_arr.min()), 25), log=True
+    )
     if title:
         kw = {"weight": "bold", "ha": "left"}
         fig.suptitle(title, fontsize=12, **kw)
     return fig
 
 
-def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
+def hotpixels(bias: xr.DataArray, n_sd: int = 20) -> pd.DataFrame:
     """Identify hot pixels in a bias-dark frame.
 
     After identification of first outliers recompute masked average and std
@@ -1012,7 +1022,7 @@ def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
 
     Parameters
     ----------
-    bias : ImFrame
+    bias : xr.DataArray
         Usually the median over a stack of 100 frames.
     n_sd : int
         Number of SD above mean (masked out of hot pixels) value.
@@ -1022,26 +1032,38 @@ def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
     pd.DataFrame
         y, x positions and values of hot pixels.
 
+    Raises
+    ------
+    ValueError
+        If the bias image is not 2D.
+
     """
-    ave = bias.mean()
-    std = bias.std()
-    m = bias > (ave + n_sd * std)
+    # Work with numpy array for iterative masked statistics
+    # Ensure we have a 2D array
+    if bias.ndim != AXES_LENGTH_2D:
+        msg = "Bias image must be 2D."
+        raise ValueError(msg)
+
+    data = bias.to_numpy()
+    ave = data.mean()
+    std = data.std()
+    m = data > (ave + n_sd * std)
     n_hpix = m.sum()
     while True:
-        m_ave = np.ma.masked_array(bias, m).mean()
-        m_std = np.ma.masked_array(bias, m).std()
-        m = bias > m_ave + n_sd * m_std
+        m_ave = np.ma.masked_array(data, m).mean()
+        m_std = np.ma.masked_array(data, m).std()
+        m = data > m_ave + n_sd * m_std
         if n_hpix == m.sum():
             break
         n_hpix = m.sum()
     w = np.where(m)
     hpix_df = pd.DataFrame({"y": w[0], "x": w[1]})
-    return hpix_df.assign(val=lambda row: bias[row.y, row.x])
+    return hpix_df.assign(val=lambda row: data[row.y, row.x])
 
 
 def correct_hotpixel(
-    img: ImFrame, y: int | NDArray[np.int_], x: int | NDArray[np.int_]
-) -> None:
+    img: xr.DataArray, y: int | NDArray[np.int64], x: int | NDArray[np.int64]
+) -> xr.DataArray:
     """Correct hot pixels in a frame.
 
     Substitute indicated position y, x with the median value of the 4 neighbor
@@ -1049,18 +1071,47 @@ def correct_hotpixel(
 
     Parameters
     ----------
-    img : ImFrame
+    img : xr.DataArray
         Frame (2D) image.
-    y : int | NDArray[np.int_]
+    y : int | NDArray[np.int64]
         y-coordinate(s).
-    x : int | NDArray[np.int_]
+    x : int | NDArray[np.int64]
         x-coordinate(s).
 
+    Returns
+    -------
+    xr.DataArray
+        Corrected image (copy).
+
+    Raises
+    ------
+    ValueError
+        If the image is not 2D.
+
     """
-    if img.ndim == AXES_LENGTH_2D:
-        v1 = img[y - 1, x]
-        v2 = img[y + 1, x]
-        v3 = img[y, x - 1]
-        v4 = img[y, x + 1]
-        correct = np.median([v1, v2, v3, v4])
-        img[y, x] = correct
+    if img.ndim != AXES_LENGTH_2D:
+        msg = "Image must be 2D."
+        raise ValueError(msg)
+
+    # We return a new DataArray to avoid side effects and support xarray semantics
+    # For simplicity and given the usage (bias/err frames), we compute to numpy.
+    # Future optimization: use map_blocks or sparse updates if Dask support is critical.
+    new_img = img.copy(deep=True)
+    data = new_img.to_numpy()  # This accesses the numpy array (or computes it)
+
+    # Handle scalar or array inputs for y, x
+    y_arr = np.atleast_1d(y)
+    x_arr = np.atleast_1d(x)
+
+    v1 = data[y_arr - 1, x_arr]
+    v2 = data[y_arr + 1, x_arr]
+    v3 = data[y_arr, x_arr - 1]
+    v4 = data[y_arr, x_arr + 1]
+
+    # median of neighbors
+    # stack them to compute median across 0-axis
+    neighbors = np.stack([v1, v2, v3, v4])
+    correct = np.median(neighbors, axis=0)
+
+    data[y_arr, x_arr] = correct
+    return new_img

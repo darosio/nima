@@ -48,7 +48,8 @@ autodoc_typehints = "signature"  # signature(default), combined, description
 # The suffix of source filenames.
 source_suffix = {
     ".rst": "restructuredtext",
-    ".md": "markdown",
+    ".md": "myst-nb",
+    ".ipynb": "myst-nb",
 }
 
 # Add any paths that contain templates here, relative to this directory.

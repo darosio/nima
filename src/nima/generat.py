@@ -56,7 +56,7 @@ class ImageObjsParams:
     """
     Parameters for an image frame.
 
-    Attributes
+    Parameters
     ----------
     max_num_objects : int, optional
         Maximum number of objects to generate (default: 8).
@@ -72,17 +72,11 @@ class ImageObjsParams:
         Maximum fluorescence intensity of an object (default: 20.0).
     """
 
-    #: Maximum number of objects to generate
     max_num_objects: int = 8
-    #: Number of rows in the image frame
     nrows: int = 128
-    #: Number of columns in the image frame
     ncols: int = 128
-    #: Minimum radius of an object
     min_radius: int = 6
-    #: Maximum radius of an object
     max_radius: int = 12
-    #: Maximum fluorescence intensity of an object
     max_fluor: float = 20.0
 
 

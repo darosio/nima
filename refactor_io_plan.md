@@ -4,41 +4,15 @@
 
 Modernize the IO module of `nima` by replacing ad-hoc `tifffile` parsing with the standardized, plugin-based `bioio` library.
 
-## Recommended Architecture
+- Standardized `TCZYX` dimensional metadata.
 
-### 1. Core Dependency
+- Lazy loading via Dask/Xarray.
 
-- **Library**: `bioio` + `bioio-tifffile` + `bioio-ome-tiff`
-- **Role**: Primary interface for image reading.
-- **Benefits**:
-  - Standardized `TCZYX` dimensional metadata.
-  - Lazy loading via Dask/Xarray.
-  - Pure Python (no JVM required for basic TIFF support).
+- Pure Python (no JVM required for basic TIFF support).
 
-### 2. Optional "Extra" Support
+- [x] `bioio` returns an `xarray.DataArray` with dimensions `TCZYX`.
 
-- **Library**: `bioio-bioformats` (depends on `jpype1`, `scyjava`) and other like `bioio-lif`
-- **Role**: Optional plugin for proprietary formats (LIF, CZI, ND2).
-- **Strategy**: Expose as an optional install (e.g., `pip install nima[all_formats]`).
-
-## Implementation Steps
-
-### Step 1: Refactor IO Module
-
-- [x] Create `src/nima/io.py` (or update `nima.py`).
-- [x] Replace `read_tiff` and `read_tiffmd` with a generic `read_image` function.
-
-### Step 2: Standardize on Xarray
-
-- **Legacy**: `DIm` (dictionary of images, e.g., `{'G': array, 'R': array}`).
-- **Target**: `xarray.DataArray` or `xarray.Dataset`.
-- **Action**:
-  - [x] `bioio` returns an `xarray.DataArray` with dimensions `TCZYX`.
-  - [x] Channels are a dimension (`C`), not keys in a dictionary.
-  - [ ] Update `nima.py` functions that expect `DIm` to handle `DataArray` instead.
-  - **Crucial**: Ratio imaging implies operations between channels (e.g., `G / R`). Xarray handles this via coordinate selection (e.g., `img.sel(C='G') / img.sel(C='R')`).
-
-### Step 3: Lazy Loading
+- [x] Channels are a dimension (`C`), not keys in a dictionary.
 
 - Leverage `BioImage`'s automatic Dask wrapping.
 
@@ -47,17 +21,6 @@ Modernize the IO module of `nima` by replacing ad-hoc `tifffile` parsing with th
   Next Steps:
 
   - You can now proceed with migrating the internal logic of nima.py to use xarray/dask natively, eventually removing the .compute() call in the read_tiff shim.
-
-❯ would dask_image be better than ndimage.median_filter?
-
-- Add more comprehensive tests for edge cases
-- Document performance characteristics with dask
-
-1. Add comprehensive unit tests specifically for xarray functionality
-1. Performance benchmarking with large dask arrays
-1. Consider adding Dataset input/output option
-
-add lxml and check metadata
 
 bg can be redesigned?
 
@@ -71,6 +34,19 @@ underlying libraries trigger immediate computation or don't support Dask arrays 
 To support Dask arrays properly, these functions would need to be refactored to use dask.array.map_blocks or xarray.apply_ufunc, allowing them to process the image in chunks (with
 appropriate overlaps/depth for filtering operations).
 
+- See test_nima fixtures
+
 NEXT:
 
+- adopt dask_image instead of ndimage.median_filter
+  Regarding DataArray.median(dim="T") vs dask-image:
+
+  - Median Projection: DataArray.median(dim="T") is the correct, lazy approach for projections.
+  - Median Filter (Spatial): dask-image.ndfilters.median_filter is superior for spatial filtering (denoising) of large-than-memory images, as ndimage.median_filter requires the whole array
+    chunk in memory. This is a potential future optimization for nima.median.
+
 - bi.mosaic_tile_dims
+
+- devel docs -> cookie
+
+- docs/conf.py -> cookie

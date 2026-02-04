@@ -329,7 +329,7 @@ def read_image(fp: Path, channels: Sequence[str] | None = None) -> DataArray:
     data = img.xarray_dask_data
 
     # Parse and attach structured metadata
-    if img.metadata:
+    if img.metadata and isinstance(img.metadata, OME):
         # Store the raw OME metadata
         data.attrs["ome_metadata"] = img.metadata
         # Parse and attach the structured Metadata object
