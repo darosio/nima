@@ -14,22 +14,68 @@ import numpy as np
 import pandas as pd
 import sigfig  # type: ignore[import-untyped]
 import tifffile
+import xarray as xr
 from dask.diagnostics.progress import ProgressBar
-from matplotlib import cm
+from matplotlib import cm, pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 from scipy import ndimage  # type: ignore[import-untyped]
 
-from nima import nima
+from nima import io, nima
 
-from .nima_types import DIm, ImFrame, ImSequence
+from .nima_types import ImFrame
 from .segmentation import BgParams
 
 __version__ = importlib.metadata.version("nima")
 __out_dir__ = f"nima-{__version__}"
-
-
 AXES_LENGTH_2D = 2
+AXES_LENGTH_3D = 3
+
+
+def _compute_bias_hpix(
+    bias_im: xr.DataArray, err: xr.DataArray
+) -> tuple[xr.DataArray, pd.DataFrame]:
+    if bias_im.ndim == AXES_LENGTH_2D:
+        hpix = nima.hotpixels(bias_im)
+        if not hpix.empty:
+            err = nima.correct_hotpixel(err, hpix.y, hpix.x)  # type: ignore[arg-type]
+        return err, hpix
+    if bias_im.ndim == AXES_LENGTH_3D:
+        hpix_dfs = []
+        err_list = []
+        for i in range(bias_im.shape[0]):
+            b_ch = bias_im[i]
+            e_ch = err[i]
+            hp = nima.hotpixels(b_ch)
+            if not hp.empty:
+                hp["C"] = i
+                hpix_dfs.append(hp)
+                e_ch = nima.correct_hotpixel(e_ch, hp.y, hp.x)  # type: ignore[arg-type]
+            err_list.append(e_ch)
+        err = xr.concat(err_list, dim=bias_im.dims[0])
+        hpix = pd.concat(hpix_dfs) if hpix_dfs else pd.DataFrame()
+        return err, hpix
+    return err, pd.DataFrame()
+
+
+def _plot_bias(
+    bias_im: xr.DataArray,
+    err: xr.DataArray,
+    output: Path,
+    hpix: pd.DataFrame,
+    err_str: str,
+) -> None:
+    title = os.fspath(output.with_suffix("").name)
+    if bias_im.ndim == AXES_LENGTH_2D:
+        plt_img_profiles(bias_im, title, output, hpix)
+        plt_img_profiles(
+            err,
+            "".join(("[", title[:9], "] $\\sigma_{read} = $", err_str)),
+            output.with_suffix(".err.png"),
+        )
+    else:
+        for i in range(bias_im.shape[0]):
+            plt_img_profiles(bias_im[i], title, output.with_suffix(f".{i}.png"), hpix)
 
 
 # MAYBE: Remove docstring and silent pydoclint
@@ -53,13 +99,6 @@ class _VerbosityLevel(int):
     LOW = 1
     MEDIUM = 2
     HIGH = 3
-
-
-def ensure_ndarray(var: Any, var_name: str) -> None:  # noqa: ANN401
-    """Ensure that the given variable is a numpy.ndarray."""
-    if not isinstance(var, np.ndarray):
-        msg = f"Expected '{var_name}' to be a numpy.ndarray"
-        raise TypeError(msg)
 
 
 @click.command()
@@ -164,16 +203,18 @@ def main(  # noqa: PLR0913
     if verbose > _VerbosityLevel.SILENT:
         click.echo(tiffstk)
         click.echo(channels)
-    d_im, _, t = nima.read_tiff(tiffstk, channels)
+    im = io.read_image(tiffstk, channels)
+    t = int(im.sizes["T"])
     if verbose > _VerbosityLevel.SILENT:
         click.echo(f"  Times: {t}")
     if hotpixels:
-        d_im = nima.d_median(d_im)
+        im = nima.median(im)
     if flat_f:
         # XXX: this is imperfect: dark must be present of flat
-        dark_im, _, _ = nima.read_tiff(Path(dark_f), channels)
-        flat_im, _, _ = nima.read_tiff(Path(flat_f), channels)
-        d_im = nima.d_shading(d_im, dark_im, flat_im, clip=True)
+        dark_im = io.read_image(Path(dark_f), channels)
+        flat_im = io.read_image(Path(flat_f), channels)
+        im = nima.shading(im, dark_im, flat_im, clip=True)
+
     # Process background
     kwargs_bg: dict[str, Any] = {"kind": bg_method}
     optional_keys = {
@@ -184,8 +225,9 @@ def main(  # noqa: PLR0913
         "arcsinh_perc": bg_percentile_filter,
     }
     kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
-    d_im_bg, bgs, ff = nima.d_bg(d_im, BgParams(**kwargs_bg), downscale=bg_downscale)
+    im, bgs, ff = nima.bg(im, BgParams(**kwargs_bg), downscale=bg_downscale)
     print(BgParams(**kwargs_bg))
+
     # Segment
     kwargs_mask_label: dict[str, Any] = {
         "channels": channels,
@@ -200,7 +242,8 @@ def main(  # noqa: PLR0913
     }
     kwargs_mask_label.update({k: v for k, v in optional_keys.items() if v})
     click.secho(kwargs_mask_label)
-    nima.d_mask_label(d_im_bg, **kwargs_mask_label)
+    labels = nima.segment(im, **kwargs_mask_label)
+
     # Measure
     kwargs_meas_props: dict[str, Any] = {"channels": channels}
     kwargs_meas_props["ratios_from_image"] = image_ratios
@@ -209,10 +252,34 @@ def main(  # noqa: PLR0913
             int(r) for r in ratio_median_radii.split(",")
         )
     click.secho(kwargs_meas_props)
-    meas, _ = nima.d_meas_props(
-        d_im_bg, channels_cl=channels_cl, channels_ph=channels_ph, **kwargs_meas_props
+
+    meas, _ = nima.measure(
+        im,
+        labels,
+        channels_cl=channels_cl,
+        channels_ph=channels_ph,
+        **kwargs_meas_props,
     )
-    output_results(output, tiffstk, ff, meas, channels, d_im_bg, bg_method, bgs)
+
+    r_cl_da = None
+    r_ph_da = None
+    if image_ratios:
+        radii = kwargs_meas_props.get("radii", (7, 3))
+        r_cl_da = nima.ratio(im, channels=channels_cl, radii=radii, mask=labels > 0)
+        r_ph_da = nima.ratio(im, channels=channels_ph, radii=radii, mask=labels > 0)
+    output_results(
+        output,
+        tiffstk,
+        ff,
+        meas,
+        channels,
+        bg_method,
+        bgs,
+        im,
+        labels,
+        r_cl=r_cl_da,
+        r_ph=r_ph_da,
+    )
 
 
 def output_results(  # noqa: PLR0913
@@ -221,9 +288,12 @@ def output_results(  # noqa: PLR0913
     ff: dict[str, list[list[Figure]]],
     meas: dict[int, pd.DataFrame],
     channels: tuple[str, ...],
-    d_im_bg: DIm,
     bg_method: str,
     bgs: pd.DataFrame,
+    im: xr.DataArray,
+    labels: xr.DataArray,
+    r_cl: xr.DataArray | None = None,
+    r_ph: xr.DataArray | None = None,
 ) -> None:
     """Output results: csv tables and png images."""
     output_dir.mkdir(exist_ok=True)
@@ -242,12 +312,15 @@ def output_results(  # noqa: PLR0913
     bgs[column_order].to_csv(bname / "bg.csv")
     # TODO: plt.close('all') or control mpl warning
     # Create measurement plots
-    f = nima.d_plot_meas(bgs, meas, channels=channels)
+    f = nima.plot_meas(bgs, meas, channels=channels)
     f.savefig(bname.with_name(bname.name + "_meas.png"))
     # Show all channels and labels
-    d = {ch: d_im_bg[ch] for ch in channels}
-    d["labels"] = d_im_bg["labels"]
-    fig = nima.d_show(d, cmap=cm.inferno_r)  # type: ignore[attr-defined]
+    fig = nima.plot_img(
+        im,
+        labels=labels,
+        channels=sorted(channels),
+        cmap=cm.inferno_r,  # type: ignore[attr-defined]
+    )
     fig.savefig(bname.with_name(bname.name + "_dim.png"))
     # Create measurement CSV files
     for k, df in meas.items():
@@ -266,16 +339,17 @@ def output_results(  # noqa: PLR0913
         df[column_order].to_csv(bname / Path(f"label{k}.csv"))
     # XXX: labelX_{rcl,rpH}.tif ### require r_cl and r_pH present in d_im
     # Create TIFF files
-    objs = ndimage.find_objects(d_im_bg["labels"])
-    for n, o in enumerate(objs):
-        name = bname / Path(f"label{n + 1}_rcl.tif")
-        tifffile.imwrite(
-            name, d_im_bg["r_cl"][o], compression="lzma", photometric="minisblack"
-        )
-        name = bname / Path(f"label{n + 1}_rpH.tif")
-        tifffile.imwrite(
-            name, d_im_bg["r_pH"][o], compression="lzma", photometric="minisblack"
-        )
+    if r_cl is not None and r_ph is not None:
+        objs = ndimage.find_objects(labels.to_numpy())
+        for n, o in enumerate(objs):
+            name = bname / Path(f"label{n + 1}_rcl.tif")
+            tifffile.imwrite(
+                name, r_cl.to_numpy()[o], compression="lzma", photometric="minisblack"
+            )
+            name = bname / Path(f"label{n + 1}_rpH.tif")
+            tifffile.imwrite(
+                name, r_ph.to_numpy()[o], compression="lzma", photometric="minisblack"
+            )
 
 
 ##  bima  ##################################################
@@ -309,37 +383,55 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     """
     if fpath.suffix == ".zip":
         with zipfile.ZipFile(fpath) as zf, zf.open(zf.namelist()[0]) as firstfile:
-            store = tifffile.imread(BytesIO(firstfile.read()))
+            store_val = tifffile.imread(BytesIO(firstfile.read()))
+            # Convert to DataArray to be consistent with nima.hotpixels
+            # Assume (T, Y, X) or (Y, X) from TiffFile
+            if store_val.ndim == AXES_LENGTH_3D:
+                store = xr.DataArray(store_val, dims=("T", "Y", "X"))
+            else:
+                store = xr.DataArray(store_val, dims=("Y", "X"))
     else:
-        store = tifffile.imread(fpath)
-    ensure_ndarray(store, "store")
+        store = io.read_image(fpath)
+        # store is TCZYX. We want to reduce over T.
+
     click.secho("Bias image-stack shape: " + str(store.shape), fg="green")
-    bias_im = np.median(store, axis=0)
-    err = np.std(store, axis=0)
+
+    # Compute median and std.
+    # If store is from read_image (TCZYX), we reduce T.
+    # If store is from zip (T, Y, X), we reduce T.
+    if "T" in store.dims:
+        bias_im = store.median(dim="T")
+        err = store.std(dim="T")
+    else:
+        # Fallback for 2D or other dims without named T
+        # (Unlikely for read_image, possible for zip path)
+        bias_im = store
+        err = xr.zeros_like(store)
+
+    # Ensure 2D for hotpixels (squeeze C, Z if present)
+    bias_im = bias_im.squeeze()
+    err = err.squeeze()
+
     # hotpixels
-    hpix = nima.hotpixels(bias_im)
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
+
+    err, hpix = _compute_bias_hpix(bias_im, err)
     if not hpix.empty:
         hpix.to_csv(output.with_suffix(".csv"), index=False)
-        # FIXME hpix.y is a pd.Series[int]; it could be cast into NDArray[int]
-        # TODO: if any of x y is out of the border ignore them
-        nima.correct_hotpixel(err, hpix.y, hpix.x)  # type: ignore[arg-type]
-    p25, p50, p75 = np.percentile(err.ravel(), [25, 50, 75])
+
+    # percentiles on err (which is DataArray now).
+    # .ravel() might need .values or flatten
+    # err is likely 2D DataArray.
+    p25, p50, p75 = np.percentile(err.to_numpy().ravel(), [25, 50, 75])
     err_str = sigfig.round(p50, p75 - p25)
     click.secho("Estimated read noise: " + err_str)
-    tifffile.imwrite(output.with_suffix(".tiff"), bias_im)
+    tifffile.imwrite(
+        output.with_suffix(".tiff"),
+        bias_im,
+        photometric="minisblack" if bias_im.ndim == AXES_LENGTH_3D else None,
+    )
     # Output summary graphics.
-    title = os.fspath(output.with_suffix("").name)
-    if bias_im.ndim == AXES_LENGTH_2D:
-        plt_img_profiles(bias_im, title, output, hpix)
-        plt_img_profiles(
-            err,
-            "".join(("[", title[:9], "] $\\sigma_{read} = $", err_str)),
-            output.with_suffix(".err.png"),
-        )
-    else:
-        for i in range(bias_im.shape[0]):
-            plt_img_profiles(bias_im[i], title, output.with_suffix(f".{i}.png"), hpix)
+    _plot_bias(bias_im, err, output, hpix, err_str)
 
 
 @bima.command()
@@ -349,7 +441,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 @click.option("--time", type=float,
               help="Acquisition time.")  # fmt: skip
 @click.argument("fpath", type=click.Path(path_type=Path))
-def dark(ctx: click.Context, fpath: Path, bias_fp: Path, time: float) -> None:
+def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> None:
     """Compute DARK.
 
     fpath : str
@@ -362,18 +454,25 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path, time: float) -> None:
 
     """
     dark_thr = 4.5
-    store = tifffile.imread(fpath)
-    ensure_ndarray(store, "store")
+    store = io.read_image(fpath)
     click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
-    dark_im = np.median(store, axis=0)
+    dark_im = store.median(dim="T") if "T" in store.dims else store
+    dark_im = dark_im.squeeze()
+
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     if bias_fp is not None:
-        bias_im = np.array(tifffile.imread(bias_fp))
+        bias_im = io.read_image(bias_fp).squeeze()
+        # Ensure alignment/broadcasting works
         dark_im = dark_im - bias_im
     if time:
         dark_im /= time
+    tifffile.imwrite(
+        output.with_suffix(".tiff"),
+        dark_im.to_numpy(),
+        photometric="minisblack" if dark_im.ndim == AXES_LENGTH_3D else None,
+    )
     plt_img_profiles(dark_im, title, output)
     print(np.where(dark_im > dark_thr))
 
@@ -435,7 +534,7 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
 @click.option("--bias", "bias_fp", type=click.Path(path_type=Path),
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
 @click.argument("fpath", type=click.Path(path_type=Path))
-def flat(ctx: click.Context, fpath: Path, bias_fp: Path) -> None:
+def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     """Flat from (.tf8) file stack.
 
     fpath : str
@@ -447,12 +546,18 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path) -> None:
     2. Plot (.png): Includes histograms, mean projection, ...
 
     """
-    store = tifffile.imread(fpath, aszarr=True)
-    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore[no-untyped-call]
+    stack = io.read_image(fpath)
+    # store is TCZYX. We want mean over T.
+    click.secho(f"Flat image-stack shape: {stack.shape}", fg="green")
+    f = stack.mean(dim="T") if "T" in stack.dims else stack
+    # Squeeze all singleton dimensions (Z, C, etc.)
+    f = f.squeeze()
     with ProgressBar():  # type: ignore[no-untyped-call]
-        tprojection = f.compute()
+        tprojection = f.compute().to_numpy()
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
-    bias_frame = np.array(tifffile.imread(bias_fp))
+    bias_frame = None
+    if bias_fp:
+        bias_frame = np.array(tifffile.imread(bias_fp))
     _output_flat(output, tprojection, bias_frame)
 
 
@@ -498,7 +603,7 @@ def _output_flat(
     flat_im /= flat_im.mean()
     tifffile.imwrite(output, flat_im)
     title = os.fspath(output.with_suffix("").name)
-    plt_img_profiles(flat_im, title, output)
+    plt_img_profiles(xr.DataArray(flat_im), title, output)
 
 
 @bima.command()
@@ -515,14 +620,14 @@ def plot(ctx: click.Context, fpath: Path) -> None:
     A plot of profiles is saved as a '.png' file.
 
     """
-    img = np.array(tifffile.imread(fpath))
+    img = io.read_image(fpath).squeeze()
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
     title = os.fspath(output.with_suffix("").name)
     plt_img_profiles(img, title, output)
 
 
 def plt_img_profiles(
-    img: ImSequence | ImFrame,
+    img: xr.DataArray,
     title: str,
     output: Path,
     hpix: pd.DataFrame | None = None,
@@ -531,6 +636,7 @@ def plt_img_profiles(
     if img.ndim == AXES_LENGTH_2D:
         f = nima.plt_img_profile(img, title=title, hpix=hpix)
         f.savefig(output.with_suffix(".png"), dpi=250, facecolor="w")
+        plt.close(f)
         # mark f = nima.plt_img_profile_2(img, title=title)
         # mark f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
     else:
@@ -538,5 +644,7 @@ def plt_img_profiles(
             title += f" C:{i}"
             f = nima.plt_img_profile(img[i], title=title)
             f.savefig(output.with_suffix(f".C{i}.png"), dpi=250, facecolor="w")
+            plt.close(f)
             f = nima.plt_img_profile_2(img[i], title=title)
             f.savefig(output.with_suffix(f".C{i}.2.png"), dpi=250, facecolor="w")
+            plt.close(f)

@@ -9,3 +9,4 @@ Development references
    description
    development
    contributing
+   dask_performance

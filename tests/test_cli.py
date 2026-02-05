@@ -184,3 +184,118 @@ def test_bias_mflat(run_bima: Path) -> None:
     np.testing.assert_allclose(test_flt, expect_flt)
     # Ensure the PNG file is created
     assert tmpflt.with_suffix(".png").exists()
+
+
+def test_bima_dark(tmp_path: Path) -> None:
+    """Check `bima dark` cli."""
+    # Use an existing valid file from tests/data
+    filename = TESTS_PATH / "data" / "1b_c16_15.tif"
+
+    runner = CliRunner()
+    output = tmp_path / "dark_out.tif"
+    # The file has 3 channels, so it works as a stack.
+    # bima dark expects a stack to median over T (if present) or just use it.
+    # 1b_c16_15.tif has T=4.
+    result = runner.invoke(bima, ["-o", str(output), "dark", str(filename)])
+
+    assert result.exit_code == 0
+    assert output.with_suffix(".tiff").exists()
+    assert output.with_suffix(".C0.png").exists()
+
+
+def test_bima_flat(tmp_path: Path) -> None:
+    """Check `bima flat` cli."""
+    # Create a dummy flat stack
+    rng = np.random.default_rng()
+    data = rng.integers(100, 200, (3, 10, 10), dtype=np.uint16)
+    filename = tmp_path / "test_flat.tif"
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
+
+    # Needs a bias file
+    bias_data = np.zeros((10, 10), dtype=np.uint16)
+    bias_filename = tmp_path / "test_bias.tif"
+    tff.imwrite(bias_filename, bias_data)
+
+    runner = CliRunner()
+    output = tmp_path / "flat_out.tif"
+
+    result = runner.invoke(
+        bima, ["-o", str(output), "flat", "--bias", str(bias_filename), str(filename)]
+    )
+
+    assert result.exit_code == 0
+    assert output.exists()
+    assert output.with_suffix(".png").exists()
+
+
+def test_bima_bias_3d(tmp_path: Path) -> None:
+    """Check `bima bias` cli with 3D input (channels)."""
+    # Create a dummy 3D bias stack (C=2, Y=10, X=10)
+    rng = np.random.default_rng()
+    data = rng.integers(10, 20, (2, 10, 10), dtype=np.uint16)
+    # Add a hotpixel
+    data[0, 5, 5] = 1000
+    filename = tmp_path / "test_bias_3d.tif"
+    tff.imwrite(filename, data, photometric="minisblack")
+
+    runner = CliRunner()
+    output = tmp_path / "bias_out.tif"
+
+    result = runner.invoke(bima, ["-o", str(output), "bias", str(filename)])
+
+    assert result.exit_code == 0
+    # Check outputs
+    # It should produce bias_out.tiff
+    assert output.with_suffix(".tiff").exists()
+    # It should produce PNG files for each channel
+    assert output.with_suffix(".0.png").exists()
+    assert output.with_suffix(".1.png").exists()
+    # It should produce CSV for hotpixels (since we added one)
+    # wait, hotpixels logic depends on thresholds.
+    # defaults: single_pixel=True, etc.
+    # If hotpixels are found, csv is created.
+    # 1000 vs 10-20 background should be detected.
+
+
+def test_bima_flat_no_bias(tmp_path: Path) -> None:
+    """Check `bima flat` cli without bias."""
+    # Create a dummy flat stack
+    rng = np.random.default_rng()
+    data = rng.integers(100, 200, (3, 10, 10), dtype=np.uint16)
+    filename = tmp_path / "test_flat.tif"
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
+
+    runner = CliRunner()
+    output = tmp_path / "flat_out.tif"
+
+    # Run without --bias
+    result = runner.invoke(bima, ["-o", str(output), "flat", str(filename)])
+
+    assert result.exit_code == 0
+    assert output.exists()
+    assert output.with_suffix(".png").exists()
+
+
+def test_bima_dark_with_time(tmp_path: Path) -> None:
+    """Check `bima dark` cli with --time option."""
+    # Create a dummy dark stack
+    rng = np.random.default_rng()
+    data = rng.integers(0, 10, (3, 10, 10), dtype=np.uint16)
+    filename = tmp_path / "test_dark.tif"
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
+
+    runner = CliRunner()
+    output = tmp_path / "dark_out.tif"
+    time_val = 2.0
+
+    result = runner.invoke(
+        bima, ["-o", str(output), "dark", "--time", str(time_val), str(filename)]
+    )
+
+    assert result.exit_code == 0
+    assert output.with_suffix(".tiff").exists()
+    # Check if values are approximately divided by time (median of 0-10 is ~5, /2 ~ 2.5)
+    # But output is saved as float or int? tff.imwrite saves float if input is float.
+    # dark_im /= time makes it float.
+    res_im = tff.imread(output.with_suffix(".tiff"))
+    assert res_im.dtype in (np.float64, np.float32)

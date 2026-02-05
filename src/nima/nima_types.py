@@ -27,5 +27,3 @@ ImFrame: TypeAlias = (
 ImSequence: TypeAlias = (
     NDArray[np.float32] | NDArray[np.int32] | NDArray[np.uint16] | NDArray[np.uint8]
 )
-
-DIm: TypeAlias = dict[str, ImSequence]

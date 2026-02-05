@@ -6,28 +6,30 @@ statistics for each label; compute ratio and ratio images between channels.
 """
 
 from collections import defaultdict
-from collections.abc import Sequence
-from dataclasses import InitVar, dataclass, field
+from collections.abc import Callable, Sequence
 from itertools import chain
-from pathlib import Path
-from pprint import pformat
 from typing import Any, cast
 
 import dask.array as da
+import dask_image.ndfilters  # type: ignore[import-untyped]
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import xmltodict  # type: ignore[import-untyped]
-from dask.array import Array
+import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 from scipy import ndimage, signal  # type: ignore[import-untyped]
-from skimage import feature, filters, measure, morphology, segmentation, transform
-from tifffile import TiffFile, TiffReader
+from skimage import (
+    feature,
+    filters,
+    measure as skmeasure,
+    morphology,
+    segmentation,
+)
 
-from .nima_types import DIm, ImFrame, ImSequence
+from .nima_types import ImSequence
 from .segmentation import BgParams, calculate_bg
 
 Kwargs = dict[str, str | int | float | bool | None]
@@ -37,65 +39,38 @@ AXES_LENGTH_3D = 3
 AXES_LENGTH_2D = 2
 
 
-def read_tiff(fp: Path, channels: Sequence[str]) -> tuple[DIm, int, int]:
-    """Read multichannel TIFF timelapse image.
+def plot_img(
+    im: xr.DataArray,
+    labels: xr.DataArray | None = None,
+    channels: Sequence[str] | None = None,
+    **kws: Any,  # noqa: ANN401
+) -> Figure:
+    """Plot channels and optionally labels.
 
     Parameters
     ----------
-    fp : Path
-        File (TIF format) to be opened.
-    channels: Sequence[str]
-        List a name for each channel.
+    im : xr.DataArray
+        Input image.
+    labels : xr.DataArray | None
+        Labeled image (optional).
+    channels : Sequence[str] | None
+        Channels to plot. If None, plots all channels.
+    **kws : Any
+        Keyword arguments for plt.imshow.
 
     Returns
     -------
-    d_im : DIm
-        Dictionary of images. Each keyword represents a channel, named
-        according to `channels` string list.
-    n_channels : int
-        Number of channels.
-    n_times : int
-        Number of timepoints.
-
-    Raises
-    ------
-    ValueError
-        When number of channels and total length of TIFF sequence does not match.
-
-    Examples
-    --------
-    >>> d_im, n_channels, n_times = read_tiff('tests/data/1b_c16_15.tif', \
-            channels=['G', 'R', 'C'])
-    >>> n_channels, n_times
-    (3, 4)
+    Figure
+        The matplotlib figure.
 
     """
-    n_channels = len(channels)
-    with TiffFile(fp) as tif:
-        im = tif.asarray()
-        axes = tif.series[0].axes
-    idx = axes.rfind("T")
-    n_times = im.shape[idx] if idx >= 0 else 1
-    if im.shape[axes.rfind("C")] % n_channels:
-        msg = "n_channel mismatch total length of TIFF sequence"
-        raise ValueError(msg)
-    d_im = {}
-    for i, ch in enumerate(channels):
-        # FIXME: must be 'TCYX' or 'ZCYX'
-        if len(axes) == AXES_LENGTH_4D:
-            d_im[ch] = im[:, i]  # im[i::n_channels]
-        elif len(axes) == AXES_LENGTH_3D:
-            d_im[ch] = im[np.newaxis, i]
-    print(d_im["G"].shape)
-    return d_im, n_channels, n_times
+    if channels is None:
+        channels = im.coords["C"].to_numpy().tolist()
+    n_channels = len(channels) + (1 if labels is not None else 0)
+    n_times = im.sizes["T"]
 
-
-def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
-    """Imshow for dictionary of image (d_im). Support plt.imshow kws."""
     max_rows = 9
-    n_channels = len(d_im.keys())
-    first_channel = d_im[next(iter(d_im.keys()))]
-    n_times = len(first_channel)
+
     if n_times <= max_rows:
         rng = range(n_times)
         n_rows = n_times
@@ -103,114 +78,165 @@ def d_show(d_im: DIm, **kws: Any) -> Figure:  # noqa: ANN401
         step = np.ceil(n_times / max_rows).astype(int)
         rng = range(0, n_times, step)
         n_rows = len(rng)
+
     fig = plt.figure(figsize=(16, 16))
-    for n, ch in enumerate(sorted(d_im.keys())):
+
+    def get_data(t: int, c: str) -> NDArray[Any]:
+        d = im.sel(C=c).isel(T=t)
+        if "Z" in d.dims:
+            d = d.squeeze("Z") if d.sizes["Z"] == 1 else d.max(dim="Z")
+        return d.to_numpy()
+
+    plot_items: list[tuple[str, Callable[[int], NDArray[Any]]]] = [
+        (ch, lambda t, c=ch: get_data(t, c))  # type: ignore[misc]
+        for ch in channels
+    ]
+
+    if labels is not None:
+        plot_items.append(("labels", lambda t: labels.isel(T=t).to_numpy()))
+
+    for n, (name, getter) in enumerate(plot_items):
         for i, r in enumerate(rng):
             ax = fig.add_subplot(n_rows, n_channels, i * n_channels + n + 1)
-            img0 = ax.imshow(d_im[ch][r], **kws)
+            img0 = ax.imshow(getter(r), **kws)
             plt.colorbar(img0, ax=ax, orientation="vertical", pad=0.02, shrink=0.85)
             plt.xticks([])
             plt.yticks([])
-            plt.ylabel(f"{ch} @ t = {r}")
+            plt.ylabel(f"{name} @ t = {r}")
+
     plt.subplots_adjust(wspace=0.2, hspace=0.02, top=0.9, bottom=0.1, left=0, right=1)
     return fig
 
 
-def d_median(d_im: DIm) -> DIm:
-    """Median filter on dictionary of image (d_im).
+def median(im: xr.DataArray) -> xr.DataArray:
+    """Median filter on xarray.DataArray.
 
     Same to skimage.morphology.disk(1) and to median filter of Fiji/ImageJ
     with radius=0.5.
 
     Parameters
     ----------
-    d_im : DIm
-        dict of images
+    im : xr.DataArray
+        Input image data array (usually TCZYX).
 
-    Return
-    ------
-    DIm
-        dict of images preserve dtype of input
-
-    Raises
-    ------
-    ValueError
-        When ImArray is neither a single image nor a stack.
+    Returns
+    -------
+    xr.DataArray
+        Filtered data array preserving dtype of input.
 
     """
-    d_out = {}
-    for k, im in d_im.items():
-        if im.ndim not in [AXES_LENGTH_2D, AXES_LENGTH_3D]:
-            msg = "Only for single image or stack (3D)."
-            raise ValueError(msg)
+    if isinstance(im.data, da.Array):
+        # Use dask-image for lazy evaluation
+        # We need to broadcast the footprint to the full dimensionality
+        # median_filter expects a footprint matching the arrayndim or
+        # it applies it to all dimensions?
+        # dask_image.ndfilters.median_filter signature:
+        # image, footprint=None, size=None, mode='reflect', cval=0.0, origin=0
+
+        # We want to apply 2D median filter (disk(1)) to the last two dimensions (Y, X)
+        # for every T, C, Z.
+        # Construct a footprint that is 1 only at the center for non-YX dims
+        # and disk(1) for YX dims.
+
+        # Access the disk footprint
         disk = morphology.disk(1)  # type: ignore[no-untyped-call]
-        if im.ndim == AXES_LENGTH_3D:
-            sel = np.conj((np.zeros((3, 3)), disk, np.zeros((3, 3))))
-            d_out[k] = ndimage.median_filter(im, footprint=sel)
-        elif im.ndim == AXES_LENGTH_2D:
-            d_out[k] = ndimage.median_filter(im, footprint=disk)
-    return d_out
+
+        # Pad the footprint to match the number of dimensions of the input array
+        # Assuming the last two dimensions are Y and X
+        # For example, if im is TCZYX (5 dims), we need (1, 1, 1, 3, 3) footprint
+
+        full_footprint = disk.reshape((1,) * (im.ndim - 2) + disk.shape)
+
+        # dask_image median_filter
+        filtered_data = dask_image.ndfilters.median_filter(
+            im.data, footprint=full_footprint, mode="reflect"
+        )
+        return im.copy(data=filtered_data)
+
+    # Legacy/Numpy path using apply_ufunc or direct ndimage
+    disk_footprint = morphology.disk(1)  # type: ignore[no-untyped-call]
+
+    def apply_median(img: NDArray[Any]) -> NDArray[Any]:
+        """Apply median filter to 2D image."""
+        return cast(
+            "NDArray[Any]", ndimage.median_filter(img, footprint=disk_footprint)
+        )
+
+    return cast(
+        "xr.DataArray",
+        xr.apply_ufunc(
+            apply_median,
+            im,
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[im.dtype],
+        ),
+    )
 
 
-def d_shading(
-    d_im: DIm, dark: DIm | ImFrame, flat: DIm | ImFrame, *, clip: bool = True
-) -> DIm:
-    """Shading correction on d_im.
+def shading(
+    im: xr.DataArray,
+    dark: xr.DataArray | float,
+    flat: xr.DataArray | float,
+    *,
+    clip: bool = True,
+) -> xr.DataArray:
+    """Shading correction on xarray.DataArray.
 
     Subtract dark; then divide by flat.
 
-    Works either with flat or d_flat
-    Need also dark for each channel because it can be different when using
-    different acquisition times.
-
     Parameters
     ----------
-    d_im : DIm
-        Dictionary of images.
-    dark : DIm | ImFrame
-        Dark image (either a 2D image or 2D d_im).
-    flat : DIm | ImFrame
-        Flat image (either a 2D image or 2D d_im).
+    im : xr.DataArray
+        Input image data array.
+    dark : xr.DataArray | float
+        Dark image (DataArray or broadcastable array/scalar).
+    flat : xr.DataArray | float
+        Flat image (DataArray or broadcastable array/scalar).
     clip : bool
         Boolean for clipping values >=0.
 
     Returns
     -------
-    DIm
-        Corrected d_im.
+    xr.DataArray
+        Corrected data array.
 
     """
-    # TODO inplace=True tosave memory
-    # assertion type(dark) == np.ndarray or dark.keys() == d_im.keys(), raise_msg
-    # assertion type(flat) == np.ndarray or flat.keys() == d_im.keys(),
-    # raise_msg will be replaced by type checking.
-    d_cor = {}
+    # Cast to float
+    d_cor = im.astype(float)
 
-    for key, value in d_im.items():
-        d_cor[key] = value.astype(float)
-        # Subtract dark frame (per key or globally)
-        d_cor[key] -= dark[key] if isinstance(dark, dict) else dark
-        # Divide by flat field (per key or globally), avoid division by zero
-        d_cor[key] /= flat[key] if isinstance(flat, dict) else flat
+    # Handle broadcasting for single-frame dark/flat (e.g. T=1 or Z=1)
+    if isinstance(dark, xr.DataArray):
+        for dim in dark.dims:
+            if dark.sizes[dim] == 1 and dim in im.dims and im.sizes[dim] > 1:
+                dark = dark.squeeze(dim)
+    if isinstance(flat, xr.DataArray):
+        for dim in flat.dims:
+            if flat.sizes[dim] == 1 and dim in im.dims and im.sizes[dim] > 1:
+                flat = flat.squeeze(dim)
+    # Subtract dark and divide by flat
+    d_cor = (d_cor - dark) / flat
+    # Clip if requested
     if clip:
-        for key, value in d_cor.items():
-            d_cor[key] = value.clip(min=0)
+        d_cor = d_cor.clip(min=0)
     return d_cor
 
 
-def d_bg(
-    d_im: DIm,
+def bg(
+    im: xr.DataArray,
     bg_params: BgParams,
     downscale: tuple[int, int] | None = None,
     *,
     clip: bool = True,
-) -> tuple[DIm, pd.DataFrame, dict[str, list[list[Figure]]]]:
-    """Bg segmentation for d_im.
+) -> tuple[xr.DataArray, pd.DataFrame, dict[str, list[list[Figure]]]]:
+    """Bg segmentation for xarray.DataArray.
 
     Parameters
     ----------
-    d_im : DIm
-        desc
+    im : xr.DataArray
+        Input image data array with dimensions including C (channels) and T (time).
     bg_params : BgParams
         An instance of BgParams containing the parameters for the segmentation.
     downscale : tuple[int, int] | None
@@ -220,8 +246,8 @@ def d_bg(
 
     Returns
     -------
-    d_cor : DIm
-        Dictionary of images subtracted for the estimated bg.
+    d_cor : xr.DataArray
+        DataArray subtracted for the estimated bg.
     bgs : pd.DataFrame
         Median of the estimated bg; columns for channels and index for time
         points.
@@ -229,31 +255,90 @@ def d_bg(
         List of (list ?) of figures.
 
     """
-    d_bg = defaultdict(list)
-    d_cor = defaultdict(list)
-    d_fig = defaultdict(list)
-    dd_cor: DIm = {}
-    for key, time_frames in d_im.items():
-        for frame in time_frames:
-            im_for_bg = cast("ImFrame", frame)
+    bgs_data = defaultdict(list)
+    figs_data = defaultdict(list)
+
+    channels = im.coords["C"].to_numpy()
+    times = im.coords["T"].to_numpy()
+
+    for ch in channels:
+        ch_bgs = []
+        for t in range(len(times)):
+            frame_da = im.sel(C=ch).isel(T=t)
+            if "Z" in im.dims and im.sizes["Z"] == 1:
+                frame_da = frame_da.squeeze("Z")
+
             if downscale:
-                im_for_bg = transform.downscale_local_mean(frame, downscale)  # type: ignore[no-untyped-call]
-            bg_result = calculate_bg(im_for_bg, bg_params=bg_params)
+                # Downscale using coarsen (lazy)
+                # downscale is (Y, X) factors
+                coarsen_dict = {"Y": downscale[0], "X": downscale[1]}
+                frame_for_bg = (
+                    frame_da.coarsen(coarsen_dict, boundary="trim").mean()  # type: ignore[attr-defined]
+                )
+            else:
+                frame_for_bg = frame_da
+
+            bg_result = calculate_bg(frame_for_bg, bg_params)
             med = bg_result.iqr[1]
+            ch_bgs.append(med)
+
             if bg_result.figures:
-                d_fig[key].append(bg_result.figures)
-            d_bg[key].append(med)
-            d_cor[key].append(frame - med)
-        dd_cor[key] = cast("ImSequence", np.array(d_cor[key]))
+                figs_data[str(ch)].append(bg_result.figures)
+
+        bgs_data[str(ch)] = ch_bgs
+
+    bgs_df = pd.DataFrame(bgs_data, index=range(len(times)))
+    bg_da = xr.DataArray(
+        bgs_df.values, dims=("T", "C"), coords={"T": times, "C": channels}
+    )
+
+    im_subtracted = im - bg_da
+
     if clip:
-        for key in d_cor:
-            dd_cor[key] = dd_cor[key].clip(0)
-    bgs = pd.DataFrame({k: np.array(v) for k, v in d_bg.items()})
-    return dd_cor, bgs, d_fig
+        im_subtracted = im_subtracted.clip(min=0)
+
+    return im_subtracted, bgs_df, dict(figs_data)
 
 
-def d_mask_label(  # noqa: PLR0913
-    d_im: DIm,
+def _wiener_2d(im: NDArray[Any]) -> NDArray[Any]:
+    """Apply 2D Wiener filter."""
+    return signal.wiener(im, (3, 3))  # type: ignore[no-any-return]
+
+
+def _threshold_2d(im: NDArray[Any], method: str) -> NDArray[np.bool_]:
+    """Apply threshold to 2D plane."""
+    if im.min() == im.max():
+        return np.zeros_like(im, dtype=bool)
+    if method == "li":
+        threshold = filters.threshold_li(im)  # type: ignore[no-untyped-call]
+    else:
+        threshold = filters.threshold_yen(im)  # type: ignore[no-untyped-call]
+    return im > threshold  # type: ignore[no-any-return]
+
+
+def _remove_small_2d(m: NDArray[np.bool_], min_size: int) -> NDArray[np.bool_]:
+    """Remove small objects from binary mask."""
+    return morphology.remove_small_objects(m, max_size=min_size - 1)  # type: ignore[no-any-return]
+
+
+def _closing_2d(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
+    """Apply binary closing morphology."""
+    return morphology.closing(m)  # type: ignore[no-any-return]
+
+
+def _clear_border_2d(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
+    """Clear objects touching the border."""
+    return segmentation.clear_border(m)  # type: ignore[no-untyped-call, no-any-return]
+
+
+def _label_2d(m: NDArray[np.bool_]) -> NDArray[np.int32]:
+    """Label connected components in binary mask."""
+    labeled, _ = ndimage.label(m)
+    return labeled.astype(np.int32)  # type: ignore[no-any-return]
+
+
+def segment(  # noqa: PLR0913
+    im: xr.DataArray,
     min_size: int | None = 640,
     channels: tuple[str, ...] = ("C", "G", "R"),
     threshold_method: str = "yen",
@@ -262,8 +347,8 @@ def d_mask_label(  # noqa: PLR0913
     watershed: bool = False,
     clear_border: bool = False,
     randomwalk: bool = False,
-) -> None:
-    """Label cells in d_im. Add two keys, mask and label.
+) -> xr.DataArray:
+    """Segment cells in xarray DataArray. Returns mask and labels.
 
     Perform plane-by-plane (2D image):
 
@@ -278,8 +363,8 @@ def d_mask_label(  # noqa: PLR0913
 
     Parameters
     ----------
-    d_im : DIm
-        desc
+    im : xr.DataArray
+        Input image with dimensions (T, C, Z, Y, X).
     min_size : int | None, optional
         Objects smaller than min_size (default=640 pixels) are discarded from mask.
     channels : tuple[str, ...], optional
@@ -295,170 +380,332 @@ def d_mask_label(  # noqa: PLR0913
     randomwalk :  bool, optional
         Use random_walker instead of watershed post-ndimage-EDT (default=False).
 
+    Returns
+    -------
+    labels : xr.DataArray
+        Labeled regions with dimensions (T, Z, Y, X).
+
     Raises
     ------
     ValueError
         If threshold_method is not one of ['yen', 'li'].
-
-    Notes
-    -----
-    Side effects:
-        Add a 'label' key to the d_im.
 
     """
     if threshold_method not in threshold_method_choices:
         msg = f"threshold_method must be one of {threshold_method_choices}"
         raise ValueError(msg)
 
-    ga = d_im[channels[0]].copy()
-    for ch in channels[1:]:
-        ga *= d_im[ch]
-    ga = np.power(ga, 1 / len(channels))
+    # Compute geometric average across channels
+    if len(channels) == 1:
+        ga = im.sel(C=channels[0])
+    else:
+        ga = im.sel(C=list(channels)).astype(float).prod(dim="C") ** (1 / len(channels))
 
+    # Apply wiener filter if requested
+    ga_wiener = ga
     if wiener:
-        ga_wiener = np.zeros_like(d_im["G"])
-        shape = (3, 3)  # for 3D (1, 4, 4)
-        for i, im in enumerate(ga):
-            ga_wiener[i] = signal.wiener(im, shape)
-    else:
-        ga_wiener = ga
-    if threshold_method == "li":
-        threshold_function = filters.threshold_li
-    else:
-        threshold_function = filters.threshold_yen  # type: ignore[assignment]
-    mask = []
-    for _, im in enumerate(ga_wiener):
-        m = im > threshold_function(im)  # type: ignore[no-untyped-call]
-        m = morphology.remove_small_objects(m, min_size=min_size)
-        m = morphology.closing(m)
-        # clear border always
-        if clear_border:
-            m = segmentation.clear_border(m)  # type: ignore[no-untyped-call]
-        mask.append(m)
-    d_im["mask"] = np.array(mask)
-    labels, _ = ndimage.label(mask)
-    # TODO if any timepoint mask is empty cluster labels
-    d_im["labels"] = labels
+        ga_wiener = xr.apply_ufunc(
+            _wiener_2d,
+            ga,
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[ga.dtype],
+        )
+
+    # Apply thresholding
+    mask = xr.apply_ufunc(
+        _threshold_2d,
+        ga_wiener,
+        kwargs={"method": threshold_method},
+        input_core_dims=[["Y", "X"]],
+        output_core_dims=[["Y", "X"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[bool],
+    )
+
+    # Remove small objects if requested
+    if min_size:
+        mask = xr.apply_ufunc(
+            _remove_small_2d,
+            mask,
+            kwargs={"min_size": min_size},
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[bool],
+        )
+
+    # Apply binary closing
+    mask = xr.apply_ufunc(
+        _closing_2d,
+        mask,
+        input_core_dims=[["Y", "X"]],
+        output_core_dims=[["Y", "X"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[bool],
+    )
+
+    # Clear border if requested
+    if clear_border:
+        mask = xr.apply_ufunc(
+            _clear_border_2d,
+            mask,
+            input_core_dims=[["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[bool],
+        )
+
+    # Label connected components
+    labels = xr.apply_ufunc(
+        _label_2d,
+        mask,
+        input_core_dims=[["Y", "X"]],
+        output_core_dims=[["Y", "X"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[np.int32],
+    )
 
     if watershed:
-        process_watershed(d_im, channels, randomwalk=randomwalk)
+        # mask is not modified by process_watershed
+        labels = process_watershed(
+            im,
+            mask,
+            labels,
+            channels=channels,
+            randomwalk=randomwalk,
+        )
+
+    # Squeeze Z dimension if singleton
+    if labels.sizes.get("Z") == 1:
+        labels = labels.squeeze("Z")
+
+    return cast("xr.DataArray", labels)
 
 
 def process_watershed(
-    d_im: DIm,
+    d_im: xr.DataArray,
+    mask: xr.DataArray,
+    labels: xr.DataArray,
     channels: tuple[str, ...],
     *,
     randomwalk: bool = False,
-) -> None:
-    """Apply watershed segmentation algorithm to a given image.
-
-    This function takes a pre-processed image `d_im`, a sequence of channels `channels`
-    to be used for the segmentation, a structuring element `ga_wiener`, a mask `mask`,
-    a time step `time`, and an optional `randomwalk` function or string to specify the
-    random walker method. If `labels` is not provided, it is initialized as an empty
-    numpy array.
-
-    """
-    # TODO: label can change from time to time, Need more robust here. may
-    # use props[0].label == 1
-    # TODO: Voronoi? depends critically on max_diameter.
-    distance = ndimage.distance_transform_edt(d_im["mask"][0])
-    pr = measure.regionprops(  # type: ignore[no-untyped-call]
-        d_im["labels"][0], intensity_image=d_im[channels[0]][0]
-    )
-    max_diameter = pr[0].equivalent_diameter_area
-    size = max_diameter * 2.20
-    for p in pr[1:]:
-        max_diameter = max(max_diameter, p.equivalent_diameter_area)
-    print(max_diameter)
-    for time, (d, lbl) in enumerate(zip(distance, d_im["labels"], strict=True)):
-        local_maxi = feature.peak_local_max(  # type: ignore[call-arg, no-untyped-call]
-            d,
-            labels=lbl,
-            footprint=np.ones((size, size)),
-            min_distance=size,
-            indices=False,
-            exclude_border=False,
-        )
-        markers = measure.label(local_maxi)  # type: ignore[no-untyped-call]
-        print(np.unique(markers))
-        if randomwalk:
-            markers[~d_im["mask"][time]] = -1
-            labels_ws = segmentation.random_walker(d_im["mask"][time], markers)
-        else:
-            labels_ws = segmentation.watershed(-d, markers, mask=lbl)  # type: ignore[no-untyped-call]
-    d_im["labels"][time] = labels_ws
-
-
-def d_ratio(
-    d_im: DIm,
-    name: str = "r_cl",
-    channels: tuple[str, str] = ("C", "R"),
-    radii: tuple[int, int] = (7, 3),
-) -> None:
-    """Ratio image between 2 channels in d_im.
-
-    Add masked (bg=0; fg=ratio) median-filtered ratio for 2 channels. So, d_im
-    must (already) contain keys for mask and the two channels.
-
-    After ratio computation any -inf, nan and inf values are replaced with 0.
-    These values should be generated (upon ratio) only in the bg. You can
-    check:
-    r_cl[d_im['labels']==4].min()
+) -> xr.DataArray:
+    """Apply watershed to xarray DataArray.
 
     Parameters
     ----------
-    d_im : DIm
-        desc
-    name : str, optional
-        Name (default='r_cl') for the new key.
-    channels : tuple[str, str], optional
-        Names for the two channels (Numerator, Denominator) (default=('C', 'R')).
-    radii : tuple[int, int], optional
-        Each element contain a radius value for a median filter cycle (default=(7, 3)).
+    d_im : xr.DataArray
+        Input image.
+    mask : xr.DataArray
+        Binary mask.
+    labels : xr.DataArray
+        Labeled regions.
+    channels : tuple[str, ...]
+        Channel names (first channel used for intensity).
+    randomwalk : bool, optional
+        Use random walker instead of watershed (default=False).
 
-    Notes
-    -----
-    Add a key named "name" and containing the calculated ratio to d_im.
+    Returns
+    -------
+    labels : xr.DataArray
+        Updated labels after watershed.
 
     """
-    with np.errstate(divide="ignore", invalid="ignore"):
-        # 0/0 and num/0 can both happen.
-        ratio = np.array(d_im[channels[0]] / d_im[channels[1]], dtype=float)
-    for i, r in enumerate(ratio):
-        np.nan_to_num(r, copy=False, posinf=0, neginf=0)
-        filtered_r = r
-        for radius in radii:
-            filtered_r = ndimage.median_filter(filtered_r, radius)
-        ratio[i] = filtered_r * d_im["mask"][i]
-    d_im[name] = ratio
+
+    def apply_watershed_2d(
+        dist: NDArray[Any],
+        lbl: NDArray[np.int32],
+        msk: NDArray[np.bool_],
+        intensity: NDArray[Any],
+    ) -> NDArray[np.int32]:
+        # dist is distance transform of mask
+        # lbl is initial labels
+        # msk is binary mask
+
+        pr = skmeasure.regionprops(lbl, intensity_image=intensity)  # type: ignore[no-untyped-call]
+        if not pr:
+            return lbl
+
+        max_diameter = pr[0].equivalent_diameter_area
+        for p in pr[1:]:
+            max_diameter = max(max_diameter, p.equivalent_diameter_area)
+
+        size = max_diameter * 2.20
+
+        coords = feature.peak_local_max(  # type: ignore[no-untyped-call]
+            dist,
+            labels=lbl,
+            footprint=np.ones((int(size), int(size))),
+            min_distance=int(size),
+            exclude_border=False,
+        )
+        local_maxi = np.zeros_like(dist, dtype=bool)
+        local_maxi[tuple(coords.T)] = True
+
+        markers = skmeasure.label(local_maxi)  # type: ignore[no-untyped-call]
+
+        if randomwalk:
+            markers[~msk] = -1
+            labels_ws = segmentation.random_walker(msk, markers, mode="bf")
+        else:
+            labels_ws = segmentation.watershed(-dist, markers, mask=lbl)  # type: ignore[no-untyped-call]
+
+        return labels_ws.astype(np.int32)  # type: ignore[no-any-return]
+
+    # We need intensity image of channel 0.
+    ch0 = d_im.sel(C=channels[0])
+
+    def wrapper(
+        msk: NDArray[np.bool_], lbl: NDArray[np.int32], intensity: NDArray[Any]
+    ) -> NDArray[np.int32]:
+        dist = ndimage.distance_transform_edt(msk)
+        return apply_watershed_2d(dist, lbl, msk, intensity)
+
+    return cast(
+        "xr.DataArray",
+        xr.apply_ufunc(
+            wrapper,
+            mask,
+            labels,
+            ch0,
+            input_core_dims=[["Y", "X"], ["Y", "X"], ["Y", "X"]],
+            output_core_dims=[["Y", "X"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[np.int32],
+        ),
+    )
 
 
-def d_meas_props(  # noqa: PLR0913
-    d_im: DIm,
+def ratio(
+    im: xr.DataArray,
+    channels: tuple[str, str] = ("C", "R"),
+    radii: Sequence[int] = (7, 3),
+    mask: xr.DataArray | None = None,
+) -> xr.DataArray:
+    """Compute ratio image for xarray.DataArray.
+
+    Parameters
+    ----------
+    im : xr.DataArray
+        Input image.
+    channels : tuple[str, str], optional
+        Names for the two channels (Numerator, Denominator) (default=('C', 'R')).
+    radii : Sequence[int], optional
+        Each element contain a radius value for a median filter cycle (default=(7, 3)).
+    mask : xr.DataArray | None, optional
+        Binary mask to apply to the ratio image.
+
+    Returns
+    -------
+    xr.DataArray
+        The ratio image.
+
+    """
+    if "Z" in im.dims and im.sizes["Z"] == 1:
+        im = im.squeeze(dim="Z")
+    num = im.sel(C=channels[0])
+    den = im.sel(C=channels[1])
+
+    # Compute ratio, handling division by zero and NaNs
+    # Using .where(den != 0) prevents "RuntimeWarning: divide by zero"
+    # and "invalid value" by replacing zeros with NaNs before division.
+    ratio = num / den.where(den != 0)
+    ratio = ratio.where(np.isfinite(ratio), 0)
+
+    # Apply median filters if requested
+    if radii:
+        # dask-image optimization
+        if isinstance(ratio.data, da.Array):
+            filtered = ratio.data
+            for radius in radii:
+                # Square footprint of size (radius, radius)?
+                # Original ndimage.median_filter(size=radius) implies a box filter of
+                # size 'radius' along all dimensions?
+                # No, ndimage.median_filter(input, size=scalar) applies it to all
+                # dimensions. But here we are processing 2D images (vectorized over
+                # others). Wait, the original code used apply_ufunc vectorized over Y,X.
+                # So ndimage.median_filter(im_2d, radius) -> size=radius means box
+                # filter (radius, radius).
+                # CAREFUL: ndimage.median_filter size parameter is the size of the box,
+                #  e.g. 3. If radius is actually 'size', then:
+                # Construct footprint for 2D box filter
+                # size should be integer
+                s = int(radius)
+                # Expand to full dimensions (Time, Channel etc are 1)
+                footprint_shape = (1,) * (ratio.ndim - 2) + (s, s)
+                # Box footprint
+                footprint = np.ones(footprint_shape, dtype=bool)
+
+                filtered = dask_image.ndfilters.median_filter(
+                    filtered, footprint=footprint, mode="reflect"
+                )
+            ratio = ratio.copy(data=filtered)
+
+        else:
+
+            def apply_median_filters(
+                im: NDArray[Any], radii_seq: Sequence[int]
+            ) -> NDArray[Any]:
+                filtered = im
+                for radius in radii_seq:
+                    filtered = ndimage.median_filter(filtered, radius)
+                return filtered
+
+            ratio = xr.apply_ufunc(
+                apply_median_filters,
+                ratio,
+                kwargs={"radii_seq": radii},
+                input_core_dims=[["Y", "X"]],
+                output_core_dims=[["Y", "X"]],
+                vectorize=True,
+                dask="parallelized",
+                output_dtypes=[ratio.dtype],
+            )
+
+    # Apply mask if provided
+    if mask is not None:
+        ratio = ratio * mask
+
+    return ratio
+
+
+def measure(  # noqa: PLR0913
+    im: xr.DataArray,
+    labels: xr.DataArray,
     channels: Sequence[str] = ("C", "G", "R"),
     channels_cl: tuple[str, str] = ("C", "R"),
     channels_ph: tuple[str, str] = ("G", "C"),
-    radii: tuple[int, int] | None = None,
+    radii: Sequence[int] | None = None,
     *,
     ratios_from_image: bool = True,
 ) -> tuple[dict[int, pd.DataFrame], dict[str, list[list[Any]]]]:
-    """Calculate pH and cl ratios and labelprops.
+    """Measure properties for xarray.DataArray.
 
     Parameters
     ----------
-    d_im : DIm
-        desc
+    im : xr.DataArray
+        Input image.
+    labels : xr.DataArray
+        Labeled image.
     channels : Sequence[str], optional
-        All d_im channels (default=('C', 'G', 'R')).
+        All channels (default=('C', 'G', 'R')).
     channels_cl : tuple[str, str], optional
         Numerator and denominator channels for cl ratio (default=('C', 'R')).
     channels_ph : tuple[str, str], optional
         Numerator and denominator channels for pH ratio (default=('G', 'C')).
-    radii : tuple[int, int] | None, optional
+    radii : Sequence[int] | None, optional
         Radii of the optional median average performed on ratio images (default=None).
     ratios_from_image : bool, optional
-        Boolean for executing d_ratio i.e. compute ratio images (default=True).
+        Boolean for executing ratio i.e. compute ratio images (default=True).
 
     Returns
     -------
@@ -472,60 +719,125 @@ def d_meas_props(  # noqa: PLR0913
 
     """
     pr: dict[str, list[list[Any]]] = defaultdict(list)
+    # Ensure dimensions order for iteration (T, ...)
+    # If im has Z, we expect labels to have Z.
+    # We iterate over T.
+
+    if "Z" in im.dims and im.sizes["Z"] == 1:
+        im = im.squeeze(dim="Z")
+
+    times = im.coords["T"].to_numpy()
+
     for ch in channels:
         pr[ch] = []
-        for time, label_im in enumerate(d_im["labels"]):
-            im = d_im[ch][time]
-            props = measure.regionprops(label_im, intensity_image=im)  # type: ignore[no-untyped-call]
+        for t in range(len(times)):
+            im_frame = im.sel(C=ch).isel(T=t)
+            lbl_frame = labels.isel(T=t)
+
+            # Convert to numpy for regionprops
+            im_np = im_frame.to_numpy()
+            lbl_np = lbl_frame.to_numpy()
+
+            props = skmeasure.regionprops(lbl_np, intensity_image=im_np)  # type: ignore[no-untyped-call]
             pr[ch].append(props)
+
     meas: dict[int, pd.DataFrame] = {}
-    # labels are 3D and "0" is always label for background
-    labels = np.unique(d_im["labels"])[1:]
-    for lbl in labels:
+    # labels unique values (0 is background)
+    # We can get unique labels from the labels DataArray (could be slow if large)
+    # Alternatively, we iterate based on what regionprops found.
+    # But we need consistent label IDs across time.
+    unique_labels = np.unique(labels.compute().to_numpy())
+    unique_labels = unique_labels[unique_labels > 0]
+
+    for lbl in unique_labels:
         idx = []
         d = defaultdict(list)
-        for time, props in enumerate(pr[channels[0]]):
+        for t, _ in enumerate(times):
+            # Check properties for channel 0 to see if label exists
+            props = pr[channels[0]][t]
             try:
-                i_label = [prop.label == lbl for prop in props].index(True)
-                prop_ch0 = props[i_label]
-                idx.append(time)
-                d["equivalent_diameter"].append(prop_ch0.equivalent_diameter_area)
-                d["eccentricity"].append(prop_ch0.eccentricity)
-                d["area"].append(prop_ch0.area)
-                for ch in pr:
-                    d[ch].append(pr[ch][time][i_label].mean_intensity)
-            except ValueError:
-                pass  # label is absent in this timepoint
+                # Find the prop with this label
+                # This search might be inefficient for many labels
+                prop = next(p for p in props if p.label == lbl)
+                idx.append(t)
+                d["equivalent_diameter"].append(prop.equivalent_diameter_area)
+                d["eccentricity"].append(prop.eccentricity)
+                d["area"].append(prop.area)
+
+                # Get mean intensity for all channels
+                # We assume consistent ordering/existence of props across channels
+                # But safer to find by label again or assume same index if sorted
+                # regionprops returns properties sorted by label.
+                # So if label exists in ch0, it exists in others (same label image)
+                i_label = [p.label for p in props].index(lbl)
+
+                for ch in channels:
+                    d[ch].append(pr[ch][t][i_label].intensity_mean)
+
+            except StopIteration:
+                pass  # Label absent at this time
+
         res_df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
         res_df["r_cl"] = res_df[channels_cl[0]] / res_df[channels_cl[1]]
         res_df["r_pH"] = res_df[channels_ph[0]] / res_df[channels_ph[1]]
         meas[int(lbl)] = res_df
+
     if ratios_from_image:
-        kwargs = {}
-        if radii:
-            kwargs["radii"] = radii
-        d_ratio(d_im, "r_cl", channels=channels_cl, **kwargs)
-        d_ratio(d_im, "r_pH", channels=channels_ph, **kwargs)
-        r_ph = []
-        r_cl = []
-        for time, (ph, cl) in enumerate(zip(d_im["r_pH"], d_im["r_cl"], strict=True)):
-            r_ph.append(ndimage.median(ph, d_im["labels"][time], index=labels))
-            r_cl.append(ndimage.median(cl, d_im["labels"][time], index=labels))
-        ratios_ph: ImSequence = np.array(r_ph)
-        ratios_cl: ImSequence = np.array(r_cl)
-        for ilbl, value in meas.items():
+        # Calculate ratio images (DataArray)
+        r_cl_da = ratio(
+            im,
+            channels=channels_cl,
+            radii=radii if radii is not None else (7, 3),
+            mask=labels > 0,
+        )
+        r_ph_da = ratio(
+            im,
+            channels=channels_ph,
+            radii=radii if radii is not None else (7, 3),
+            mask=labels > 0,
+        )
+
+        r_ph_list = []
+        r_cl_list = []
+
+        # Iterate time and calculate median within labels
+        for t in range(len(times)):
+            r_ph_frame = r_ph_da.isel(T=t).to_numpy()
+            r_cl_frame = r_cl_da.isel(T=t).to_numpy()
+            lbl_frame_np = labels.isel(T=t).to_numpy()
+
+            # ndimage.median works with labels and index list
+            r_ph_list.append(
+                ndimage.median(r_ph_frame, lbl_frame_np, index=unique_labels)
+            )
+            r_cl_list.append(
+                ndimage.median(r_cl_frame, lbl_frame_np, index=unique_labels)
+            )
+
+        ratios_ph = np.array(r_ph_list)
+        ratios_cl = np.array(r_cl_list)
+
+        for i, lbl in enumerate(unique_labels):
+            # For xarray implementation, let's be safer.
+            # We have ratios_ph[:, i]. This corresponds to unique_labels[i].
+
+            # We need to align with meas[lbl] which has specific time indices.
+
             res_df = pd.DataFrame(
                 {
-                    "r_pH_median": ratios_ph[:, ilbl - 1],
-                    "r_cl_median": ratios_cl[:, ilbl - 1],
-                }
+                    "r_pH_median": ratios_ph[:, i],
+                    "r_cl_median": ratios_cl[:, i],
+                },
+                index=range(len(times)),  # Default index 0..T-1
             )
-            # concat only on index that are present in both
-            meas[ilbl] = pd.concat([value, res_df], axis=1, join="inner")
+            # meas[lbl] has index=idx (subset of times).
+            # Join inner will select matching times.
+            meas[int(lbl)] = pd.concat([meas[int(lbl)], res_df], axis=1, join="inner")
+
     return meas, pr
 
 
-def d_plot_meas(
+def plot_meas(
     bgs: pd.DataFrame, meas: dict[int, pd.DataFrame], channels: Sequence[str]
 ) -> Figure:
     """Plot meas object.
@@ -536,9 +848,9 @@ def d_plot_meas(
     Parameters
     ----------
     bgs : pd.DataFrame
-        Estimated bg returned from d_bg()
+        Estimated bg returned from bg()
     meas : dict[int, pd.DataFrame]
-        meas object returned from d_meas_props().
+        meas object returned from measure().
     channels : Sequence[str]
         All bgs and meas channels (default=['C', 'G', 'R']).
 
@@ -597,7 +909,7 @@ def d_plot_meas(
 
 
 def plt_img_profile(  # noqa: PLR0915
-    img: ImFrame,
+    img: xr.DataArray,
     title: str | None = None,
     hpix: pd.DataFrame | None = None,
     vmin: float | None = None,
@@ -607,7 +919,7 @@ def plt_img_profile(  # noqa: PLR0915
 
     Parameters
     ----------
-    img : ImFrame
+    img : xr.DataArray
         Image of Flat or Bias.
     title : str | None, optional
         Title of the figure (default=None).
@@ -624,8 +936,9 @@ def plt_img_profile(  # noqa: PLR0915
         Profile plot.
 
     """
+    img_arr = img.to_numpy()
     # definitions for the axes
-    ratio = img.shape[0] / img.shape[1]
+    ratio = img_arr.shape[0] / img_arr.shape[1]
     left, width = 0.05, 0.6
     bottom, height = 0.05, 0.6 * ratio
     spacing, marginal = 0.05, 0.25
@@ -702,7 +1015,7 @@ def plt_img_profile(  # noqa: PLR0915
     if hpix is not None and not hpix.empty:
         ax.plot(hpix["x"], hpix["y"], "+", mfc="gray", mew=2, ms=14)
 
-    im2c = img_hist(img, ax, ax_px, ax_py, ax_hist, vmin, vmax)
+    im2c = img_hist(img_arr, ax, ax_px, ax_py, ax_hist, vmin, vmax)
     ax_cm.axis("off")
     fig.colorbar(
         im2c, ax=ax_cm, fraction=0.99, shrink=0.99, aspect=4, orientation="horizontal"
@@ -710,12 +1023,12 @@ def plt_img_profile(  # noqa: PLR0915
     return fig
 
 
-def plt_img_profile_2(img: ImFrame, title: str | None = None) -> Figure:
+def plt_img_profile_2(img: xr.DataArray, title: str | None = None) -> Figure:
     """Summary graphics for Flat-Bias images.
 
     Parameters
     ----------
-    img : ImFrame
+    img : xr.DataArray
         Image of Flat or Bias.
     title : str | None, optional
         Title of the figure  (default=None).
@@ -726,36 +1039,43 @@ def plt_img_profile_2(img: ImFrame, title: str | None = None) -> Figure:
         Profile plot.
 
     """
+    img_arr = img.to_numpy()
     fig = plt.figure(constrained_layout=True)
     gs = fig.add_gridspec(3, 3)
     ax = fig.add_subplot(gs[0:2, 0:2])
-    vmin, vmax = [float(val) for val in np.percentile(img, [18.4, 81.6])]  # 66.6 %
-    ax.imshow(img, vmin=vmin, vmax=vmax, cmap="turbo")
-    ymin = round(img.shape[0] / 2 * 0.67)
-    ymax = round(img.shape[0] / 2 * 1.33)
-    xmin = round(img.shape[1] / 2 * 0.67)
-    xmax = round(img.shape[1] / 2 * 1.33)
+    vmin, vmax = [float(val) for val in np.percentile(img_arr, [18.4, 81.6])]  # 66.6 %
+    ax.imshow(img_arr, vmin=vmin, vmax=vmax, cmap="turbo")
+    ymin = round(img_arr.shape[0] / 2 * 0.67)
+    ymax = round(img_arr.shape[0] / 2 * 1.33)
+    xmin = round(img_arr.shape[1] / 2 * 0.67)
+    xmax = round(img_arr.shape[1] / 2 * 1.33)
     ax.axvline(xmin, c="k")
     ax.axvline(xmax, c="k")
     ax.axhline(ymin, c="k")
     ax.axhline(ymax, c="k")
     ax1 = fig.add_subplot(gs[2, 0:2])
-    ax1.plot(img.mean(axis=0))
-    ax1.plot(img[ymin:ymax, :].mean(axis=0), alpha=0.2, lw=2, c="k")
+    ax1.plot(img_arr.mean(axis=0))
+    ax1.plot(img_arr[ymin:ymax, :].mean(axis=0), alpha=0.2, lw=2, c="k")
     ax2 = fig.add_subplot(gs[0:2, 2])
     ax2.plot(
-        img[:, xmin:xmax].mean(axis=1), range(img.shape[0]), alpha=0.2, lw=2, c="k"
+        img_arr[:, xmin:xmax].mean(axis=1),
+        range(img_arr.shape[0]),
+        alpha=0.2,
+        lw=2,
+        c="k",
     )
-    ax2.plot(img.mean(axis=1), range(img.shape[0]))
+    ax2.plot(img_arr.mean(axis=1), range(img_arr.shape[0]))
     axh = fig.add_subplot(gs[2, 2])
-    axh.hist(img.ravel(), bins=max(int(img.max() - img.min()), 25), log=True)
+    axh.hist(
+        img_arr.ravel(), bins=max(int(img_arr.max() - img_arr.min()), 25), log=True
+    )
     if title:
         kw = {"weight": "bold", "ha": "left"}
         fig.suptitle(title, fontsize=12, **kw)
     return fig
 
 
-def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
+def hotpixels(bias: xr.DataArray, n_sd: int = 20) -> pd.DataFrame:
     """Identify hot pixels in a bias-dark frame.
 
     After identification of first outliers recompute masked average and std
@@ -763,7 +1083,7 @@ def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
 
     Parameters
     ----------
-    bias : ImFrame
+    bias : xr.DataArray
         Usually the median over a stack of 100 frames.
     n_sd : int
         Number of SD above mean (masked out of hot pixels) value.
@@ -773,26 +1093,38 @@ def hotpixels(bias: ImFrame, n_sd: int = 20) -> pd.DataFrame:
     pd.DataFrame
         y, x positions and values of hot pixels.
 
+    Raises
+    ------
+    ValueError
+        If the bias image is not 2D.
+
     """
-    ave = bias.mean()
-    std = bias.std()
-    m = bias > (ave + n_sd * std)
+    # Work with numpy array for iterative masked statistics
+    # Ensure we have a 2D array
+    if bias.ndim != AXES_LENGTH_2D:
+        msg = "Bias image must be 2D."
+        raise ValueError(msg)
+
+    data = bias.to_numpy()
+    ave = data.mean()
+    std = data.std()
+    m = data > (ave + n_sd * std)
     n_hpix = m.sum()
     while True:
-        m_ave = np.ma.masked_array(bias, m).mean()
-        m_std = np.ma.masked_array(bias, m).std()
-        m = bias > m_ave + n_sd * m_std
+        m_ave = np.ma.masked_array(data, m).mean()
+        m_std = np.ma.masked_array(data, m).std()
+        m = data > m_ave + n_sd * m_std
         if n_hpix == m.sum():
             break
         n_hpix = m.sum()
     w = np.where(m)
     hpix_df = pd.DataFrame({"y": w[0], "x": w[1]})
-    return hpix_df.assign(val=lambda row: bias[row.y, row.x])
+    return hpix_df.assign(val=lambda row: data[row.y, row.x])
 
 
 def correct_hotpixel(
-    img: ImFrame, y: int | NDArray[np.int_], x: int | NDArray[np.int_]
-) -> None:
+    img: xr.DataArray, y: int | NDArray[np.int64], x: int | NDArray[np.int64]
+) -> xr.DataArray:
     """Correct hot pixels in a frame.
 
     Substitute indicated position y, x with the median value of the 4 neighbor
@@ -800,282 +1132,47 @@ def correct_hotpixel(
 
     Parameters
     ----------
-    img : ImFrame
+    img : xr.DataArray
         Frame (2D) image.
-    y : int | NDArray[np.int_]
+    y : int | NDArray[np.int64]
         y-coordinate(s).
-    x : int | NDArray[np.int_]
+    x : int | NDArray[np.int64]
         x-coordinate(s).
 
+    Returns
+    -------
+    xr.DataArray
+        Corrected image (copy).
+
+    Raises
+    ------
+    ValueError
+        If the image is not 2D.
+
     """
-    if img.ndim == AXES_LENGTH_2D:
-        v1 = img[y - 1, x]
-        v2 = img[y + 1, x]
-        v3 = img[y, x - 1]
-        v4 = img[y, x + 1]
-        correct = np.median([v1, v2, v3, v4])
-        img[y, x] = correct
-
-
-@dataclass()
-class Channel:
-    """Represent illumination-detection channel.
-
-    Attributes
-    ----------
-    wavelength : int
-        Illumination wavelength.
-    attenuation : float
-        Illumination attenuation.
-    gain : float
-        Detector gain.
-    binning : str
-        Detector binning.
-    filters : list[str]
-        List of filters.
-    """
-
-    wavelength: int
-    attenuation: float
-    gain: float
-    binning: str
-    filters: list[str]
-
-    def __repr__(self) -> str:
-        """Represent most relevant metadata."""
-        return (
-            f"Channel(λ={self.wavelength}, attenuation={self.attenuation}, "
-            f"gain={self.gain}, binning={self.binning}, "
-            f"filters hash={np.array([hash(f) for f in self.filters]).sum()})"
-        )
-
-
-@dataclass(eq=True, frozen=True)
-class StagePosition:
-    """Dataclass representing stage position.
-
-    Attributes
-    ----------
-    x : float | None
-        Position in the X dimension.
-    y : float | None
-        Position in the Y dimension.
-    z : float | None
-        Position in the Z dimension.
-    """
-
-    x: float | None
-    y: float | None
-    z: float | None
-
-    def __hash__(self) -> int:
-        """Generate a hash value for the object based on its attributes."""
-        return hash((self.x, self.y, self.z))
-
-    def __repr__(self) -> str:
-        """Represent most relevant metadata."""
-        return f"\t\tXYZ={pformat((self.x, self.y, self.z))}"
-
-
-@dataclass(eq=True)
-class VoxelSize:
-    """Dataclass representing voxel size.
-
-    Attributes
-    ----------
-    x : float | None
-        Size in the X dimension.
-    y : float | None
-        Size in the Y dimension.
-    z : float | None
-        Size in the Z dimension.
-    """
-
-    x: float | None
-    y: float | None
-    z: float | None
-
-    def __hash__(self) -> int:
-        """Generate a hash value for the object based on its attributes."""
-        return hash((self.x, self.y, self.z))
-
-
-class MultiplePositionsError(Exception):
-    """Exception raised when a series contains multiple stage positions."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-
-
-@dataclass
-class Metadata:
-    """Dataclass representing core metadata.
-
-    Attributes
-    ----------
-    rdr : InitVar[TiffReader]
-        TiffReader parameter to initialize class.
-    size_s : int
-        Number of series (size in the S dimension).
-    size_x : list[int]
-        List of sizes in the X dimension.
-    size_y : list[int]
-        List of sizes in the Y dimension.
-    size_z : list[int]
-        List of sizes in the Z dimension.
-    size_c : list[int]
-        List of sizes in the C dimension.
-    size_t : list[int]
-        List of sizes in the T dimension.
-    dimension_order : list[str]
-        List of dimension order for each pixels.
-    bits : list[int]
-        List of bits per pixel.
-    objective : list[str]
-        List of objectives.
-    name : list[str]
-        List of series names.
-    date : list[str]
-        List of acquisition dates.
-    stage_position : list[dict[StagePosition, tuple[int, int, int]]]
-        List of {StagePosition: (T,C,Z)} for each `S`.
-    voxel_size : list[VoxelSize]
-        List of voxel sizes.
-    channels : list[list[Channel]]
-        Channels settings.
-    tcz_deltat : list[list[tuple[int, int, int, float]]]
-        Delta time for each T C Z.
-    """
-
-    rdr: InitVar[TiffReader]
-    size_s: int = 1
-    size_x: list[int] = field(default_factory=list)
-    size_y: list[int] = field(default_factory=list)
-    size_z: list[int] = field(default_factory=list)
-    size_c: list[int] = field(default_factory=list)
-    size_t: list[int] = field(default_factory=list)
-    dimension_order: list[str] = field(default_factory=list)
-    bits: list[int] = field(default_factory=list)
-    objective: list[str] = field(default_factory=list)
-    name: list[str] = field(default_factory=list)
-    date: list[str] = field(default_factory=list)
-    stage_position: list[dict[StagePosition, tuple[int, int, int]]] = field(
-        default_factory=list
-    )
-    voxel_size: list[VoxelSize] = field(default_factory=list)
-    channels: list[list[Channel]] = field(default_factory=list)
-    tcz_deltat: list[list[tuple[int, int, int, float]]] = field(default_factory=list)
-
-    def __repr__(self) -> str:
-        """Represent most relevant metadata."""
-        return (
-            f"Metadata(S={self.size_s}, T={self.size_t}, C={self.size_c}, "
-            f"Z={self.size_z}, Y={self.size_y}, X={self.size_x}, "
-            f"order={self.dimension_order}\n"
-            f"         Bits={self.bits}, Obj={self.objective}\n"
-            f"         voxel size={pformat(self.voxel_size)}\n"
-            f"         stage=\n{pformat(self.stage_position)}\n"
-            f"         channels=\n{pformat(self.channels)})"
-        )
-
-    def __post_init__(self, rdr: TiffReader) -> None:
-        """Consolidate all core metadata."""
-        mdd = xmltodict.parse(rdr.ome_metadata)
-        mdd = mdd["OME"]
-        images = mdd["OME:Image"]
-        if isinstance(images, dict):
-            images = [images]
-        self.size_s = len(images)
-        for image in images:
-            pixels = image["OME:Pixels"]
-            channels = pixels["OME:Channel"]
-            planes = pixels["OME:Plane"]
-            self.size_x.append(int(pixels["@SizeX"]))
-            self.size_y.append(int(pixels["@SizeY"]))
-            self.size_z.append(int(pixels["@SizeZ"]))
-            self.size_c.append(int(pixels["@SizeC"]))
-            self.size_t.append(int(pixels["@SizeT"]))
-            self.dimension_order.append(pixels["@DimensionOrder"])
-            self.bits.append(int(pixels["@SignificantBits"]))
-            self.name.append(image["@ID"])
-            self.objective.append(image["OME:ObjectiveSettings"]["@ID"])
-            self.date.append(image["OME:AcquisitionDate"])
-            self.stage_position.append(self._get_stage_position(planes))
-            self.voxel_size.append(
-                VoxelSize(
-                    float(pixels["@PhysicalSizeX"]),
-                    float(pixels["@PhysicalSizeY"]),
-                    float(pixels["@PhysicalSizeZ"]),
-                )
-            )
-            self.channels.append(
-                [
-                    Channel(
-                        int(channel["OME:LightSourceSettings"]["@Wavelength"]),
-                        float(channel["OME:LightSourceSettings"]["@Attenuation"]),
-                        float(channel["OME:DetectorSettings"].get("@Gain", 0)),
-                        channel["OME:DetectorSettings"]["@Binning"],
-                        [
-                            d["@ID"].removeprefix("Filter:")
-                            for d in channel["OME:LightPath"]["OME:ExcitationFilterRef"]
-                        ],
-                    )
-                    for channel in channels
-                ]
-            )
-
-            self.tcz_deltat.append(
-                [
-                    (
-                        int(plane["@TheT"]),
-                        int(plane["@TheC"]),
-                        int(plane["@TheZ"]),
-                        float(plane["@DeltaT"]),
-                    )
-                    for plane in planes
-                ]
-            )
-        self.ome = mdd
-        for attribute in [
-            "size_x",
-            "size_y",
-            "size_z",
-            "size_c",
-            "size_t",
-            "dimension_order",
-            "bits",
-            "name",
-            "objective",
-            "date",
-            "voxel_size",
-        ]:
-            if len(set(getattr(self, attribute))) == 1:
-                setattr(self, attribute, list(set(getattr(self, attribute))))
-        for channel in self.channels[1:]:
-            if channel != self.channels[0]:
-                break
-            self.channels = [channel]
-
-    def _get_stage_position(
-        self, planes: list[dict[str, str]]
-    ) -> dict[StagePosition, tuple[int, int, int]]:
-        """Retrieve the stage positions from the given pixels."""
-        pos_dict: dict[StagePosition, tuple[int, int, int]] = {}
-        for plane in planes:
-            x, y, z = plane["@PositionX"], plane["@PositionY"], plane["@PositionZ"]
-            pos = StagePosition(float(x), float(y), float(z))
-            t, c, z = plane["@TheT"], plane["@TheC"], plane["@TheZ"]
-            pos_dict.update({pos: (int(t), int(c), int(z))})
-        return pos_dict
-
-
-def read_tiffmd(fp: Path, channels: Sequence[str]) -> tuple[Array, Metadata]:
-    """Read multichannel TIFF timelapse image."""
-    n_channels = len(channels)
-    rdr = TiffReader(fp)
-    dim = da.from_zarr(rdr.aszarr())  # type: ignore[no-untyped-call]
-    md = Metadata(rdr)
-    if md.size_c[0] % n_channels:
-        msg = "n_channel mismatch total length of TIFF sequence"
+    if img.ndim != AXES_LENGTH_2D:
+        msg = "Image must be 2D."
         raise ValueError(msg)
-    return dim.astype(np.int32), md
+
+    # We return a new DataArray to avoid side effects and support xarray semantics
+    # For simplicity and given the usage (bias/err frames), we compute to numpy.
+    # Future optimization: use map_blocks or sparse updates if Dask support is critical.
+    new_img = img.copy(deep=True)
+    data = new_img.to_numpy()  # This accesses the numpy array (or computes it)
+
+    # Handle scalar or array inputs for y, x
+    y_arr = np.atleast_1d(y)
+    x_arr = np.atleast_1d(x)
+
+    v1 = data[y_arr - 1, x_arr]
+    v2 = data[y_arr + 1, x_arr]
+    v3 = data[y_arr, x_arr - 1]
+    v4 = data[y_arr, x_arr + 1]
+
+    # median of neighbors
+    # stack them to compute median across 0-axis
+    neighbors = np.stack([v1, v2, v3, v4])
+    correct = np.median(neighbors, axis=0)
+
+    data[y_arr, x_arr] = correct
+    return new_img

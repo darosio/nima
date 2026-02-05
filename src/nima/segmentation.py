@@ -1,11 +1,15 @@
 """Functions to partition images into meaningful regions."""
 
 from dataclasses import dataclass
-from typing import cast, overload
+from typing import Any, cast, overload
 
+import dask.array as da
+import dask_image.ndfilters  # type: ignore[import-untyped]
+import dask_image.ndmorph  # type: ignore[import-untyped]
 import matplotlib.pyplot as plt
 import numpy as np
 import skimage
+import xarray as xr
 from dask.diagnostics.progress import ProgressBar
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
@@ -160,12 +164,25 @@ class BgResult:
     figures: list[Figure] | None
 
 
-def _bg_arcsinh(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, ImSequence]:
+def _bg_arcsinh(
+    im: xr.DataArray, bg_params: BgParams
+) -> tuple[xr.DataArray, str, xr.DataArray]:
     perc = bg_params.perc
     radius = bg_params.radius
     arcsinh_perc = bg_params.arcsinh_perc
-    lim = np.arcsinh(im)
-    lim = ndimage.percentile_filter(lim, arcsinh_perc, size=radius)
+
+    data = im.data
+    if isinstance(data, da.Array):
+        lim_data = da.arcsinh(data)
+        lim_data = dask_image.ndfilters.percentile_filter(
+            lim_data, arcsinh_perc, size=radius
+        )
+    else:
+        data = np.asarray(data)
+        lim_data = np.arcsinh(data)
+        lim_data = ndimage.percentile_filter(lim_data, arcsinh_perc, size=radius)
+
+    lim = im.copy(data=lim_data)
     thr = (1 - perc) * lim.min() + perc * lim.max()
     m = lim < thr
     title = (
@@ -174,71 +191,194 @@ def _bg_arcsinh(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, ImSeq
     return m, title, lim
 
 
-def _bg_entropy(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, ImSequence]:
+def _bg_entropy(
+    im: xr.DataArray, bg_params: BgParams
+) -> tuple[xr.DataArray, str, xr.DataArray]:
     perc = bg_params.perc
     radius = bg_params.radius
-    im8 = skimage.util.img_as_ubyte(im)  # type: ignore[no-untyped-call]
-    if im.dtype == float:
-        lim = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore[no-untyped-call]
+
+    data = im.data
+
+    if isinstance(data, da.Array):
+        # Normalize to uint8 distributedly
+        # This is non-trivial without global min/max which triggers compute
+        # But we can compute min/max cheaply
+        _dmin, _dmax = data.min(), data.max()  # type: ignore[no-untyped-call]
+        # We assume float input for now as per original code handling
+        if data.dtype.kind == "f":
+            # dmin/dmax are lazy scalars
+            pass
+
+        # For now, let's use map_overlap with depth=radius
+        # And inside the function do what original did
+        def wrapped_entropy(block: NDArray[Any]) -> NDArray[Any]:
+            # block is numpy array
+            im8 = skimage.util.img_as_ubyte(block)  # type: ignore[no-untyped-call]
+            if block.dtype.kind == "f":
+                return cast(
+                    "NDArray[Any]",
+                    filters.rank.entropy(  # type: ignore[no-untyped-call]
+                        im8 / im8.max(),
+                        morphology.disk(radius),  # type: ignore[no-untyped-call]
+                    ),
+                )
+            return cast(
+                "NDArray[Any]",
+                filters.rank.entropy(im8, morphology.disk(radius)),  # type: ignore[no-untyped-call]
+            )
+
+        # Let's assume we use map_overlap.
+        # Depth must be at least radius.
+        lim_data = data.map_overlap(  # type: ignore[no-untyped-call]
+            wrapped_entropy,
+            depth=radius,
+            boundary="reflect",
+            dtype=np.float64,  # entropy returns float
+        )
     else:
-        lim = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore[no-untyped-call]
+        # Numpy fallback inside dask wrapper
+        data = np.asarray(data)
+        im8 = skimage.util.img_as_ubyte(data)  # type: ignore[no-untyped-call]
+        if data.dtype.kind == "f":
+            lim_data = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore[no-untyped-call]
+        else:
+            lim_data = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore[no-untyped-call]
+
+    lim = im.copy(data=lim_data)
     thr = (1 - perc) * lim.min() + perc * lim.max()
     m = lim < thr
     title = f"{bg_params.kind} radius={radius}, perc={perc}"
     return m, title, lim
 
 
-def _bg_adaptive(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
+def _bg_adaptive(
+    im: xr.DataArray, bg_params: BgParams
+) -> tuple[xr.DataArray, str, None]:
     adaptive_radius = bg_params.adaptive_radius
-    f = im > filters.threshold_local(im, adaptive_radius)  # type: ignore[no-untyped-call]
-    m = ~f
+
+    data = im.data
+    if isinstance(data, da.Array):
+        # dask_image has threshold_local signature:
+        # image, block_size, method='gaussian', offset=0, mode='reflect', param=None
+        # while skimage:
+        # image, block_size, method='gaussian', offset=0, mode='reflect', param=None,
+        # cval=0. It seems compatible.
+        f = data > dask_image.ndfilters.threshold_local(data, adaptive_radius)
+    else:
+        data = np.asarray(data)
+        f = data > filters.threshold_local(data, adaptive_radius)  # type: ignore[no-untyped-call]
+
+    m_data = ~f
+    m = im.copy(data=m_data)
     title = f"{bg_params.kind} adaptive_radius={adaptive_radius}"
     return m, title, None
 
 
-def _bg_li_adaptive(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
+def _bg_li_adaptive(
+    im: xr.DataArray, bg_params: BgParams
+) -> tuple[xr.DataArray, str, None]:
     adaptive_radius = bg_params.adaptive_radius
-    li = filters.threshold_li(im)  # type: ignore[no-untyped-call]
-    m = im < li
-    if bg_params.erosion_disk:
-        m = skimage.morphology.erosion(m, morphology.disk(bg_params.erosion_disk))  # type: ignore[no-untyped-call]
-    imm = im * m
-    if bg_params.clip:
-        imm = imm.clip(np.min(im))
-    f = imm > filters.threshold_local(imm, adaptive_radius)  # type: ignore[no-untyped-call]
-    m = ~f * m
+
+    data = im.data
+    if isinstance(data, da.Array):
+        # Compute global threshold (triggers compute)
+        # TODO: optimize by computing on histogram or subsample
+        li = filters.threshold_li(data.compute())  # type: ignore[no-untyped-call]
+        m_data = data < li
+        if bg_params.erosion_disk:
+            structure = morphology.disk(bg_params.erosion_disk)  # type: ignore[no-untyped-call]
+            m_data = dask_image.ndmorph.binary_erosion(m_data, structure=structure)
+
+        imm = data * m_data
+        if bg_params.clip:
+            imm = imm.clip(min=data.min())  # type: ignore[no-untyped-call]
+
+        f = imm > dask_image.ndfilters.threshold_local(imm, adaptive_radius)
+        m_data = ~f * m_data
+    else:
+        data = np.asarray(data)
+        li = filters.threshold_li(data)  # type: ignore[no-untyped-call]
+        m_data = data < li
+        if bg_params.erosion_disk:
+            m_data = skimage.morphology.erosion(
+                m_data,
+                morphology.disk(bg_params.erosion_disk),  # type: ignore[no-untyped-call]
+            )
+        imm = data * m_data
+        if bg_params.clip:
+            imm = imm.clip(np.min(data))
+        f = imm > filters.threshold_local(imm, adaptive_radius)  # type: ignore[no-untyped-call]
+        m_data = ~f * m_data
+
+    m = im.copy(data=m_data)
     title = f"{bg_params.kind} adaptive_radius={adaptive_radius}"
     return m, title, None
 
 
-def _bg_li_li(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
-    li = filters.threshold_li(im.copy())  # type: ignore[no-untyped-call]
-    m = im < li
-    if bg_params.erosion_disk:
-        m = skimage.morphology.erosion(m, morphology.disk(bg_params.erosion_disk))  # type: ignore[no-untyped-call]
-    imm = im * m
-    # To avoid zeros generated after first thesholding, clipping to the
-    # min value of original image is needed before second threshold.
-    thr2 = filters.threshold_li(imm.clip(np.min(im)))  # type: ignore[no-untyped-call]
-    m = im < thr2
+def _bg_li_li(im: xr.DataArray, bg_params: BgParams) -> tuple[xr.DataArray, str, None]:
+    data = im.data
+
+    if isinstance(data, da.Array):
+        # Global compute
+        li = filters.threshold_li(data.compute())  # type: ignore[no-untyped-call]
+        m_data = data < li
+        if bg_params.erosion_disk:
+            structure = morphology.disk(bg_params.erosion_disk)  # type: ignore[no-untyped-call]
+            m_data = dask_image.ndmorph.binary_erosion(m_data, structure=structure)
+
+        imm = data * m_data
+        # Clip to min of original image
+        min_val = data.min()  # type: ignore[no-untyped-call]
+        imm_clipped = imm.clip(min=min_val)
+
+        # Second threshold
+        thr2 = filters.threshold_li(imm_clipped.compute())  # type: ignore[no-untyped-call]
+        m_data = data < thr2
+    else:
+        data = np.asarray(data)
+        li = filters.threshold_li(data.copy())  # type: ignore[no-untyped-call]
+        m_data = data < li
+        if bg_params.erosion_disk:
+            m_data = skimage.morphology.erosion(
+                m_data,
+                morphology.disk(bg_params.erosion_disk),  # type: ignore[no-untyped-call]
+            )
+        imm = data * m_data
+        thr2 = filters.threshold_li(imm.clip(np.min(data)))  # type: ignore[no-untyped-call]
+        m_data = data < thr2
+
+    m = im.copy(data=m_data)
     title = bg_params.kind + " " + ""
     return m, title, None
 
 
-def _bg_inverse_yen(im: ImSequence, bg_params: BgParams) -> tuple[ImMask, str, None]:
-    f = filters.threshold_local(1 / im)  # type: ignore[no-untyped-call]
-    m = f > filters.threshold_yen(f)  # type: ignore[no-untyped-call]
+def _bg_inverse_yen(
+    im: xr.DataArray, bg_params: BgParams
+) -> tuple[xr.DataArray, str, None]:
+    data = im.data
+
+    if isinstance(data, da.Array):
+        inv_im = 1 / data
+        f = dask_image.ndfilters.threshold_local(inv_im, 3)
+        yen = filters.threshold_yen(f.compute())  # type: ignore[no-untyped-call]
+        m_data = f > yen
+    else:
+        data = np.asarray(data)
+        f = filters.threshold_local(1 / data, 3)  # type: ignore[no-untyped-call]
+        m_data = f > filters.threshold_yen(f)  # type: ignore[no-untyped-call]
+
+    m = im.copy(data=m_data)
     title = bg_params.kind + " " + ""
     return m, title, None
 
 
 # def bg(im: ImArray, bg_params: BgParams | None = None) -> tuple[float, list[Figure]]:
-def calculate_bg(im: ImSequence, bg_params: BgParams | None = None) -> BgResult:
+def calculate_bg(im: xr.DataArray, bg_params: BgParams | None = None) -> BgResult:
     """Segment background from an image stack.
 
     Parameters
     ----------
-    im: ImSequence
+    im: xr.DataArray
         An image stack.
     bg_params : BgParams | None, optional
         An instance of BgParams containing the parameters for the segmentation.
@@ -275,12 +415,46 @@ def calculate_bg(im: ImSequence, bg_params: BgParams | None = None) -> BgResult:
         msg = f"Invalid 'kind' parameter: {bg_params.kind}"
         raise ValueError(msg)
     m, title, lim = processing_functions[bg_params.kind](im, bg_params)
-    pixel_values = im[m]
-    p25, p50, p75 = np.percentile(pixel_values, [25, 50, 75])
+
+    # Compute mask if lazy, required for where(drop=True)
+    if isinstance(m.data, da.Array):
+        m = m.compute()
+
+    # Compute stats
+    # Masking DataArray returns 1D DataArray
+    # We want to access values.
+    pixel_values = im.where(m, drop=True)
+    if isinstance(pixel_values.data, da.Array):
+        pixel_values_np = pixel_values.compute().data
+    else:
+        pixel_values_np = pixel_values.data
+
+    # Ensure numpy array
+    if not isinstance(pixel_values_np, np.ndarray):
+        pixel_values_np = np.asarray(pixel_values_np)
+
+    # Remove NaNs/Infs
+    pixel_values_np = pixel_values_np[np.isfinite(pixel_values_np)]
+
+    p25, p50, p75 = np.percentile(pixel_values_np, [25, 50, 75])
     iqr: tuple[float, float, float] = (float(p25), float(p50), float(p75))
     title = title + "\n" + str(iqr)
-    figures = _bg_plot(im, m, title, lim)
-    bg, sd = stats.distributions.norm.fit(pixel_values)
+
+    # Prepare inputs for plot (numpy)
+    im_np = im.compute().data if isinstance(im.data, da.Array) else np.asarray(im.data)
+
+    m_np = m.compute().data if isinstance(m.data, da.Array) else np.asarray(m.data)
+
+    if lim is not None:
+        if isinstance(lim.data, da.Array):
+            lim_np = lim.compute().data
+        else:
+            lim_np = np.asarray(lim.data)
+    else:
+        lim_np = None
+
+    figures = _bg_plot(im_np, m_np, title, lim_np)
+    bg, sd = stats.distributions.norm.fit(pixel_values_np)
     return BgResult(bg, sd, iqr, figures)
 
 
