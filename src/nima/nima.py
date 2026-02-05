@@ -307,7 +307,7 @@ def _wiener_2d(im: NDArray[Any]) -> NDArray[Any]:
 
 def _threshold_2d(im: NDArray[Any], method: str) -> NDArray[np.bool_]:
     """Apply threshold to 2D plane."""
-    if np.all(im == im.flat[0]):
+    if im.min() == im.max():
         return np.zeros_like(im, dtype=bool)
     if method == "li":
         threshold = filters.threshold_li(im)  # type: ignore[no-untyped-call]

@@ -1,10 +1,16 @@
 """Generate mock images."""
 
 import warnings
+from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
+import pandas as pd
+import xarray as xr
 from numpy.typing import NDArray
+
+from nima import segmentation, utils
 
 
 def gen_bias(nrows: int = 128, ncols: int = 128) -> NDArray[np.float64]:
@@ -128,3 +134,171 @@ def gen_frame(  # noqa: PLR0913
     noise = rng.normal(0, noise_sd, size=(nrows, ncols))
     img = bias + flat * (sky + objs) + noise
     return img.clip(0).astype("uint16")
+
+
+def safe_call(
+    func: Callable[..., Any],
+    *args: Any,  # noqa: ANN401
+    **kwargs: Any,  # noqa: ANN401
+) -> Any:  # noqa: ANN401
+    """Wrap a function call to handle exceptions.
+
+    Parameters
+    ----------
+    func : Callable[..., Any]
+        Function to call.
+    *args : Any
+        Positional arguments for func.
+    **kwargs : Any
+        Keyword arguments for func.
+
+    Returns
+    -------
+    Any
+        Result of the function call, or np.nan if an exception occurs.
+    """
+    try:
+        return func(*args, **kwargs)
+    except Exception:  # noqa: BLE001
+        return np.nan
+
+
+def run_simulation(  # noqa: PLR0913
+    num_repeats: int = 1,
+    noise_sd: float = 4,
+    objs_pars: ImageObjsParams | None = None,
+    bias: NDArray[np.float64] | None = None,
+    flat: NDArray[np.float64] | None = None,
+    sky: float = 10,
+) -> pd.DataFrame:
+    """Run background estimation simulation.
+
+    Parameters
+    ----------
+    num_repeats : int
+        Number of simulation iterations.
+    noise_sd : float
+        Standard deviation of noise to add to generated images.
+    objs_pars : ImageObjsParams | None, optional
+        Parameters for object generation.
+    bias : NDArray[np.float64] | None, optional
+        Bias frame.
+    flat : NDArray[np.float64] | None, optional
+        Flat frame.
+    sky : float, optional
+        Sky value (default: 10).
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame containing estimated backgrounds and failure counts.
+    """
+    # Define configurations
+    # Each config: (name, function, kwargs, extractor)
+    configs: list[
+        tuple[str, Callable[..., Any], dict[str, Any], Callable[[Any], float]]
+    ] = [
+        (
+            "arcsinh",
+            segmentation.calculate_bg,
+            {"bg_params": segmentation.BgParams(kind="arcsinh")},
+            lambda res: res.bg,
+        ),
+        (
+            "entropy",
+            segmentation.calculate_bg,
+            {"bg_params": segmentation.BgParams(kind="entropy")},
+            lambda res: res.bg,
+        ),
+        (
+            "adaptive",
+            segmentation.calculate_bg,
+            {"bg_params": segmentation.BgParams(kind="adaptive")},
+            lambda res: res.bg,
+        ),
+        (
+            "li_adaptive",
+            segmentation.calculate_bg,
+            {"bg_params": segmentation.BgParams(kind="li_adaptive")},
+            lambda res: res.bg,
+        ),
+        (
+            "li_li",
+            segmentation.calculate_bg,
+            {"bg_params": segmentation.BgParams(kind="li_li")},
+            lambda res: res.bg,
+        ),
+        (
+            "inverse_yen",
+            segmentation.calculate_bg,
+            {"bg_params": segmentation.BgParams(kind="inverse_yen")},
+            lambda res: res.bg,
+        ),
+        ("bg", segmentation.calculate_bg_iteratively, {}, lambda res: res.bg),
+        ("bg2", utils.bg, {"bgmax": 800}, lambda res: res[0]),
+    ]
+
+    results: dict[str, list[float]] = {name: [] for name, _, _, _ in configs}
+    failures = {name: 0 for name, _, _, _ in configs}
+
+    if objs_pars is None:
+        objs_pars = ImageObjsParams(max_num_objects=10, max_fluor=100, nrows=128)
+
+    for _ in range(num_repeats):
+        # Generate data
+        objs = gen_objs(objs_pars)
+        frame_np = gen_frame(objs, bias, flat, sky=sky, noise_sd=noise_sd)
+
+        # Create DataArray (as expected by segmentation functions)
+        # Note: gen_frame returns 2D numpy array
+        frame_da = xr.DataArray(
+            frame_np[np.newaxis, np.newaxis, ...],
+            coords={
+                "T": [10],
+                "C": ["G"],
+                "Y": range(objs_pars.nrows),
+                "X": range(objs_pars.ncols),
+            },
+            dims=["T", "C", "Y", "X"],
+        ).squeeze()
+
+        for name, func, kwargs, extractor in configs:
+            # Prepare arguments based on function signature
+            args: tuple[Any, ...]
+            if func in (utils.bg, segmentation.calculate_bg_iteratively):
+                args = (frame_da.to_numpy(),)
+            else:
+                args = (frame_da,)
+
+            res = safe_call(func, *args, **kwargs)
+
+            val = np.nan
+            is_failure = False
+
+            # Check if res is nan failure (assuming valid result is not nan float)
+            if isinstance(res, float) and np.isnan(res):
+                is_failure = True
+            else:
+                try:
+                    val = extractor(res)
+                    # Check if extracted value is nan
+                    if np.isnan(val):
+                        is_failure = True
+                except Exception:  # noqa: BLE001
+                    is_failure = True
+
+            if is_failure:
+                failures[name] += 1
+                val = np.nan
+
+            results[name].append(val)
+
+    df = pd.DataFrame(results)
+    df["sd"] = noise_sd
+
+    # Store failure counts in metadata or print/return separately if needed
+    total_failures = sum(failures.values())
+    if total_failures > 0:
+        print(f"Failures encountered: {failures}")
+
+    return df

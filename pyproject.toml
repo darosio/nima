@@ -239,7 +239,7 @@ max-complexity = 12
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["I002"] # don't need annotations
 "docs/*" = ["INP"]
-"*.ipynb" = ["ANN001", "ANN201", "D103", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF", "T20"]
+"*.ipynb" = ["ANN001", "ANN201", "D103", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF", "T20", "B018"]
 "tests/*" = ["PLR2004", "S101"]
 
 [tool.ruff.lint.pydocstyle]
