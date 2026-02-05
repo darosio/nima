@@ -14,6 +14,11 @@ analysis tasks using scipy.ndimage and scikit-image.
 
 ## Features
 
+- Modern IO:
+  - Replaced legacy `tifffile` parsing with `bioio` for standardized, plugin-based support.
+  - Returns `xarray.DataArray` with standardized `TCZYX` dimensions and lazy Dask loading.
+  - Channels are dimensions (`C`), not keys in a dictionary.
+  - Pure Python implementation (no JVM required for basic TIFF).
 - Bias and Flat Correction
 - Automatic Cell Segmentation
 - Multi-Ratio Ratiometric Imaging, enabling users to analyze multiple ratios
