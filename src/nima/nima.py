@@ -178,8 +178,8 @@ def median(im: xr.DataArray) -> xr.DataArray:
 
 def shading(
     im: xr.DataArray,
-    dark: xr.DataArray | Any,  # noqa: ANN401
-    flat: xr.DataArray | Any,  # noqa: ANN401
+    dark: xr.DataArray | float,
+    flat: xr.DataArray | float,
     *,
     clip: bool = True,
 ) -> xr.DataArray:
@@ -191,9 +191,9 @@ def shading(
     ----------
     im : xr.DataArray
         Input image data array.
-    dark : xr.DataArray | Any
+    dark : xr.DataArray | float
         Dark image (DataArray or broadcastable array/scalar).
-    flat : xr.DataArray | Any
+    flat : xr.DataArray | float
         Flat image (DataArray or broadcastable array/scalar).
     clip : bool
         Boolean for clipping values >=0.

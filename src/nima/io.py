@@ -118,8 +118,8 @@ class Metadata:
 
     Attributes
     ----------
-    rdr : InitVar[TiffReader]
-        TiffReader parameter to initialize class.
+    rdr : InitVar[OME]
+        OME object used to initialize the class.
     size_s : int
         Number of series (size in the S dimension).
     size_x : list[int]
