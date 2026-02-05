@@ -357,7 +357,7 @@ def output_results(  # noqa: PLR0913
 @click.pass_context
 @click.version_option()
 @click.option("-o", "--output", type=click.Path(writable=True, path_type=Path),
-              help="Output path [default: \\*.tif, \\*.png].")  # fmt: skip
+              help="Output path [default: *.tif, *.png].")  # fmt: skip
 def bima(ctx: click.Context, output: Path) -> None:
     """Compute bias, dark and flat."""
     ctx.ensure_object(dict)
