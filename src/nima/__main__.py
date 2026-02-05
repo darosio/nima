@@ -546,10 +546,14 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     2. Plot (.png): Includes histograms, mean projection, ...
 
     """
-    store = tifffile.imread(fpath, aszarr=True)
-    f = da.mean(da.from_zarr(store).rechunk(), axis=0)  # type: ignore[no-untyped-call]
+    stack = io.read_image(fpath)
+    # store is TCZYX. We want mean over T.
+    click.secho(f"Flat image-stack shape: {stack.shape}", fg="green")
+    f = stack.mean(dim="T") if "T" in stack.dims else stack
+    # Squeeze all singleton dimensions (Z, C, etc.)
+    f = f.squeeze()
     with ProgressBar():  # type: ignore[no-untyped-call]
-        tprojection = f.compute()
+        tprojection = f.compute().to_numpy()
     output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
     bias_frame = None
     if bias_fp:

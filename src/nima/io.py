@@ -6,6 +6,9 @@ of microscopy formats (TIFF, CZI, LIF, etc.) and returns data as
 lazy-loaded xarray.DataArrays with standard dimensional metadata (TCZYX).
 """
 
+import atexit
+import shutil
+import tempfile
 import warnings
 from collections.abc import Sequence
 from dataclasses import InitVar, dataclass, field
@@ -286,12 +289,39 @@ class Metadata:
         return pos_dict
 
 
+def _handle_tf8_workaround(fp: Path) -> Path:
+    """Create a temporary symlink with .tif extension for .tf8 files.
+
+    This ensures compatibility with bioio plugins that rely on file extensions.
+    The temporary directory is cleaned up on process exit.
+    """
+    tmp_dir = tempfile.mkdtemp(prefix="nima_tf8_")
+    atexit.register(shutil.rmtree, tmp_dir, ignore_errors=True)
+
+    tmp_fp = Path(tmp_dir) / fp.with_suffix(".tif").name
+    try:
+        tmp_fp.symlink_to(fp.resolve())
+    except OSError:
+        shutil.copy(fp, tmp_fp)
+
+    warnings.warn(
+        f"Renaming .tf8 to .tif in {tmp_fp} for bioio compatibility. "
+        "Temporary file will be removed on exit.",
+        UserWarning,
+        stacklevel=2,
+    )
+    return tmp_fp
+
+
 def read_image(fp: Path, channels: Sequence[str] | None = None) -> DataArray:
     """Read a microscopy image file using bioio.
 
     Reads image data into a lazy-loaded xarray.DataArray with standardized
     dimensions (TCZYX). Supports any format supported by the installed
     bioio plugins (e.g., OME-TIFF, CZI, LIF).
+
+    For .tf8 files (BigTIFF from photonics iMic), it renames them temporarily
+    to .tif to ensure bioio compatibility if bioio_bioformats is not used.
 
     Parameters
     ----------
@@ -310,20 +340,31 @@ def read_image(fp: Path, channels: Sequence[str] | None = None) -> DataArray:
         Channel names (if available in metadata) are preserved in the
         coordinates.
 
-    Raises
-    ------
-    ValueError
-        If the number of provided channels does not match the number of channels
-        in the image file.
-
     Examples
     --------
     >>> from nima import io
     >>> img = io.read_image("tests/data/1b_c16_15.tif", channels=["G", "R", "C"])
     >>> img.coords["C"].values
     array(['G', 'R', 'C'], dtype='<U1')
+
+    Raises
+    ------
+    ValueError
+        If the number of provided channels does not match the number of channels
+        in the image file.
+    Exception
+        If the file cannot be read by bioio.
     """
-    img = BioImage(fp)
+    try:
+        img = BioImage(fp)
+    except Exception:
+        if fp.suffix == ".tf8":
+            # Fallback for tf8: try renaming to .tif in a temp location
+            # This is a workaround for iMic BigTIFF files
+            tmp_fp = _handle_tf8_workaround(fp)
+            img = BioImage(tmp_fp)
+        else:
+            raise
     # Get the dask-backed xarray directly
     # This property returns a lazy-loaded DataArray with standard dimensions
     data = img.xarray_dask_data

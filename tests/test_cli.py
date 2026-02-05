@@ -209,7 +209,7 @@ def test_bima_flat(tmp_path: Path) -> None:
     rng = np.random.default_rng()
     data = rng.integers(100, 200, (3, 10, 10), dtype=np.uint16)
     filename = tmp_path / "test_flat.tif"
-    tff.imwrite(filename, data, photometric="minisblack")
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
 
     # Needs a bias file
     bias_data = np.zeros((10, 10), dtype=np.uint16)
@@ -263,7 +263,7 @@ def test_bima_flat_no_bias(tmp_path: Path) -> None:
     rng = np.random.default_rng()
     data = rng.integers(100, 200, (3, 10, 10), dtype=np.uint16)
     filename = tmp_path / "test_flat.tif"
-    tff.imwrite(filename, data, photometric="minisblack")
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
 
     runner = CliRunner()
     output = tmp_path / "flat_out.tif"
@@ -282,7 +282,7 @@ def test_bima_dark_with_time(tmp_path: Path) -> None:
     rng = np.random.default_rng()
     data = rng.integers(0, 10, (3, 10, 10), dtype=np.uint16)
     filename = tmp_path / "test_dark.tif"
-    tff.imwrite(filename, data, photometric="minisblack")
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
 
     runner = CliRunner()
     output = tmp_path / "dark_out.tif"
