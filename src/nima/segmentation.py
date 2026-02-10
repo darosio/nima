@@ -215,10 +215,12 @@ def _bg_entropy(
             # block is numpy array
             im8 = skimage.util.img_as_ubyte(block)  # type: ignore[no-untyped-call]
             if block.dtype.kind == "f":
+                if im8.max() > 0:
+                    im8 = skimage.util.img_as_ubyte(im8 / im8.max())  # type: ignore[no-untyped-call]
                 return cast(
                     "NDArray[Any]",
                     filters.rank.entropy(  # type: ignore[no-untyped-call]
-                        im8 / im8.max(),
+                        im8,
                         morphology.disk(radius),  # type: ignore[no-untyped-call]
                     ),
                 )
@@ -240,7 +242,9 @@ def _bg_entropy(
         data = np.asarray(data)
         im8 = skimage.util.img_as_ubyte(data)  # type: ignore[no-untyped-call]
         if data.dtype.kind == "f":
-            lim_data = filters.rank.entropy(im8 / im8.max(), morphology.disk(radius))  # type: ignore[no-untyped-call]
+            if im8.max() > 0:
+                im8 = skimage.util.img_as_ubyte(im8 / im8.max())  # type: ignore[no-untyped-call]
+            lim_data = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore[no-untyped-call]
         else:
             lim_data = filters.rank.entropy(im8, morphology.disk(radius))  # type: ignore[no-untyped-call]
 
