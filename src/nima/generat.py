@@ -159,7 +159,8 @@ def safe_call(
     """
     try:
         return func(*args, **kwargs)
-    except Exception:  # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
+        print(f"An error occurred in {func.__name__}: {e}")
         return np.nan
 
 

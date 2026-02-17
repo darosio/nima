@@ -235,8 +235,9 @@ def test_bima_bias_3d(tmp_path: Path) -> None:
     data = rng.integers(10, 20, (2, 10, 10), dtype=np.uint16)
     # Add a hotpixel
     data[0, 5, 5] = 1000
-    filename = tmp_path / "test_bias_3d.tif"
-    tff.imwrite(filename, data, photometric="minisblack")
+    filename = tmp_path / "test_bias_3d.ome.tif"
+    with tff.TiffWriter(filename) as tif:
+        tif.write(data, photometric="minisblack", metadata={"axes": "CYX"})
 
     runner = CliRunner()
     output = tmp_path / "bias_out.tif"
