@@ -3141,7 +3141,7 @@ requires-dist = [
     { name = "jupyter", marker = "extra == 'docs'", specifier = ">=1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.8" },
     { name = "myst-nb", marker = "extra == 'docs'", specifier = ">=1.3.0" },
-    { name = "nima-io", specifier = "<=0.4.1" },
+    { name = "nima-io", specifier = "<=0.4.2" },
     { name = "pandas", specifier = ">=3.0.1" },
     { name = "pyarrow", specifier = ">=23.0.1" },
     { name = "pydata-sphinx-theme", marker = "extra == 'docs'", specifier = ">=0.16.1" },
@@ -3184,7 +3184,7 @@ tests = [
 
 [[package]]
 name = "nima-io"
-version = "0.4.1"
+version = "0.4.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bioio" },
@@ -3197,9 +3197,9 @@ dependencies = [
     { name = "ome-types" },
     { name = "xarray" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/13/01/39fb783d2f147bdee37904ccba2fa31b9efc2eae97992682684bed6648e3/nima_io-0.4.1.tar.gz", hash = "sha256:008c69e97f308991b836077ecd3231d13ebc8a7062f35c827a41f154083fc400", size = 334361, upload-time = "2026-02-18T13:05:33.474Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/05/e5/54849e1c37be6c205478edcec396c6615dd05ede18e32af758a042fd44f5/nima_io-0.4.2.tar.gz", hash = "sha256:ad712ef689fa8173427cc44a1510cf72f608ac757c8285b3a0ee21cf1e3094fb", size = 334298, upload-time = "2026-02-18T14:53:08.989Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a0/ae/3781ca9702232336810bbd0bddc789461fe671c202fb57c85774207993e3/nima_io-0.4.1-py3-none-any.whl", hash = "sha256:8d687768a1938e37c0f8d1082bf672d6c12ee03d7d004a55993bce0dae552c7c", size = 12228, upload-time = "2026-02-18T13:05:32.583Z" },
+    { url = "https://files.pythonhosted.org/packages/68/6a/eb015325498142ad36e652eae7d6df00d0de105be0ef867d7685c7090843/nima_io-0.4.2-py3-none-any.whl", hash = "sha256:a291c4ea16f1ed04281d3aaa20027ddc4a8674e258b3f86726f374f35f0c9b3e", size = 12228, upload-time = "2026-02-18T14:53:07.383Z" },
 ]
 
 [[package]]
