@@ -673,7 +673,7 @@ def ratio(
 
     # Apply mask if provided
     if mask is not None:
-        ratio = ratio * mask
+        ratio *= mask
 
     return ratio
 

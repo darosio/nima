@@ -108,7 +108,7 @@ class _VerbosityLevel(int):
 @click.version_option(version=__version__, message="%(version)s")
 @click.option("--verbose", "-v", count=True, help="Verbosity of messages.")
 @click.option("--silent", "-s", is_flag=True, help="Suppress output; verbose=0.")
-@click.option("-o", "--output",  default=__out_dir__, type=PATH_OUT,
+@click.option("-o", "--output", default=__out_dir__, type=PATH_OUT,
               help=f"Output directory path [default: ./{__version__}/].")  # fmt: skip
 @click.option("--hotpixels", is_flag=True, default=False,
               help="Apply median filter (rad=0.5) to remove hot pixels.")  # fmt: skip

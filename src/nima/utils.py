@@ -104,12 +104,12 @@ def channel_mean(img: ImFrame) -> pd.DataFrame:
 
 
 def ratio_df(filelist: list[str]) -> pd.DataFrame:
-    """Compute ratios from a list of files."""
+    """Compute ratios from a list of files."""  # noqa: DOC501
     r = []
     for f in filelist:
         img = tff.imread(f)
         if isinstance(img, np.ndarray):
-            if img.dtype in (np.float64, np.int_):
+            if img.dtype in {np.float64, np.int_}:
                 r.append(channel_mean(img))
             else:
                 msg = (

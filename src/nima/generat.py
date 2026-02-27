@@ -1,5 +1,6 @@
 """Generate mock images."""
 
+import operator
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -236,7 +237,7 @@ def run_simulation(  # noqa: PLR0913
             lambda res: res.bg,
         ),
         ("bg", segmentation.calculate_bg_iteratively, {}, lambda res: res.bg),
-        ("bg2", utils.bg, {"bgmax": 800}, lambda res: res[0]),
+        ("bg2", utils.bg, {"bgmax": 800}, operator.itemgetter(0)),
     ]
 
     results: dict[str, list[float]] = {name: [] for name, _, _, _ in configs}
@@ -266,7 +267,7 @@ def run_simulation(  # noqa: PLR0913
         for name, func, kwargs, extractor in configs:
             # Prepare arguments based on function signature
             args: tuple[Any, ...]
-            if func in (utils.bg, segmentation.calculate_bg_iteratively):
+            if func in {utils.bg, segmentation.calculate_bg_iteratively}:
                 args = (frame_da.to_numpy(),)
             else:
                 args = (frame_da,)

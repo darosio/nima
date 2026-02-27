@@ -401,7 +401,7 @@ def calculate_bg(im: xr.DataArray, bg_params: BgParams | None = None) -> BgResul
     ValueError
         If an unsupported segmentation method (kind) is specified.
     """
-    bg_params = bg_params if bg_params else BgParams()
+    bg_params = bg_params or BgParams()
     if bg_params.adaptive_radius is None:
         bg_params.adaptive_radius = int(im.shape[1] / 2)
         if bg_params.adaptive_radius % 2 == 0:  # sk >0.12.0 check for even value
@@ -577,7 +577,7 @@ def fit_gaussian(vals: ImVector) -> tuple[float, float]:
 # fit the bg for clop3 experiments
 def calculate_bg_iteratively(
     frame: ImFrame,
-    bgmax: None | float = None,
+    bgmax: float | None = None,
     *,
     probplot: bool = False,
 ) -> BgResult:
@@ -593,7 +593,7 @@ def calculate_bg_iteratively(
     ----------
     frame : ImFrame
         The image frame for which the background estimate needs to be refined.
-    bgmax : None | float, optional
+    bgmax : float | None, optional
         Maximum value used from `frame` for background estimation. Defaults to
         None, using the mean of all pixels.
     probplot : bool, optional

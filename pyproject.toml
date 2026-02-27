@@ -100,6 +100,11 @@ Documentation = "https://nima.readthedocs.io"
 Homepage = "https://github.com/darosio/nima"
 repository = "https://github.com/darosio/nima/"
 
+[tool.pytest.ini_options]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
 
@@ -158,14 +163,14 @@ line-length = 88
 target-version = "py311"
 unsafe-fixes = true
 # Enable preview mode
-preview = false
+preview = true
 
 [tool.ruff.format]
 docstring-code-format = true
 
 [tool.ruff.lint]
 # S311 Standard pseudo-random generators are not suitable for cryptographic purposes
-ignore = ["COM", "CPY", "ISC001", "S311", "T20"]
+ignore = ["COM", "CPY", "DOC201", "ISC001", "PLR6301", "PLR0914", "PLR0917", "S311", "T20"]
 select = [
   "A", # builtins
   "AIR", # airflow
@@ -237,7 +242,7 @@ max-complexity = 12
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["I002"] # don't need annotations
 "docs/*" = ["INP"]
-"*.ipynb" = ["ANN001", "ANN201", "D103", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF", "T20", "B018"]
+"*.ipynb" = ["ANN001", "ANN201", "D103", "DOC", "ERA", "PD901", "PD013", "E501", "PLR2004", "SLF", "T20", "B018"]
 "tests/*" = ["PLR2004", "S101"]
 
 [tool.ruff.lint.pydocstyle]

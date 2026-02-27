@@ -7,13 +7,12 @@ import pandas as pd
 import pypdf
 import pytest
 import skimage.io
-import skimage.measure
 import tifffile as tff
 from click.testing import CliRunner, Result
 from matplotlib.testing.compare import compare_images
 from matplotlib.testing.exceptions import ImageComparisonFailure
 
-from nima.__main__ import bima, main
+from nima.__main__ import bima, main  # noqa: PLC2701
 
 # tests path
 TESTS_PATH = Path(__file__).parent
@@ -299,4 +298,4 @@ def test_bima_dark_with_time(tmp_path: Path) -> None:
     # But output is saved as float or int? tff.imwrite saves float if input is float.
     # dark_im /= time makes it float.
     res_im = tff.imread(output.with_suffix(".tiff"))
-    assert res_im.dtype in (np.float64, np.float32)
+    assert res_im.dtype in {np.float64, np.float32}
