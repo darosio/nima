@@ -28,6 +28,9 @@ from .segmentation import BgParams
 
 __version__ = importlib.metadata.version("nima")
 __out_dir__ = f"nima-{__version__}"
+PATH_TYPE = click.Path(path_type=Path)  # type: ignore[type-var]
+PATH_OUT = click.Path(path_type=Path, writable=True)  # type: ignore[type-var]
+PATH_IN = click.Path(path_type=Path, exists=True)  # type: ignore[type-var]
 AXES_LENGTH_2D = 2
 AXES_LENGTH_3D = 3
 
@@ -105,13 +108,13 @@ class _VerbosityLevel(int):
 @click.version_option(version=__version__, message="%(version)s")
 @click.option("--verbose", "-v", count=True, help="Verbosity of messages.")
 @click.option("--silent", "-s", is_flag=True, help="Suppress output; verbose=0.")
-@click.option("-o", "--output", default=__out_dir__, type=click.Path(writable=True, path_type=Path), # noqa: E501
-              help="Output directory path [default: ./nima-version/].")  # fmt: skip
+@click.option("-o", "--output",  default=__out_dir__, type=PATH_OUT,
+              help=f"Output directory path [default: ./{__version__}/].")  # fmt: skip
 @click.option("--hotpixels", is_flag=True, default=False,
               help="Apply median filter (rad=0.5) to remove hot pixels.")  # fmt: skip
-@click.option("-f", "--flat", "flat_f", type=str, default="",
+@click.option("-f", "--flat", "flat_f", type=PATH_IN, default=None,
               help="Path to flat image for shading correction.")  # fmt: skip
-@click.option("-d", "--dark", "dark_f", type=str, default="",
+@click.option("-d", "--dark", "dark_f", type=PATH_IN, default=None,
               help="Path to dark image for shading correction.")  # fmt: skip
 # Background estimation options
 @click.option("--bg-method",
@@ -129,7 +132,7 @@ class _VerbosityLevel(int):
 @click.option("--bg-percentile-filter", type=float,
               help="Percentile filter for arcsinh method [default: 80].")  # fmt: skip
 # Segmentation and measurement options
-@click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen", # noqa: E501
+@click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen",  # noqa: E501
               help="Segmentation algorithm [default: yen].")  # fmt: skip
 @click.option("--min-size", type=float,
               help="Minimum size of labeled objects [default: 2000].")  # fmt: skip
@@ -149,15 +152,15 @@ class _VerbosityLevel(int):
               help="Channels for Cl ratio [default: C/R].")  # fmt: skip
 @click.option("--channels-ph", type=(str, str), default=("G", "C"),
               help="Channels for pH ratio [default: G/C].")  # fmt: skip
-@click.argument("tiffstk", type=click.Path(path_type=Path))
+@click.argument("tiffstk", type=PATH_IN)
 @click.argument("channels", type=str, nargs=-1)
 def main(  # noqa: PLR0913
     verbose: int,
     silent: bool | None,  # noqa: FBT001
     output: Path,
     hotpixels: bool,  # noqa: FBT001
-    flat_f: str,
-    dark_f: str,
+    flat_f: Path | None,
+    dark_f: Path | None,
     bg_method: str,
     bg_downscale: tuple[int, int] | None,
     bg_radius: float | None,
@@ -209,7 +212,7 @@ def main(  # noqa: PLR0913
         click.echo(f"  Times: {t}")
     if hotpixels:
         im = nima.median(im)
-    if flat_f:
+    if flat_f and dark_f:
         # XXX: this is imperfect: dark must be present of flat
         dark_im = io.read_image(Path(dark_f), channels)
         flat_im = io.read_image(Path(flat_f), channels)
@@ -241,7 +244,7 @@ def main(  # noqa: PLR0913
         "randomwalk": randomwalk,
     }
     kwargs_mask_label.update({k: v for k, v in optional_keys.items() if v})
-    click.secho(kwargs_mask_label)
+    click.secho(str(kwargs_mask_label))
     labels = nima.segment(im, **kwargs_mask_label)
 
     # Measure
@@ -251,7 +254,7 @@ def main(  # noqa: PLR0913
         kwargs_meas_props["radii"] = tuple(
             int(r) for r in ratio_median_radii.split(",")
         )
-    click.secho(kwargs_meas_props)
+    click.secho(str(kwargs_meas_props))
 
     meas, _ = nima.measure(
         im,
@@ -352,11 +355,11 @@ def output_results(  # noqa: PLR0913
             )
 
 
-##  bima  ##################################################
+# bima  ##################################################
 @click.group()
 @click.pass_context
 @click.version_option()
-@click.option("-o", "--output", type=click.Path(writable=True, path_type=Path),
+@click.option("-o", "--output", type=PATH_OUT,
               help="Output path [default: *.tif, *.png].")  # fmt: skip
 def bima(ctx: click.Context, output: Path) -> None:
     """Compute bias, dark and flat."""
@@ -366,7 +369,7 @@ def bima(ctx: click.Context, output: Path) -> None:
 
 @bima.command()
 @click.pass_context
-@click.argument("fpath", type=click.Path(path_type=Path))
+@click.argument("fpath", type=PATH_IN)
 def bias(ctx: click.Context, fpath: Path) -> None:
     """Compute the BIAS frame and estimate read noise.
 
@@ -413,7 +416,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     err = err.squeeze()
 
     # hotpixels
-    output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
+    output = ctx.obj["output"] or fpath.with_suffix(".png")
 
     err, hpix = _compute_bias_hpix(bias_im, err)
     if not hpix.empty:
@@ -436,11 +439,11 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(path_type=Path),
+@click.option("--bias", "bias_fp", type=click.Path(),
               help="File path to the bias stack (Light Off - Long acquisition time).")  # fmt: skip # noqa: E501
 @click.option("--time", type=float,
               help="Acquisition time.")  # fmt: skip
-@click.argument("fpath", type=click.Path(path_type=Path))
+@click.argument("fpath", type=click.Path())
 def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> None:
     """Compute DARK.
 
@@ -459,13 +462,13 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> 
     dark_im = store.median(dim="T") if "T" in store.dims else store
     dark_im = dark_im.squeeze()
 
-    output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
+    output = ctx.obj["output"] or fpath.with_suffix(".png")
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     if bias_fp is not None:
         bias_im = io.read_image(bias_fp).squeeze()
         # Ensure alignment/broadcasting works
-        dark_im = dark_im - bias_im
+        dark_im -= bias_im
     if time:
         dark_im /= time
     tifffile.imwrite(
@@ -479,7 +482,7 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> 
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(path_type=Path),
+@click.option("--bias", "bias_fp", type=click.Path(),
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
 @click.argument("globpath", type=str)
 def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
@@ -531,9 +534,9 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(path_type=Path),
+@click.option("--bias", "bias_fp", type=click.Path(),
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
-@click.argument("fpath", type=click.Path(path_type=Path))
+@click.argument("fpath", type=click.Path())
 def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     """Flat from (.tf8) file stack.
 
@@ -554,7 +557,7 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     f = f.squeeze()
     with ProgressBar():  # type: ignore[no-untyped-call]
         tprojection = f.compute().to_numpy()
-    output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".tiff")
+    output = ctx.obj["output"] or fpath.with_suffix(".tiff")
     bias_frame = None
     if bias_fp:
         bias_frame = np.array(tifffile.imread(bias_fp))
@@ -608,7 +611,7 @@ def _output_flat(
 
 @bima.command()
 @click.pass_context
-@click.argument("fpath", type=click.Path(exists=True, path_type=Path))
+@click.argument("fpath", type=click.Path(exists=True))
 def plot(ctx: click.Context, fpath: Path) -> None:
     """Plot profiles of a 2D image.
 
@@ -621,7 +624,7 @@ def plot(ctx: click.Context, fpath: Path) -> None:
 
     """
     img = io.read_image(fpath).squeeze()
-    output = ctx.obj["output"] if ctx.obj["output"] else fpath.with_suffix(".png")
+    output = ctx.obj["output"] or fpath.with_suffix(".png")
     title = os.fspath(output.with_suffix("").name)
     plt_img_profiles(img, title, output)
 

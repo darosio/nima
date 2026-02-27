@@ -62,7 +62,7 @@ class TestNimaOptions:
     def test_stdout(self, result_folder: ResultFolder) -> None:
         """It outputs the correct value for 'Times'."""
         out = result_folder[2].output
-        assert result_folder[2].return_value is None
+        assert result_folder[2].return_value is None  # type: ignore[attr-defined]
         assert result_folder[2].exit_code == 0
         assert (
             int(
@@ -91,7 +91,7 @@ class TestNima:
     def test_stdout(self, result_folder: ResultFolder) -> None:
         """It outputs the correct value for 'Times'."""
         out = result_folder[2].output
-        assert result_folder[2].return_value is None
+        assert result_folder[2].return_value is None  # type: ignore[attr-defined]
         assert result_folder[2].exit_code == 0
         assert (
             int(
