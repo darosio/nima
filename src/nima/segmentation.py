@@ -13,7 +13,7 @@ import xarray as xr
 from dask.diagnostics.progress import ProgressBar
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
-from scipy import (  # type: ignore[import-untyped]
+from scipy import (
     ndimage,
     optimize,
     signal,
@@ -550,15 +550,16 @@ def fit_gaussian(vals: ImVector) -> tuple[float, float]:
     """
 
     def gaussian_fit_func(
-        params: list[float], x: float | NDArray[np.float64]
+        params: NDArray[np.float64], /, x: float | NDArray[np.float64]
     ) -> NDArray[np.float64]:
         amplitude, mean, sigma, offset = params
-        return (amplitude * np.exp(-0.5 * ((x - mean) / sigma) ** 2) + offset).astype(
-            np.float64
+        return cast(
+            "NDArray[np.float64]",
+            amplitude * np.exp(-0.5 * ((x - mean) / sigma) ** 2) + offset,
         )
 
     def fit_error_func(
-        params: list[float], x: NDArray[np.float64], y: NDArray[np.float64]
+        params: NDArray[np.float64], /, x: NDArray[np.float64], y: NDArray[np.float64]
     ) -> NDArray[np.float64]:
         return (y - gaussian_fit_func(params, x)).astype(np.float64)
 
@@ -632,7 +633,7 @@ def calculate_bg_iteratively(
             # TODO: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > .1
             # TODO: mask = prob_frame > prob_threshold
             filtered_frame = frame[mask]
-            bg_updated, sd_ = stats.distributions.norm.fit(filtered_frame, method="MM")
+            bg_updated, sd_ = stats.distributions.norm.fit(filtered_frame, method="MM")  # type: ignore[arg-type]
             if np.isclose(bg_updated, bg_break, atol=1e-6):  # Tolerance for convergence
                 break
             bg_break = bg_updated
@@ -644,7 +645,7 @@ def calculate_bg_iteratively(
         xmin, xmax = filtered_frame.min(), filtered_frame.max()
         x = np.linspace(xmin, xmax, 100)
         p = stats.norm.pdf(x, bg_updated, sd_)
-        bs, ss = stats.distributions.norm.fit(filtered_frame, method="MLE")
+        bs, ss = stats.distributions.norm.fit(filtered_frame, method="MLE")  # type: ignore[arg-type]
         print(bs, ss)
         ps = stats.norm.pdf(x, bs, ss)
         ax1.hist(filtered_frame, bins=20, density=True, alpha=0.6, color="g")
@@ -657,7 +658,7 @@ def calculate_bg_iteratively(
         ax1.set_ylabel("Frequency")
         ax2 = fig.add_subplot(132)
         ax2.set_title("Probplot")
-        stats.probplot(filtered_frame, plot=ax2, rvalue=True)
+        stats.probplot(filtered_frame.astype(np.float64), plot=ax2, rvalue=True)  # type: ignore[call-overload]
         ax3 = fig.add_subplot(133)
         masked = (frame * mask).clip(np.min(frame))
         img0 = ax3.imshow(masked)
@@ -667,8 +668,8 @@ def calculate_bg_iteratively(
         print(xmax)
     else:
         figs = None
-    iqr = np.percentile(filtered_frame, [25, 50, 75])
-    return BgResult(bg_updated, sd_, iqr, figs)
+    q25, q50, q75 = (float(v) for v in np.percentile(filtered_frame, [25, 50, 75]))
+    return BgResult(bg_updated, sd_, (q25, q50, q75), figs)
 
 
 def geometric_mean_filter(image: ImFrame, kernel_size: float) -> ImFrame:

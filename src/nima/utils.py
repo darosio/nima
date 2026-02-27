@@ -8,7 +8,7 @@ import pandas as pd
 import tifffile as tff
 from dask.array.core import Array
 from numpy.typing import NDArray
-from scipy import optimize, stats  # type: ignore[import-untyped]
+from scipy import optimize, stats
 
 from nima.nima import AXES_LENGTH_4D
 
@@ -48,20 +48,16 @@ def bg(
 
     """
 
-    def fitfunc(
-        p: list[float], x: float | NDArray[np.float64]
-    ) -> float | NDArray[np.float64]:
-        return (p[0] * np.exp(-0.5 * ((x - p[1]) / p[2]) ** 2) + p[3]).astype(
-            np.float64
+    def fitfunc(p: NDArray[np.float64], x: NDArray[np.float64]) -> NDArray[np.float64]:
+        return cast(
+            "NDArray[np.float64]", p[0] * np.exp(-0.5 * ((x - p[1]) / p[2]) ** 2) + p[3]
         )
 
     def errfunc(
-        p: list[float], x: float | NDArray[np.float64], y: float | NDArray[np.float64]
-    ) -> float | NDArray[np.float64]:
+        p: NDArray[np.float64], x: NDArray[np.float64], y: NDArray[np.float64]
+    ) -> NDArray[np.float64]:
         residuals = y - fitfunc(p, x)
-        if isinstance(residuals, np.ndarray):
-            return residuals.astype(np.float64)
-        return np.float64(residuals)
+        return residuals.astype(np.float64)
 
     mmin = int(im.min())
     mmax = int(im.max())

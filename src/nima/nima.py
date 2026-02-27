@@ -20,7 +20,7 @@ import xarray as xr
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
-from scipy import ndimage, signal  # type: ignore[import-untyped]
+from scipy import ndimage, signal
 from skimage import (
     feature,
     filters,
@@ -302,7 +302,7 @@ def bg(
 
 def _wiener_2d(im: NDArray[Any]) -> NDArray[Any]:
     """Apply 2D Wiener filter."""
-    return signal.wiener(im, (3, 3))  # type: ignore[no-any-return]
+    return signal.wiener(im, (3, 3))
 
 
 def _threshold_2d(im: NDArray[Any], method: str) -> NDArray[np.bool_]:
@@ -334,7 +334,7 @@ def _clear_border_2d(m: NDArray[np.bool_]) -> NDArray[np.bool_]:
 def _label_2d(m: NDArray[np.bool_]) -> NDArray[np.int32]:
     """Label connected components in binary mask."""
     labeled, _ = ndimage.label(m)
-    return labeled.astype(np.int32)  # type: ignore[no-any-return]
+    return labeled.astype(np.int32)
 
 
 def segment(  # noqa: PLR0913
@@ -566,7 +566,7 @@ def process_watershed(
     def wrapper(
         msk: NDArray[np.bool_], lbl: NDArray[np.int32], intensity: NDArray[Any]
     ) -> NDArray[np.int32]:
-        dist = ndimage.distance_transform_edt(msk)
+        dist = cast("NDArray[np.float64]", ndimage.distance_transform_edt(msk))
         return apply_watershed_2d(dist, lbl, msk, intensity)
 
     return cast(

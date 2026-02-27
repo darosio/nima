@@ -19,7 +19,7 @@ from dask.diagnostics.progress import ProgressBar
 from matplotlib import cm, pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
-from scipy import ndimage  # type: ignore[import-untyped]
+from scipy import ndimage
 
 from nima import io, nima
 
