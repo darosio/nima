@@ -109,7 +109,9 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
     for f in filelist:
         img = tff.imread(f)
         if isinstance(img, np.ndarray):
-            if img.dtype in {np.float64, np.int_}:
+            if np.issubdtype(img.dtype, np.floating) or np.issubdtype(
+                img.dtype, np.integer
+            ):
                 r.append(channel_mean(img))
             else:
                 msg = (
