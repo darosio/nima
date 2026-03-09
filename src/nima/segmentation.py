@@ -84,30 +84,6 @@ def _bg_plot(
 class BgParams:
     """Parameters for `bg` segmentation methods.
 
-    Attributes
-    ----------
-    kind : str, optional
-        The segmentation method to use. Available options are 'arcsinh',
-        'entropy', 'adaptive', 'li_adaptive', 'li_li', and 'inverse_yen'.
-        The default is 'arcsinh'.
-    perc : float, optional
-        Percentage of max-min (default=10) for threshold `entropy` and `arcsinh`
-        methods. It gets automatically converted to a fraction of 1 in the
-        initialization process.
-    radius : int, optional
-        Radius (default=10) used in `entropy` and `arcsinh` (percentile_filter)
-        methods.
-    adaptive_radius : int | None, optional
-        Size for the `adaptive` filter of skimage (default is calculated as
-        half of the image size during usage).
-    arcsinh_perc : float, optional
-        Percentage (default=80) used in the percentile_filter (scipy) within
-        `arcsinh` method.
-    erosion_disk : float, optional
-        Size of the erosion disk used during image processing (default: 0).
-    clip : bool, optional
-        Flag to enable or disable clipping (default: False).
-
     Raises
     ------
     ValueError
@@ -115,12 +91,23 @@ class BgParams:
     """
 
     kind: str = "arcsinh"
+    """The segmentation method to use. Available options are 'arcsinh',
+    'entropy', 'adaptive', 'li_adaptive', 'li_li', and 'inverse_yen'."""
     perc: float = 10.0
+    """Percentage of max-min for threshold `entropy` and `arcsinh`
+    methods. It gets automatically converted to a fraction of 1 in the
+    initialization process."""
     radius: int = 10
+    """Radius used in `entropy` and `arcsinh` (percentile_filter) methods."""
     adaptive_radius: int | None = None
+    """Size for the `adaptive` filter of skimage (default is calculated as
+    half of the image size during usage)."""
     arcsinh_perc: float = 80
+    """Percentage used in the percentile_filter (scipy) within `arcsinh` method."""
     erosion_disk: float = 0
+    """Size of the erosion disk used during image processing."""
     clip: bool = False
+    """Flag to enable or disable clipping."""
 
     def __post_init__(self) -> None:
         """Perform validation and normalization on initialization.
@@ -142,26 +129,18 @@ class BgParams:
 
 @dataclass
 class BgResult:
-    """Group result of a frame bg estimation.
-
-    Attributes
-    ----------
-    bg : float
-        Background value estimated from the frame.
-    sd : float
-        Standard deviation of the background estimation.
-    iqr : tuple[float, float, float]
-        Interquartile range (IQR) of the background estimation, consisting of
-        three float values.
-    figures : list[Figure] | None
-        List of matplotlib Figure objects representing visualizations related
-        to the background estimation, or None if no figures are provided.
-    """
+    """Group result of a frame bg estimation."""
 
     bg: float
+    """Background value estimated from the frame."""
     sd: float
+    """Standard deviation of the background estimation."""
     iqr: tuple[float, float, float]
+    """Interquartile range (IQR) of the background estimation, consisting of
+    three float values."""
     figures: list[Figure] | None
+    """List of matplotlib Figure objects representing visualizations related
+    to the background estimation, or None if no figures are provided."""
 
 
 def _bg_arcsinh(
