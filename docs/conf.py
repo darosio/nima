@@ -26,24 +26,27 @@ html_static_path = ["_static"]
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autodoc",
-    "autodocsumm",
-    "sphinx.ext.napoleon",
-    "sphinx_autodoc_typehints",
+    "autoapi.extension",
     "myst_nb",
+    "sphinx.ext.napoleon",
     "sphinx_click",
 ]
 
 # Napoleon settings to Default
 napoleon_use_ivar = False
 
-autodoc_default_options = {
-    "members": True,
-    "member-order": "bysource",
-    "undoc-members": False,
-    "autosummary": True,
-}
-autodoc_typehints = "signature"  # signature(default), combined, description
+autodoc_typehints = "description"  # signature(default), combined
+
+# -- sphinx-autoapi configuration --------------------------------------------
+autoapi_dirs = ["../src"]
+autoapi_options = [
+    "members",
+    "show-inheritance",
+    "show-module-summary",
+]
+autoapi_member_order = "bysource"
+autoapi_add_toctree_entry = False
+autoapi_keep_files = True
 
 # The suffix of source filenames.
 source_suffix = {

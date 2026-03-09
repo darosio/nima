@@ -9,5 +9,4 @@ classes and functions.
 .. toctree::
    :maxdepth: 1
 
-   generat
-   nima
+   ../autoapi/nima/index
