@@ -40,7 +40,7 @@ version = "0.11.9"
 
 [project.optional-dependencies]
 docs = [
-  "bokeh>=3.8.2",
+  "bokeh>=3.9.0",
   "dask-image>=2025.11.0",
   "holoviews>=1.22.1",
   "hvplot>=0.12.2",
@@ -77,7 +77,7 @@ tests = [
   "mypy>=1.19.1",
   "pandas-stubs>=2.3.3.260113",
   "pygments>=2.19.2", # color xdoctest
-  "pypdf>=6.8.0",
+  "pypdf>=6.9.1",
   "pytest>=9.0.2",
   "scipy-stubs>=1.17.1.1",
   "types-click >= 7.1.8",
