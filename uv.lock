@@ -1578,7 +1578,7 @@ wheels = [
 
 [[package]]
 name = "impy-array"
-version = "2.5.1"
+version = "2.5.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dask" },
@@ -1587,9 +1587,9 @@ dependencies = [
     { name = "scikit-image" },
     { name = "scipy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b3/3b/63df50816bbebec5902965467f64ac41bd96a584486c6ac1973e2ab03e4e/impy_array-2.5.1.tar.gz", hash = "sha256:3e4dc996d48020211e766a0d90472b7f49dd32c150dad42993b163fa5d5e74a2", size = 156124, upload-time = "2026-01-20T17:22:30.436Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/7e/11864e5fea0df83daf83f0efcd44eb7be954b7c63c0887ab54463c7def8c/impy_array-2.5.2.tar.gz", hash = "sha256:6af915c4e365772b4461018dbcbe5cbd6926faf7a1f8232e99b708fb668c69ad", size = 155966, upload-time = "2026-05-09T16:20:29.46Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4a/13/59943493a646e8018fe2670882f3e868fe2be23e34fb292355c42a7c0274/impy_array-2.5.1-py3-none-any.whl", hash = "sha256:6c974cd27f09530ecbacf2ecb143822f833ff81b599318f22cdfce32dee51614", size = 185483, upload-time = "2026-01-20T17:22:28.798Z" },
+    { url = "https://files.pythonhosted.org/packages/fa/5d/f4654b371a423dbb52add2921ad4276a167b6df257b08f790271a2fed0fa/impy_array-2.5.2-py3-none-any.whl", hash = "sha256:e7a06f79e42ae8ce90adc22ba9fba7a7785d1e5e4665c3dc731e5c0ab86f44d8", size = 185310, upload-time = "2026-05-09T16:20:27.872Z" },
 ]
 
 [[package]]
@@ -2934,7 +2934,7 @@ requires-dist = [
     { name = "dask-image", marker = "extra == 'docs'", specifier = ">=2025.11.0" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = ">=1.22.1" },
     { name = "hvplot", marker = "extra == 'docs'", specifier = ">=0.12.2" },
-    { name = "impy-array", marker = "extra == 'docs'", specifier = ">=2.5.1" },
+    { name = "impy-array", marker = "extra == 'docs'", specifier = ">=2.5.2" },
     { name = "ipykernel", marker = "extra == 'docs'", specifier = ">=7.1.0" },
     { name = "jupyter", marker = "extra == 'docs'", specifier = ">=1.1.1" },
     { name = "matplotlib", specifier = ">=3.10.9" },
