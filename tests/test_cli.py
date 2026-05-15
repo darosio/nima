@@ -12,7 +12,7 @@ from click.testing import CliRunner, Result
 from matplotlib.testing.compare import compare_images
 from matplotlib.testing.exceptions import ImageComparisonFailure
 
-from nima.__main__ import bima, main  # noqa: PLC2701
+from nima.__main__ import bima, main
 
 # tests path
 TESTS_PATH = Path(__file__).parent

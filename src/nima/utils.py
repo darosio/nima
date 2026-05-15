@@ -37,14 +37,14 @@ def bg(
     tuple[float, float]
         Background and standard deviation values.
 
+    Notes
+    -----
+    Faster than `nimg` by 2 order of magnitude.
+
     Examples
     --------
     r = bg(np.ones([10, 10]))
     plt.step(r[2], r[3])
-
-    Notes
-    -----
-    Faster than `nimg` by 2 order of magnitude.
 
     """
 

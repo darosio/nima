@@ -500,15 +500,6 @@ def fit_gaussian(vals: ImVector) -> tuple[float, float]:
     sd : float
         Estimated standard deviation (sigma) of the Gaussian distribution.
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from numpy.random import default_rng
-    >>> rng = default_rng()
-    >>> data = rng.normal(loc=50, scale=5, size=1000)  # Generate sample data
-    >>> mean, sd = fit_gaussian(data)
-    >>> print(f"Estimated Mean: {mean}, Estimated Standard Deviation: {sd}")
-
     Notes
     -----
     The Gaussian fitting process involves constructing a histogram from the
@@ -526,6 +517,15 @@ def fit_gaussian(vals: ImVector) -> tuple[float, float]:
     This function relies on the `leastsq` optimization function from
     `scipy.optimize` and the method `norm.fit` from `scipy.stats.distributions`
     to estimate initial parameters for the optimization process.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from numpy.random import default_rng
+    >>> rng = default_rng()
+    >>> data = rng.normal(loc=50, scale=5, size=1000)  # Generate sample data
+    >>> mean, sd = fit_gaussian(data)
+    >>> print(f"Estimated Mean: {mean}, Estimated Standard Deviation: {sd}")
     """
 
     def gaussian_fit_func(
