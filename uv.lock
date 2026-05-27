@@ -1020,30 +1020,24 @@ wheels = [
 array = [
     { name = "numpy" },
 ]
-dataframe = [
-    { name = "numpy" },
-    { name = "pandas" },
-    { name = "pyarrow" },
-]
 distributed = [
     { name = "distributed" },
 ]
 
 [[package]]
 name = "dask-image"
-version = "2025.11.0"
+version = "2026.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "dask", extra = ["array", "dataframe"] },
+    { name = "dask", extra = ["array"] },
     { name = "numpy" },
-    { name = "pandas" },
     { name = "pims" },
     { name = "scipy" },
     { name = "tifffile" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5c/c4/7b83217443201469384a415687a8b89da8e55fc7a182e9507a69851a78b9/dask_image-2025.11.0.tar.gz", hash = "sha256:45cf1a9c3a8a1c143c75d43f1494e4fe0827564d3ec6efb93618fb04603ba0b3", size = 79561, upload-time = "2025-11-13T01:57:28.093Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/49/e592a13a5e1efdcdb8f1faab7c4e309c61648792e276f9ced5fb79381b33/dask_image-2026.5.0.tar.gz", hash = "sha256:ed6b462277e691b2c12b0890ba801a0f9a00cc1894b0aa71b195a7a1419b2b00", size = 80457, upload-time = "2026-05-27T14:05:57.383Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6f/4b/817da308fa1170da07ef01259585887a3bbb6ab80700b3e61ce4967301ec/dask_image-2025.11.0-py3-none-any.whl", hash = "sha256:4834ece8d7133f8cd7d4e672f7f5a598c9057e687b20f14f3121360e3e1690b4", size = 61936, upload-time = "2025-11-13T01:57:27.133Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/5b/15d6d6ff8697b188787609be059fe4f07f99fc00f43f68e9e1540fa8733e/dask_image-2026.5.0-py3-none-any.whl", hash = "sha256:acf86cd7f0f1e97804198d30b7cc931efd29f9dec86c65ec004b50405c3f5227", size = 43814, upload-time = "2026-05-27T14:05:56.237Z" },
 ]
 
 [[package]]
@@ -3033,7 +3027,7 @@ tests = [
 requires-dist = [
     { name = "bokeh", marker = "extra == 'docs'", specifier = ">=3.9.0" },
     { name = "click", specifier = ">=8.3.3" },
-    { name = "dask-image", specifier = ">=2025.11.0" },
+    { name = "dask-image", specifier = ">=2026.5.0" },
     { name = "dask-image", marker = "extra == 'docs'", specifier = ">=2025.11.0" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = ">=1.22.1" },
     { name = "hvplot", marker = "extra == 'docs'", specifier = ">=0.12.2" },
