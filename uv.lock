@@ -3028,7 +3028,7 @@ requires-dist = [
     { name = "bokeh", marker = "extra == 'docs'", specifier = ">=3.9.0" },
     { name = "click", specifier = ">=8.3.3" },
     { name = "dask-image", specifier = ">=2026.5.0" },
-    { name = "dask-image", marker = "extra == 'docs'", specifier = ">=2025.11.0" },
+    { name = "dask-image", marker = "extra == 'docs'", specifier = ">=2026.5.0" },
     { name = "holoviews", marker = "extra == 'docs'", specifier = ">=1.22.1" },
     { name = "hvplot", marker = "extra == 'docs'", specifier = ">=0.12.2" },
     { name = "impy-array", marker = "extra == 'docs'", specifier = ">=2.5.2" },
