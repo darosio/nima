@@ -188,8 +188,9 @@ def main(  # noqa: PLR0913
     channels : list of str, optional
         Names of the channels in the TIFF image. Default is ["G", "R", "C"].
 
-    Saves
+    Notes
     -----
+    Saves:
     1. Representation of image channels and segmentation saved as `BN_dim.png`.
     2. Plot of ratios and channel intensities for each label and background vs.
        time saved as `BN_meas.png`.
@@ -376,8 +377,9 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     fpath : str
         Path to the bias stack (Light Off - 0 acquisition time).
 
-    Saves
+    Notes
     -----
+    Saves:
     1. BIAS image (.tif): Median projection.
     2. Plot (.png): Includes histograms, median projection, and visualization of
        hot pixels.
@@ -450,8 +452,9 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> 
     fpath : str
         Path to the dark stack (Light Off - Long acquisition time).
 
-    Saves
+    Notes
     -----
+    Saves:
     1. DARK image (.tif): Median projection.
     2. Plot (.png): Includes histograms, median projection, ...
 
@@ -491,8 +494,9 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
     globpath : "glob expression"
         Glob pattern (enclosed in quotes) for a collection of (.tif) files.
 
-    Saves
+    Notes
     -----
+    Saves:
     1. FLAT image (.tif): Mean projection.
     2. Plot (.png): Includes histograms, mean projection, ...
 
@@ -543,8 +547,9 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     fpath : str
         Path to the (.tf8) file containing the image data.
 
-    Saves
+    Notes
     -----
+    Saves:
     1. FLAT image (.tif): Mean projection.
     2. Plot (.png): Includes histograms, mean projection, ...
 
@@ -618,7 +623,7 @@ def plot(ctx: click.Context, fpath: Path) -> None:
     fpath : str
         Path to the 2D image file (e.g. Bias or Dark).
 
-    Saves
+    Notes
     -----
     A plot of profiles is saved as a '.png' file.
 
