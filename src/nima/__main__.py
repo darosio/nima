@@ -323,7 +323,7 @@ def output_results(  # noqa: PLR0913
         im,
         labels=labels,
         channels=sorted(channels),
-        cmap=cm.inferno_r,  # type: ignore[attr-defined]
+        cmap=cm.inferno_r,
     )
     fig.savefig(bname.with_name(bname.name + "_dim.png"))
     # Create measurement CSV files
