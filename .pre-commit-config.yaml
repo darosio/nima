@@ -83,7 +83,7 @@ repos:
 
   # should be replaced in the future ref https://github.com/astral-sh/ruff/issues/458
   - repo: https://github.com/jsh9/pydoclint
-    rev: 0.8.6
+    rev: 0.8.7
     hooks:
       - id: pydoclint
 
@@ -110,7 +110,7 @@ repos:
         args: ["-w", "-i", "2", "-ci", "-sr"] # 2 spaces, indent case, simplify redirects
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.11.19
+    rev: 0.11.23
     hooks:
       - id: uv-lock
         stages: [pre-commit]
