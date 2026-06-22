@@ -67,7 +67,7 @@ def bg(
     ydata, xdata = np.histogram(vals, bins=mmax - mmin, range=(mmin, mmax))
     xdata = xdata[:-1] + 0.5
     loc, scale = stats.distributions.norm.fit(vals)
-    init = [sum(ydata), loc, scale, min(ydata)]
+    init = np.asarray([sum(ydata), loc, scale, min(ydata)], dtype=np.float64)
     fin = len(xdata) - 1
     leastsq = optimize.leastsq
     out = leastsq(errfunc, init, args=(xdata[:fin], ydata[:fin]))
@@ -88,7 +88,7 @@ def ave(img: ImFrame, bgmax: float, prob_value: float = 0.001) -> float:
     sd = min(sd, 10)
     mask = prob(img, float(av), sd) < prob_value
     # MAYBE: plot the mask
-    return np.ma.masked_array(img, ~mask).mean() - av  # type: ignore[no-any-return]
+    return cast("float", np.ma.array(img, mask=~mask).mean()) - av
 
 
 def channel_mean(img: ImFrame) -> pd.DataFrame:

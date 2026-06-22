@@ -545,7 +545,10 @@ def fit_gaussian(vals: ImVector) -> tuple[float, float]:
     min_val, max_val = int(vals.min()), int(vals.max())
     ydata, edges = np.histogram(vals, bins=max_val - min_val, range=(min_val, max_val))
     xdata = edges[:-1] + 0.5
-    initial_guess = [ydata.sum(), *stats.distributions.norm.fit(vals), ydata.min()]
+    initial_guess = np.asarray(
+        [ydata.sum(), *stats.distributions.norm.fit(vals), ydata.min()],
+        dtype=np.float64,
+    )
     optimized_params = optimize.leastsq(
         fit_error_func, initial_guess, args=(xdata[:-1], ydata[:-1])
     )[0]

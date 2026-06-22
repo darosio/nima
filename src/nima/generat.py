@@ -4,7 +4,7 @@ import operator
 import warnings
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -108,7 +108,7 @@ def gen_objs(
         )
         for _ in range(num_objs)
     ]
-    return np.sum(objs, axis=0)  # type: ignore[no-any-return]
+    return cast("NDArray[np.float64]", np.sum(objs, axis=0))
 
 
 def gen_frame(  # noqa: PLR0913
