@@ -363,7 +363,7 @@ def calculate_bg(im: xr.DataArray, bg_params: BgParams | None = None) -> BgResul
     ----------
     im: xr.DataArray
         An image stack.
-    bg_params : BgParams | None, optional
+    bg_params : BgParams | None
         An instance of BgParams containing the parameters for the segmentation.
         If None, default values are used. Default is None.
 
@@ -575,10 +575,10 @@ def calculate_bg_iteratively(
     ----------
     frame : ImFrame
         The image frame for which the background estimate needs to be refined.
-    bgmax : float | None, optional
+    bgmax : float | None
         Maximum value used from `frame` for background estimation. Defaults to
         None, using the mean of all pixels.
-    probplot : bool, optional
+    probplot : bool
         If True, generates a Q-Q plot to assess Gaussian fit. Default is False.
 
     Returns

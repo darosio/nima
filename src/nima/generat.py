@@ -181,13 +181,13 @@ def run_simulation(  # noqa: PLR0913
         Number of simulation iterations.
     noise_sd : float
         Standard deviation of noise to add to generated images.
-    objs_pars : ImageObjsParams | None, optional
+    objs_pars : ImageObjsParams | None
         Parameters for object generation.
-    bias : NDArray[np.float64] | None, optional
+    bias : NDArray[np.float64] | None
         Bias frame.
-    flat : NDArray[np.float64] | None, optional
+    flat : NDArray[np.float64] | None
         Flat frame.
-    sky : float, optional
+    sky : float
         Sky value (default: 10).
 
     Returns

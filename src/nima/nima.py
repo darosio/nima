@@ -241,7 +241,7 @@ def bg(
         An instance of BgParams containing the parameters for the segmentation.
     downscale : tuple[int, int] | None
         Tupla, x, y are downscale factors for rows, cols (default=None).
-    clip : bool, optional
+    clip : bool
         Boolean (default=True) for clipping values >=0.
 
     Returns
@@ -365,19 +365,19 @@ def segment(  # noqa: PLR0913
     ----------
     im : xr.DataArray
         Input image with dimensions (T, C, Z, Y, X).
-    min_size : int | None, optional
+    min_size : int | None
         Objects smaller than min_size (default=640 pixels) are discarded from mask.
-    channels : tuple[str, ...], optional
+    channels : tuple[str, ...]
         List a name for each channel.
-    threshold_method : str, optional
+    threshold_method : str
         Threshold method applied to the geometric average plane-by-plane (default=yen).
-    wiener : bool, optional
+    wiener : bool
         Boolean for wiener filter (default=False).
-    watershed : bool, optional
+    watershed : bool
         Boolean for watershed on labels (default=False).
-    clear_border :  bool, optional
+    clear_border : bool
         Whether to filter out objects near the 2D image edge (default=False).
-    randomwalk :  bool, optional
+    randomwalk : bool
         Use random_walker instead of watershed post-ndimage-EDT (default=False).
 
     Returns
@@ -510,7 +510,7 @@ def process_watershed(
         Labeled regions.
     channels : tuple[str, ...]
         Channel names (first channel used for intensity).
-    randomwalk : bool, optional
+    randomwalk : bool
         Use random walker instead of watershed (default=False).
 
     Returns
@@ -597,11 +597,11 @@ def ratio(
     ----------
     im : xr.DataArray
         Input image.
-    channels : tuple[str, str], optional
+    channels : tuple[str, str]
         Names for the two channels (Numerator, Denominator) (default=('C', 'R')).
-    radii : Sequence[int], optional
+    radii : Sequence[int]
         Each element contain a radius value for a median filter cycle (default=(7, 3)).
-    mask : xr.DataArray | None, optional
+    mask : xr.DataArray | None
         Binary mask to apply to the ratio image.
 
     Returns
@@ -696,15 +696,15 @@ def measure(  # noqa: PLR0913
         Input image.
     labels : xr.DataArray
         Labeled image.
-    channels : Sequence[str], optional
+    channels : Sequence[str]
         All channels (default=('C', 'G', 'R')).
-    channels_cl : tuple[str, str], optional
+    channels_cl : tuple[str, str]
         Numerator and denominator channels for cl ratio (default=('C', 'R')).
-    channels_ph : tuple[str, str], optional
+    channels_ph : tuple[str, str]
         Numerator and denominator channels for pH ratio (default=('G', 'C')).
-    radii : Sequence[int] | None, optional
+    radii : Sequence[int] | None
         Radii of the optional median average performed on ratio images (default=None).
-    ratios_from_image : bool, optional
+    ratios_from_image : bool
         Boolean for executing ratio i.e. compute ratio images (default=True).
 
     Returns
@@ -921,13 +921,13 @@ def plt_img_profile(  # noqa: PLR0915
     ----------
     img : xr.DataArray
         Image of Flat or Bias.
-    title : str | None, optional
+    title : str | None
         Title of the figure (default=None).
-    hpix : pd.DataFrame | None, optional
+    hpix : pd.DataFrame | None
         Identified hot pixels (as empty or not empty df) (default=None).
-    vmin : float | None, optional
+    vmin : float | None
         Minimum value (default=None).
-    vmax : float | None, optional
+    vmax : float | None
         Maximum value (default=None).
 
     Returns
@@ -1030,7 +1030,7 @@ def plt_img_profile_2(img: xr.DataArray, title: str | None = None) -> Figure:
     ----------
     img : xr.DataArray
         Image of Flat or Bias.
-    title : str | None, optional
+    title : str | None
         Title of the figure  (default=None).
 
     Returns
