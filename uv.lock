@@ -3193,7 +3193,7 @@ tests = [
     { name = "mypy", specifier = ">=2.1.0" },
     { name = "pandas-stubs", specifier = ">=2.3.3.260113" },
     { name = "pygments", specifier = ">=2.19.2" },
-    { name = "pypdf", specifier = ">=6.14.2" },
+    { name = "pypdf", specifier = ">=6.15.0" },
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "scipy-stubs", specifier = ">=1.17.1.1" },
     { name = "types-click", specifier = ">=7.1.8" },
