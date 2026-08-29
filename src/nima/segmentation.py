@@ -615,7 +615,7 @@ def calculate_bg_iteratively(
             # TODO: mask = geometric_mean_filter(prob_frame, kernel_size=5.0) > .1
             # TODO: mask = prob_frame > prob_threshold
             filtered_frame = frame[mask]
-            bg_updated, sd_ = stats.distributions.norm.fit(filtered_frame, method="MM")  # type: ignore[arg-type]
+            bg_updated, sd_ = stats.distributions.norm.fit(filtered_frame, method="MM")  # type: ignore[call-overload]
             if np.isclose(bg_updated, bg_break, atol=1e-6):  # Tolerance for convergence
                 break
             bg_break = bg_updated
@@ -627,7 +627,7 @@ def calculate_bg_iteratively(
         xmin, xmax = filtered_frame.min(), filtered_frame.max()
         x = np.linspace(xmin, xmax, 100)
         p = stats.norm.pdf(x, bg_updated, sd_)
-        bs, ss = stats.distributions.norm.fit(filtered_frame, method="MLE")  # type: ignore[arg-type]
+        bs, ss = stats.distributions.norm.fit(filtered_frame, method="MLE")  # type: ignore[call-overload]
         print(bs, ss)
         ps = stats.norm.pdf(x, bs, ss)
         ax1.hist(filtered_frame, bins=20, density=True, alpha=0.6, color="g")
