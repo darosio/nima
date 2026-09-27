@@ -222,7 +222,6 @@ def main(  # noqa: PLR0913
     # Process background
     kwargs_bg: dict[str, Any] = {"kind": bg_method}
     optional_keys = {
-        "downscale": bg_downscale,
         "radius": bg_radius,
         "adaptive_radius": bg_adaptive_radius,
         "perc": bg_percentile,
@@ -374,8 +373,17 @@ def bima(ctx: click.Context, output: Path) -> None:
 def bias(ctx: click.Context, fpath: Path) -> None:
     """Compute the BIAS frame and estimate read noise.
 
-    fpath : str
+    Parameters
+    ----------
+    ctx : click.Context
+        Click context; ``ctx.obj["output"]`` holds the optional output path.
+    fpath : Path
         Path to the bias stack (Light Off - 0 acquisition time).
+
+    Raises
+    ------
+    click.BadParameter
+        If an output file would overwrite the input stack.
 
     Notes
     -----
@@ -419,6 +427,10 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
     # hotpixels
     output = ctx.obj["output"] or fpath.with_suffix(".png")
+    targets = (output, output.with_suffix(".csv"), output.with_suffix(".tiff"))
+    if fpath.resolve() in {p.resolve() for p in targets}:
+        msg = f"Output would overwrite the input stack {fpath}; set -o/--output."
+        raise click.BadParameter(msg, param_hint="FPATH")
 
     err, hpix = _compute_bias_hpix(bias_im, err)
     if not hpix.empty:
