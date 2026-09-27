@@ -426,7 +426,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     err = err.squeeze()
 
     # hotpixels
-    output = ctx.obj["output"] or fpath.with_suffix(".png")
+    output = ctx.obj["output"] or fpath.with_name(f"{fpath.stem}_bias.png")
     targets = (output, output.with_suffix(".csv"), output.with_suffix(".tiff"))
     if fpath.resolve() in {p.resolve() for p in targets}:
         msg = f"Output would overwrite the input stack {fpath}; set -o/--output."
