@@ -333,3 +333,70 @@ def test_nima_bg_downscale(tmp_path: Path) -> None:
         [str(filename), "G", "R", "C", "-o", str(tmp_path), "--bg-downscale", "2", "2"],
     )
     assert result.exit_code == 0, result.output
+
+
+def _write_tyx_stack(filename: Path) -> bytes:
+    """Write a small TYX stack and return its bytes."""
+    rng = np.random.default_rng()
+    data = rng.integers(100, 200, (3, 10, 10), dtype=np.uint16)
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
+    return filename.read_bytes()
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("dark", ["stack_dark.tiff", "stack_dark.png"]),
+        ("flat", ["stack_flat.tiff", "stack_flat-raw.tiff", "stack_flat.png"]),
+    ],
+)
+def test_bima_default_output(tmp_path: Path, command: str, expected: list[str]) -> None:
+    """Without -o, `bima dark|flat stack.tiff` writes stack_<cmd>.* beside input."""
+    filename = tmp_path / "stack.tiff"
+    original = _write_tyx_stack(filename)
+
+    result = CliRunner().invoke(bima, [command, str(filename)])
+
+    assert result.exit_code == 0, result.output
+    assert filename.read_bytes() == original
+    for name in expected:
+        assert (tmp_path / name).exists(), name
+
+
+@pytest.mark.parametrize("command", ["dark", "flat"])
+def test_bima_refuses_output_colliding_with_input(tmp_path: Path, command: str) -> None:
+    """An explicit -o that would overwrite the input stack is rejected."""
+    filename = tmp_path / "stack.tiff"
+    original = _write_tyx_stack(filename)
+
+    result = CliRunner().invoke(bima, ["-o", str(filename), command, str(filename)])
+
+    assert result.exit_code != 0
+    assert filename.read_bytes() == original
+
+
+def test_bima_mflat_does_not_overwrite_input(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`bima mflat "a*.tiff"` without -o must not overwrite a matched `a.tiff`."""
+    monkeypatch.chdir(tmp_path)
+    for name in ("a.tiff", "a1.tiff"):
+        tff.imwrite(tmp_path / name, np.full((10, 10), 150, dtype=np.uint16))
+    original = (tmp_path / "a.tiff").read_bytes()
+
+    result = CliRunner().invoke(bima, ["mflat", "a*.tiff"])
+
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "a.tiff").read_bytes() == original
+    assert (tmp_path / "a_flat.tiff").exists()
+
+
+def test_bima_plot_default_output(tmp_path: Path) -> None:
+    """Without -o, `bima plot img.tif` writes img.png."""
+    filename = tmp_path / "img.tif"
+    tff.imwrite(filename, np.full((10, 10), 5, dtype=np.uint16))
+
+    result = CliRunner().invoke(bima, ["plot", str(filename)])
+
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "img.png").exists()

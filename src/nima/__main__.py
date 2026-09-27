@@ -3,6 +3,7 @@
 import importlib.metadata
 import os
 import zipfile
+from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,27 @@ def _compute_bias_hpix(
         hpix = pd.concat(hpix_dfs) if hpix_dfs else pd.DataFrame()
         return err, hpix
     return err, pd.DataFrame()
+
+
+def _check_no_overwrite(inputs: Iterable[Path], outputs: Iterable[Path]) -> None:
+    """Raise if any output path resolves to one of the input paths.
+
+    Parameters
+    ----------
+    inputs : Iterable[Path]
+        Paths of the input files.
+    outputs : Iterable[Path]
+        Paths the command is going to write.
+
+    Raises
+    ------
+    click.BadParameter
+        If an output would overwrite an input.
+    """
+    clashes = {p.resolve() for p in inputs} & {p.resolve() for p in outputs}
+    if clashes:
+        msg = f"Output would overwrite input {min(clashes)}; set -o/--output."
+        raise click.BadParameter(msg)
 
 
 def _plot_bias(
@@ -380,11 +402,6 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     fpath : Path
         Path to the bias stack (Light Off - 0 acquisition time).
 
-    Raises
-    ------
-    click.BadParameter
-        If an output file would overwrite the input stack.
-
     Notes
     -----
     Saves:
@@ -427,10 +444,9 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
     # hotpixels
     output = ctx.obj["output"] or fpath.with_name(f"{fpath.stem}_bias.png")
-    targets = (output, output.with_suffix(".csv"), output.with_suffix(".tiff"))
-    if fpath.resolve() in {p.resolve() for p in targets}:
-        msg = f"Output would overwrite the input stack {fpath}; set -o/--output."
-        raise click.BadParameter(msg, param_hint="FPATH")
+    _check_no_overwrite(
+        [fpath], [output, output.with_suffix(".csv"), output.with_suffix(".tiff")]
+    )
 
     err, hpix = _compute_bias_hpix(bias_im, err)
     if not hpix.empty:
@@ -453,11 +469,11 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(),
+@click.option("--bias", "bias_fp", type=PATH_IN,
               help="File path to the bias stack (Light Off - Long acquisition time).")  # fmt: skip # noqa: E501
 @click.option("--time", type=float,
               help="Acquisition time.")  # fmt: skip
-@click.argument("fpath", type=click.Path())
+@click.argument("fpath", type=PATH_IN)
 def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> None:
     """Compute DARK.
 
@@ -472,12 +488,15 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> 
 
     """
     dark_thr = 4.5
+    output = ctx.obj["output"] or fpath.with_name(f"{fpath.stem}_dark.png")
+    _check_no_overwrite(
+        [fpath], [output, output.with_suffix(".png"), output.with_suffix(".tiff")]
+    )
     store = io.read_image(fpath)
     click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
     dark_im = store.median(dim="T") if "T" in store.dims else store
     dark_im = dark_im.squeeze()
 
-    output = ctx.obj["output"] or fpath.with_suffix(".png")
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     if bias_fp is not None:
@@ -497,7 +516,7 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> 
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(),
+@click.option("--bias", "bias_fp", type=PATH_IN,
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
 @click.argument("globpath", type=str)
 def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
@@ -514,6 +533,9 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
 
     """
     image_sequence = tifffile.TiffSequence(globpath)
+    stem = Path(Path(globpath).name.replace("*", "").replace("?", "")).stem
+    output_path = ctx.obj["output"] or Path(f"{stem}_flat.tiff")
+    _check_no_overwrite([Path(f) for f in image_sequence], _flat_outputs(output_path))
     sequence_info = f"{image_sequence.axes} {image_sequence.shape}"
     click.secho(sequence_info, fg="green")
     # Use synchronous scheduler to avoid distributed client issues in tests
@@ -530,16 +552,6 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
         mean_projection = da.mean(dask_array, axis=0)
         # Compute the mean projection
         tprojection = mean_projection.compute()
-    # Determine the output file path
-    output_path = (
-        ctx.obj["output"]
-        if ctx.obj.get("output")
-        else (
-            Path(Path(globpath).name.replace("*", "").replace("?", "")).with_suffix(
-                ".tiff"
-            )
-        )
-    )
     # Read the bias file (if provided)
     bias_frame = None
     if bias_fp:
@@ -550,9 +562,9 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(),
+@click.option("--bias", "bias_fp", type=PATH_IN,
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
-@click.argument("fpath", type=click.Path())
+@click.argument("fpath", type=PATH_IN)
 def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     """Flat from (.tf8) file stack.
 
@@ -566,6 +578,8 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     2. Plot (.png): Includes histograms, mean projection, ...
 
     """
+    output = ctx.obj["output"] or fpath.with_name(f"{fpath.stem}_flat.tiff")
+    _check_no_overwrite([fpath], _flat_outputs(output))
     stack = io.read_image(fpath)
     # store is TCZYX. We want mean over T.
     click.secho(f"Flat image-stack shape: {stack.shape}", fg="green")
@@ -574,11 +588,15 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     f = f.squeeze()
     with ProgressBar():  # type: ignore[no-untyped-call]
         tprojection = f.compute().to_numpy()
-    output = ctx.obj["output"] or fpath.with_suffix(".tiff")
     bias_frame = None
     if bias_fp:
         bias_frame = np.array(tifffile.imread(bias_fp))
     _output_flat(output, tprojection, bias_frame)
+
+
+def _flat_outputs(output: Path) -> list[Path]:
+    """Return the paths written by :func:`_output_flat`."""
+    return [output, output.with_stem(f"{output.stem}-raw"), output.with_suffix(".png")]
 
 
 def _output_flat(
@@ -628,7 +646,7 @@ def _output_flat(
 
 @bima.command()
 @click.pass_context
-@click.argument("fpath", type=click.Path(exists=True))
+@click.argument("fpath", type=PATH_IN)
 def plot(ctx: click.Context, fpath: Path) -> None:
     """Plot profiles of a 2D image.
 
@@ -640,8 +658,9 @@ def plot(ctx: click.Context, fpath: Path) -> None:
     A plot of profiles is saved as a '.png' file.
 
     """
-    img = io.read_image(fpath).squeeze()
     output = ctx.obj["output"] or fpath.with_suffix(".png")
+    _check_no_overwrite([fpath], [output.with_suffix(".png")])
+    img = io.read_image(fpath).squeeze()
     title = os.fspath(output.with_suffix("").name)
     plt_img_profiles(img, title, output)
 
