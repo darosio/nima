@@ -8,9 +8,12 @@ import pypdf
 import pytest
 import skimage.io
 import tifffile as tff
+import xarray as xr
 from click.testing import CliRunner, Result
+from matplotlib.figure import Figure
 
-from nima.__main__ import _drop_unset, bima, main  # noqa: PLC2701
+from nima import nima as nima_mod
+from nima.__main__ import _drop_unset, bima, main, plt_img_profiles  # noqa: PLC2701
 
 # tests path
 TESTS_PATH = Path(__file__).parent
@@ -441,3 +444,22 @@ def test_drop_unset_keeps_zero() -> None:
         "perc": 0.0,
         "clip": False,
     }
+
+
+def test_plt_img_profiles_title_per_channel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Each channel figure gets the base title plus its own channel only."""
+    titles: list[str] = []
+
+    def record(img: xr.DataArray, title: str = "", **_kwargs: object) -> Figure:
+        del img
+        titles.append(title)
+        return Figure()
+
+    monkeypatch.setattr(nima_mod, "plt_img_profile", record)
+    monkeypatch.setattr(nima_mod, "plt_img_profile_2", record)
+
+    plt_img_profiles(xr.DataArray(np.zeros((2, 4, 4))), "t", tmp_path / "o.png")
+
+    assert titles == ["t C:0", "t C:0", "t C:1", "t C:1"]

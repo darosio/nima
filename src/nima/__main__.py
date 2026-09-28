@@ -749,10 +749,10 @@ def plt_img_profiles(
         # mark f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
     else:
         for i in range(img.shape[0]):
-            title += f" C:{i}"
-            f = nima.plt_img_profile(img[i], title=title)
+            ch_title = f"{title} C:{i}"
+            f = nima.plt_img_profile(img[i], title=ch_title)
             f.savefig(output.with_suffix(f".C{i}.png"), dpi=250, facecolor="w")
             plt.close(f)
-            f = nima.plt_img_profile_2(img[i], title=title)
+            f = nima.plt_img_profile_2(img[i], title=ch_title)
             f.savefig(output.with_suffix(f".C{i}.2.png"), dpi=250, facecolor="w")
             plt.close(f)
