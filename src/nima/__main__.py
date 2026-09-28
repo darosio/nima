@@ -126,6 +126,78 @@ class _VerbosityLevel(int):
     HIGH = 3
 
 
+def _drop_unset(options: dict[str, Any]) -> dict[str, Any]:
+    """Return the options that were set, i.e. not None (zeros are kept).
+
+    Parameters
+    ----------
+    options : dict[str, Any]
+        Option names mapped to their command-line values.
+
+    Returns
+    -------
+    dict[str, Any]
+        The options whose value is not None.
+    """
+    return {k: v for k, v in options.items() if v is not None}
+
+
+def _check_shading_pair(flat_f: Path | None, dark_f: Path | None) -> None:
+    """Require flat and dark images together for shading correction.
+
+    Parameters
+    ----------
+    flat_f : Path | None
+        Flat image path.
+    dark_f : Path | None
+        Dark image path.
+
+    Raises
+    ------
+    click.UsageError
+        If only one of the two is given.
+    """
+    if (flat_f is None) != (dark_f is None):
+        msg = "Shading correction needs both -f/--flat and -d/--dark."
+        raise click.UsageError(msg)
+
+
+def _parse_radii(
+    _ctx: click.Context, _param: click.Parameter, value: str | None
+) -> tuple[int, ...] | None:
+    """Parse comma-separated positive integer radii, e.g. ``"7,3"``.
+
+    Parameters
+    ----------
+    _ctx : click.Context
+        Click context (unused).
+    _param : click.Parameter
+        Click parameter (unused).
+    value : str | None
+        Raw option value.
+
+    Returns
+    -------
+    tuple[int, ...] | None
+        The parsed radii, or None when the option is not given.
+
+    Raises
+    ------
+    click.BadParameter
+        If any radius is not a positive integer.
+    """
+    if value is None:
+        return None
+    try:
+        radii = tuple(int(r) for r in value.split(","))
+    except ValueError:
+        radii = ()
+    if not radii or min(radii) < 1:
+        msg = f"expected comma-separated positive integers, got {value!r}"
+        raise click.BadParameter(msg)
+    return radii
+
+
 @click.command()
 @click.version_option(version=__version__, message="%(version)s")
 @click.option("--verbose", "-v", count=True, help="Verbosity of messages.")
@@ -143,21 +215,21 @@ class _VerbosityLevel(int):
               type=click.Choice(["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False),  # noqa: E501
               default="li_adaptive",
               help="Background estimation algorithm [default: li_adaptive].")  # fmt: skip # noqa: E501
-@click.option("--bg-downscale", type=(int, int),
+@click.option("--bg-downscale", type=(click.IntRange(min=1), click.IntRange(min=1)),
               help="Binning Y X.")  # fmt: skip
-@click.option("--bg-radius", type=float,
+@click.option("--bg-radius", type=click.IntRange(min=1),
               help="Radius for entropy or arcsinh methods [default: 10].")  # fmt: skip
-@click.option("--bg-adaptive-radius", type=float,
+@click.option("--bg-adaptive-radius", type=click.IntRange(min=1),
               help="Radius for adaptive methods [default: X/2].")  # fmt: skip
-@click.option("--bg-percentile", type=float,
+@click.option("--bg-percentile", type=click.FloatRange(0, 100),
               help="Percentile for entropy or arcsinh methods [default: 10].")  # fmt: skip # noqa: E501
-@click.option("--bg-percentile-filter", type=float,
+@click.option("--bg-percentile-filter", type=click.FloatRange(0, 100),
               help="Percentile filter for arcsinh method [default: 80].")  # fmt: skip
 # Segmentation and measurement options
 @click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen",  # noqa: E501
               help="Segmentation algorithm [default: yen].")  # fmt: skip
-@click.option("--min-size", type=float,
-              help="Minimum size of labeled objects [default: 2000].")  # fmt: skip
+@click.option("--min-size", type=click.IntRange(min=1),
+              help="Minimum size of labeled objects [default: 640].")  # fmt: skip
 @click.option("--clear-border", is_flag=True,
               help="Remove labels touching image borders [default: 0].")  # fmt: skip
 @click.option("--wiener", is_flag=True,
@@ -168,7 +240,7 @@ class _VerbosityLevel(int):
               help="Apply randomwalk binary mask (labeling) [default: 0].")  # fmt: skip
 @click.option("--image-ratios/--no-image-ratios", default=True,
               help="Compute ratio images? [default: True].")  # fmt: skip
-@click.option("--ratio-median-radii", type=str,
+@click.option("--ratio-median-radii", type=str, callback=_parse_radii,
               help="Median filter ratio images with radii [default: (7, 3)].")  # fmt: skip # noqa: E501
 @click.option("--channels-cl", type=(str, str), default=("C", "R"),
               help="Channels for Cl ratio [default: C/R].")  # fmt: skip
@@ -185,18 +257,18 @@ def main(  # noqa: PLR0913
     dark_f: Path | None,
     bg_method: str,
     bg_downscale: tuple[int, int] | None,
-    bg_radius: float | None,
-    bg_adaptive_radius: float | None,
+    bg_radius: int | None,
+    bg_adaptive_radius: int | None,
     bg_percentile: float | None,
     bg_percentile_filter: float | None,
     fg_method: str,
-    min_size: float | None,
+    min_size: int | None,
     clear_border: bool | None,  # noqa: FBT001
     wiener: bool | None,  # noqa: FBT001
     watershed: bool | None,  # noqa: FBT001
     randomwalk: bool | None,  # noqa: FBT001
     image_ratios: bool,  # noqa: FBT001
-    ratio_median_radii: str | None,
+    ratio_median_radii: tuple[int, ...] | None,
     channels_cl: tuple[str, str],
     channels_ph: tuple[str, str],
     tiffstk: Path,
@@ -224,6 +296,7 @@ def main(  # noqa: PLR0913
     6. For each label: Ratio images saved as `BN/label[1,2,⋯]_r[cl,pH].tif`.
 
     """
+    _check_shading_pair(flat_f, dark_f)
     verbose = 0 if silent else max(1, min(4, verbose))
     channels = ("G", "R", "C") if len(channels) == 0 else channels
     if verbose > _VerbosityLevel.SILENT:
@@ -236,7 +309,6 @@ def main(  # noqa: PLR0913
     if hotpixels:
         im = nima.median(im)
     if flat_f and dark_f:
-        # XXX: this is imperfect: dark must be present of flat
         dark_im = io.read_image(Path(dark_f), channels)
         flat_im = io.read_image(Path(flat_f), channels)
         im = nima.shading(im, dark_im, flat_im, clip=True)
@@ -249,9 +321,8 @@ def main(  # noqa: PLR0913
         "perc": bg_percentile,
         "arcsinh_perc": bg_percentile_filter,
     }
-    kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
+    kwargs_bg.update(_drop_unset(optional_keys))
     im, bgs, ff = nima.bg(im, BgParams(**kwargs_bg), downscale=bg_downscale)
-    print(BgParams(**kwargs_bg))
 
     # Segment
     kwargs_mask_label: dict[str, Any] = {
@@ -265,17 +336,15 @@ def main(  # noqa: PLR0913
         "watershed": watershed,
         "randomwalk": randomwalk,
     }
-    kwargs_mask_label.update({k: v for k, v in optional_keys.items() if v})
+    kwargs_mask_label.update(_drop_unset(optional_keys))
     click.secho(str(kwargs_mask_label))
     labels = nima.segment(im, **kwargs_mask_label)
 
     # Measure
     kwargs_meas_props: dict[str, Any] = {"channels": channels}
     kwargs_meas_props["ratios_from_image"] = image_ratios
-    if ratio_median_radii:
-        kwargs_meas_props["radii"] = tuple(
-            int(r) for r in ratio_median_radii.split(",")
-        )
+    if ratio_median_radii is not None:
+        kwargs_meas_props["radii"] = ratio_median_radii
     click.secho(str(kwargs_meas_props))
 
     meas, _ = nima.measure(

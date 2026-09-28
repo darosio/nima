@@ -10,7 +10,7 @@ import skimage.io
 import tifffile as tff
 from click.testing import CliRunner, Result
 
-from nima.__main__ import bima, main
+from nima.__main__ import _drop_unset, bima, main  # noqa: PLC2701
 
 # tests path
 TESTS_PATH = Path(__file__).parent
@@ -400,3 +400,44 @@ def test_bima_plot_default_output(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, result.output
     assert (tmp_path / "img.png").exists()
+
+
+@pytest.mark.parametrize(
+    "bad_option",
+    [
+        ["--bg-percentile", "150"],
+        ["--bg-percentile-filter", "-1"],
+        ["--bg-radius", "0"],
+        ["--bg-adaptive-radius", "0"],
+        ["--bg-downscale", "0", "2"],
+        ["--min-size", "0"],
+        ["--ratio-median-radii", "a,b"],
+        ["--ratio-median-radii", "7,0"],
+    ],
+)
+def test_nima_rejects_invalid_option(tmp_path: Path, bad_option: list[str]) -> None:
+    """Out-of-range or malformed options fail as usage errors (exit code 2)."""
+    filename = TESTS_PATH / "data" / "1b_c16_15.tif"
+    result = CliRunner().invoke(
+        main, [str(filename), "G", "R", "C", "-o", str(tmp_path), *bad_option]
+    )
+    assert result.exit_code == 2, result.output
+
+
+@pytest.mark.parametrize("option", ["-f", "-d"])
+def test_nima_rejects_flat_without_dark(tmp_path: Path, option: str) -> None:
+    """Shading correction needs both -f and -d; one alone is a usage error."""
+    filename = TESTS_PATH / "data" / "1b_c16_15.tif"
+    result = CliRunner().invoke(
+        main,
+        [str(filename), "G", "R", "C", "-o", str(tmp_path), option, str(filename)],
+    )
+    assert result.exit_code == 2, result.output
+
+
+def test_drop_unset_keeps_zero() -> None:
+    """Only options left unset (None) are dropped; explicit zeros are kept."""
+    assert _drop_unset({"perc": 0.0, "radius": None, "clip": False}) == {
+        "perc": 0.0,
+        "clip": False,
+    }
