@@ -28,7 +28,7 @@ dependencies = [
   "scipy>=1.18.1",
   "sigfig>=1.4.0",
   "dask-image>=2026.5.0",
-  "nima-io<=0.4.2",
+  "nima-io>=0.4.2",
 ]
 description = "Numerical IMage Analyses."
 keywords = ["ClopHensor", "ratio imaging", "image analysis", "chloride", "pH"]
