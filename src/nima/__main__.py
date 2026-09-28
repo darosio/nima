@@ -34,6 +34,12 @@ PATH_OUT = click.Path(path_type=Path, writable=True)  # type: ignore[type-var]
 PATH_IN = click.Path(path_type=Path, exists=True)  # type: ignore[type-var]
 AXES_LENGTH_2D = 2
 AXES_LENGTH_3D = 3
+# Flat-field constants, introduced in cc27c41 (2022-07-15) without rationale.
+# Their physical meaning is not documented; do not treat them as validated.
+# Plausibly: a pedestal keeping (flat - bias) positive, and a Gaussian sigma (px)
+# smoothing the flat down to its low-frequency illumination profile.
+FLAT_BIAS_PEDESTAL = 20
+FLAT_SMOOTH_SIGMA = 100
 
 
 def _compute_bias_hpix(
@@ -692,20 +698,19 @@ def _output_flat(
 
     Notes
     -----
-    The constant value (e.g., 20) added to 'tprojection' before subtracting
-    'bias' in the function's implementation may need further review or
-    adjustment based on the specific requirements of the flat field correction.
+    Uses the undocumented constants ``FLAT_BIAS_PEDESTAL`` and
+    ``FLAT_SMOOTH_SIGMA``; see their definition for what is known.
 
     """
     # Ensure the parent directories exist
     output.parent.mkdir(parents=True, exist_ok=True)
     tifffile.imwrite(output.with_stem(f"{output.stem}-raw"), tprojection)
     if bias_im is None:
-        flat_im = ndimage.gaussian_filter(tprojection, sigma=100)
+        flat_im = ndimage.gaussian_filter(tprojection, sigma=FLAT_SMOOTH_SIGMA)
     else:
         flat_im = ndimage.gaussian_filter(
-            tprojection + 20 - bias_im, sigma=100
-        )  # FIXME
+            tprojection + FLAT_BIAS_PEDESTAL - bias_im, sigma=FLAT_SMOOTH_SIGMA
+        )
         # MAYBE: consider skimage.filters.gaussian and  cmap=plt.cm.Set2_r
     flat_im /= flat_im.mean()
     tifffile.imwrite(output, flat_im)
