@@ -1,6 +1,6 @@
 """Functions to partition images into meaningful regions."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any, cast, overload
 
 import dask.array as da
@@ -94,9 +94,8 @@ class BgParams:
     """The segmentation method to use. Available options are 'arcsinh',
     'entropy', 'adaptive', 'li_adaptive', 'li_li', and 'inverse_yen'."""
     perc: float = 10.0
-    """Percentage of max-min for threshold `entropy` and `arcsinh`
-    methods. It gets automatically converted to a fraction of 1 in the
-    initialization process."""
+    """Percentage (0-100) of max-min for threshold `entropy` and `arcsinh`
+    methods; see `perc_fraction` for the value as a fraction of 1."""
     radius: int = 10
     """Radius used in `entropy` and `arcsinh` (percentile_filter) methods."""
     adaptive_radius: int | None = None
@@ -112,8 +111,7 @@ class BgParams:
     def __post_init__(self) -> None:
         """Perform validation and normalization on initialization.
 
-        Ensures that `perc` is within the valid range and converts it from
-        a percentage to a fraction for internal use.
+        Ensures that `perc` is within the valid range.
 
         Raises
         ------
@@ -124,7 +122,11 @@ class BgParams:
         if not min_perc <= self.perc <= max_perc:
             msg = "perc must be in [0, 100] range"
             raise ValueError(msg)
-        self.perc /= 100
+
+    @property
+    def perc_fraction(self) -> float:
+        """Return `perc` as a fraction of 1."""
+        return self.perc / 100
 
 
 @dataclass
@@ -146,7 +148,7 @@ class BgResult:
 def _bg_arcsinh(
     im: xr.DataArray, bg_params: BgParams
 ) -> tuple[xr.DataArray, str, xr.DataArray]:
-    perc = bg_params.perc
+    perc = bg_params.perc_fraction
     radius = bg_params.radius
     arcsinh_perc = bg_params.arcsinh_perc
 
@@ -173,7 +175,7 @@ def _bg_arcsinh(
 def _bg_entropy(
     im: xr.DataArray, bg_params: BgParams
 ) -> tuple[xr.DataArray, str, xr.DataArray]:
-    perc = bg_params.perc
+    perc = bg_params.perc_fraction
     radius = bg_params.radius
 
     data = im.data
@@ -382,9 +384,12 @@ def calculate_bg(im: xr.DataArray, bg_params: BgParams | None = None) -> BgResul
     """
     bg_params = bg_params or BgParams()
     if bg_params.adaptive_radius is None:
-        bg_params.adaptive_radius = int(im.shape[1] / 2)
-        if bg_params.adaptive_radius % 2 == 0:  # sk >0.12.0 check for even value
-            bg_params.adaptive_radius += 1
+        # Resolve the default per image on a copy: the caller's params are reused
+        # across frames and images, possibly of different sizes.
+        radius = int(im.shape[1] / 2)
+        if radius % 2 == 0:  # sk >0.12.0 check for even value
+            radius += 1
+        bg_params = replace(bg_params, adaptive_radius=radius)
 
     processing_functions = {
         "arcsinh": _bg_arcsinh,

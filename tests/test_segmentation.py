@@ -1,5 +1,7 @@
 """Tests for segmentation module."""
 
+import dataclasses
+
 import dask.array as da
 import numpy as np
 import pytest
@@ -133,3 +135,29 @@ class TestSegmentationFunctions:
         im_safe = im_da + 0.1
         mask, _, _ = segmentation._bg_inverse_yen(im_safe, params)  # noqa: SLF001
         assert isinstance(mask.data, da.Array)
+
+
+class TestBgParams:
+    """BgParams keeps what it is given; calculate_bg does not modify it."""
+
+    def test_perc_survives_copy(self) -> None:
+        """Copying with dataclasses.replace keeps perc as a percentage."""
+        params = dataclasses.replace(BgParams(perc=10))
+        assert params.perc == 10
+        assert params.perc_fraction == pytest.approx(0.1)
+
+    def test_calculate_bg_does_not_mutate_params(self, im: xr.DataArray) -> None:
+        """The default adaptive radius is resolved locally, not stored."""
+        params = BgParams(kind="adaptive")
+        segmentation.calculate_bg(im, params)
+        assert params.adaptive_radius is None
+
+    def test_reused_params_match_fresh_params(self, im: xr.DataArray) -> None:
+        """Reusing params on a smaller image gives the fresh-params result."""
+        small = im[::2, ::2]
+        reused = BgParams(kind="adaptive")
+        segmentation.calculate_bg(im, reused)
+        got = segmentation.calculate_bg(small, reused)
+        expected = segmentation.calculate_bg(small, BgParams(kind="adaptive"))
+        assert got.bg == pytest.approx(expected.bg)
+        assert got.iqr == pytest.approx(expected.iqr)
