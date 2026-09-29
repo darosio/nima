@@ -97,6 +97,9 @@ bima bias <FPATH>
 ```
 
 Replace \<FPATH> with the paths to the bias stack (Light Off - 0 acquisition time).
+Without `-o`, outputs are written next to the input as `<stem>_bias.tiff`,
+`<stem>_bias.png` and `<stem>_bias.csv` (hot pixels); an output path that
+would overwrite the input stack is rejected.
 
 To estimate the system dark (multi-channel) frame:
 

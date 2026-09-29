@@ -1,0 +1,65 @@
+%% nima v0.11.9 — domain-level dependency map (generated 2026-09-27, /modernize-assess)
+graph TD
+  subgraph Entry["Entry points"]
+    D9["D9 nima CLI pipeline<br/>__main__.main / output_results"]
+    D2["D2 bima CLI calibration<br/>bias/dark/flat/mflat/plot + hotpixels"]
+    SIM["simulate_bg.py (stray root script)"]
+  end
+  subgraph Core["Core xarray library (nima.py / segmentation.py)"]
+    D3["D3 median / shading"]
+    D4["D4 bg estimation<br/>BgParams, calculate_bg, nima.bg"]
+    D6["D6 segment / process_watershed"]
+    D7["D7 ratio / measure"]
+    D8["D8 plotting"]
+  end
+  subgraph Legacy["Legacy NumPy API"]
+    D5["D5 prob / calculate_bg_iteratively /<br/>utils.bg, ave, channel_mean, ratio_df"]
+  end
+  subgraph Data["I/O and types"]
+    D1["D1 io.read_image -> DataArray TCZYX"]
+    NIO[("nima_io<=0.4.2<br/>read_image / stitch_scenes / Metadata")]
+    TIFF[("tifffile (direct)")]
+    TY["nima_types"]
+  end
+  subgraph Sim["Simulation"]
+    D10["D10 generat.run_simulation"]
+  end
+  subgraph QA["D11 tests / benchmarks / notebooks"]
+    T["tests/"]
+    B["benchmarks/"]
+    NB["docs notebooks"]
+  end
+
+  D9 -->|path| D1
+  D9 -->|DataArray TCZYX| D3
+  D9 -->|DataArray + BgParams| D4
+  D9 -->|bg-subtracted DataArray| D6
+  D9 -->|DataArray + labels| D7
+  D9 -->|bgs DF, meas dict, figs dict| D8
+  D9 -->|label*_r*.tif| TIFF
+  D2 -->|path| D1
+  D2 -->|zip bias, mflat, --bias| TIFF
+  D2 -->|2D DataArray| D8
+  D2 -->|hotpixels / correct_hotpixel| D3
+  D1 --> NIO
+  D4 -->|BgResult.figures| D8
+  D6 -.->|labels DataArray T,Y,X| D7
+  D4 -.->|bgs DataFrame| D8
+  D5 -->|BgResult, prob| D4
+  D5 -->|AXES_LENGTH_4D const| D7
+  D5 --> TIFF
+  D4 --> TY
+  D5 --> TY
+  D10 -->|2D DataArray| D4
+  D10 -->|NumPy frame| D5
+  SIM --> D10
+  T --> D9
+  T --> D2
+  T --> D4
+  T --> D5
+  T --> D10
+  B --> D3
+  NB --> D1
+  NB --> D4
+  NB --> D5
+  NB --> D10

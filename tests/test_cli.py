@@ -289,3 +289,47 @@ def test_bima_dark_with_time(tmp_path: Path) -> None:
     # dark_im /= time makes it float.
     res_im = tff.imread(output.with_suffix(".tiff"))
     assert np.issubdtype(res_im.dtype, np.floating)
+
+
+def _write_bias_stack(filename: Path) -> bytes:
+    """Write a small TYX bias stack and return its bytes."""
+    rng = np.random.default_rng()
+    data = rng.integers(10, 20, (4, 10, 10), dtype=np.uint16)
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
+    return filename.read_bytes()
+
+
+def test_bima_bias_default_output(tmp_path: Path) -> None:
+    """`bima bias stack.tiff` without -o writes stack_bias.* and keeps the input."""
+    filename = tmp_path / "stack.tiff"
+    original = _write_bias_stack(filename)
+
+    result = CliRunner().invoke(bima, ["bias", str(filename)])
+
+    assert result.exit_code == 0, result.output
+    assert filename.read_bytes() == original
+    assert (tmp_path / "stack_bias.tiff").exists()
+    assert (tmp_path / "stack_bias.png").exists()
+
+
+def test_bima_bias_refuses_output_colliding_with_input(tmp_path: Path) -> None:
+    """An explicit -o that would overwrite the input stack is rejected."""
+    filename = tmp_path / "stack.tiff"
+    original = _write_bias_stack(filename)
+
+    result = CliRunner().invoke(
+        bima, ["-o", str(tmp_path / "stack.png"), "bias", str(filename)]
+    )
+
+    assert result.exit_code != 0
+    assert filename.read_bytes() == original
+
+
+def test_nima_bg_downscale(tmp_path: Path) -> None:
+    """`nima --bg-downscale Y X` runs to completion."""
+    filename = TESTS_PATH / "data" / "1b_c16_15.tif"
+    result = CliRunner().invoke(
+        main,
+        [str(filename), "G", "R", "C", "-o", str(tmp_path), "--bg-downscale", "2", "2"],
+    )
+    assert result.exit_code == 0, result.output
