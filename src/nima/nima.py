@@ -981,10 +981,11 @@ def plt_img_profile(  # noqa: PLR0915
         )
         ax.tick_params(axis="y", labelleft=False, right=True)
         ax.tick_params(axis="x", top=True, labelbottom=False)
+        # Default limits span the central 1 - 1/e (63.2 %) of pixel values.
         if vmin is None:
-            vmin = float(np.percentile(im, 18.4))  # 1/e (66.6 %)
-        elif vmax is None:
-            vmax = float(np.percentile(im, 81.6))  # 1/e (66.6 %)
+            vmin = float(np.percentile(im, 18.4))
+        if vmax is None:
+            vmax = float(np.percentile(im, 81.6))
         img = ax.imshow(im, vmin=vmin, vmax=vmax, cmap="turbo")
         ax_px.plot(im.mean(axis=0), lw=4, alpha=0.5)
         ymin = round(im.shape[0] / 2 * 0.67)
@@ -1129,7 +1130,7 @@ def correct_hotpixel(
     """Correct hot pixels in a frame.
 
     Substitute indicated position y, x with the median value of the 4 neighbor
-    pixels.
+    pixels; at the image border only the neighbors inside the frame are used.
 
     Parameters
     ----------
@@ -1155,25 +1156,19 @@ def correct_hotpixel(
         msg = "Image must be 2D."
         raise ValueError(msg)
 
-    # We return a new DataArray to avoid side effects and support xarray semantics
-    # For simplicity and given the usage (bias/err frames), we compute to numpy.
-    # Future optimization: use map_blocks or sparse updates if Dask support is critical.
-    new_img = img.copy(deep=True)
-    data = new_img.to_numpy()  # This accesses the numpy array (or computes it)
-
-    # Handle scalar or array inputs for y, x
+    # Work on an in-memory copy: to_numpy() of a dask-backed array is a fresh
+    # computed array, so writing into it would not reach a shallow copy of img.
+    data = img.to_numpy().copy()
     y_arr = np.atleast_1d(y)
     x_arr = np.atleast_1d(x)
-
-    v1 = data[y_arr - 1, x_arr]
-    v2 = data[y_arr + 1, x_arr]
-    v3 = data[y_arr, x_arr - 1]
-    v4 = data[y_arr, x_arr + 1]
-
-    # median of neighbors
-    # stack them to compute median across 0-axis
-    neighbors = np.stack([v1, v2, v3, v4])
-    correct = np.median(neighbors, axis=0)
-
-    data[y_arr, x_arr] = correct
-    return new_img
+    # NaN padding marks out-of-frame neighbours, which nanmedian then ignores.
+    padded = np.pad(data.astype(np.float64), 1, constant_values=np.nan)
+    yp, xp = y_arr + 1, x_arr + 1
+    neighbors = np.stack([
+        padded[yp - 1, xp],
+        padded[yp + 1, xp],
+        padded[yp, xp - 1],
+        padded[yp, xp + 1],
+    ])
+    data[y_arr, x_arr] = np.nanmedian(neighbors, axis=0)
+    return img.copy(data=data)

@@ -108,6 +108,7 @@ bima dark <FPATH>
 ```
 
 Replace \<FPATH> with the paths to the dark stack (Light Off - Long acquisition time).
+Without `-o`, outputs are `<stem>_dark.tiff` and `<stem>_dark.png`.
 
 Note: The estimation of the system dark may be removed in future versions
 because it risks being redundant with the flat estimation. It is likely to be
@@ -121,6 +122,9 @@ bima flat --bias <BIAS_PATH> <FPATH>
 
 Replace \<FPATH> with the path to the tf8 stack and \<BIAS_PATH> with the path to
 the bias image.
+Without `-o`, outputs are `<stem>_flat.tiff`, `<stem>_flat-raw.tiff` and
+`<stem>_flat.png`; `bima mflat "<glob>"` writes `<glob stem>_flat.*` in the
+current directory. Any output path that would overwrite an input is rejected.
 
 ## TODO
 

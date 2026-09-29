@@ -3,6 +3,7 @@
 import importlib.metadata
 import os
 import zipfile
+from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -33,6 +34,12 @@ PATH_OUT = click.Path(path_type=Path, writable=True)  # type: ignore[type-var]
 PATH_IN = click.Path(path_type=Path, exists=True)  # type: ignore[type-var]
 AXES_LENGTH_2D = 2
 AXES_LENGTH_3D = 3
+# Flat-field constants, introduced in cc27c41 (2022-07-15) without rationale.
+# Their physical meaning is not documented; do not treat them as validated.
+# Plausibly: a pedestal keeping (flat - bias) positive, and a Gaussian sigma (px)
+# smoothing the flat down to its low-frequency illumination profile.
+FLAT_BIAS_PEDESTAL = 20
+FLAT_SMOOTH_SIGMA = 100
 
 
 def _compute_bias_hpix(
@@ -59,6 +66,27 @@ def _compute_bias_hpix(
         hpix = pd.concat(hpix_dfs) if hpix_dfs else pd.DataFrame()
         return err, hpix
     return err, pd.DataFrame()
+
+
+def _check_no_overwrite(inputs: Iterable[Path], outputs: Iterable[Path]) -> None:
+    """Raise if any output path resolves to one of the input paths.
+
+    Parameters
+    ----------
+    inputs : Iterable[Path]
+        Paths of the input files.
+    outputs : Iterable[Path]
+        Paths the command is going to write.
+
+    Raises
+    ------
+    click.BadParameter
+        If an output would overwrite an input.
+    """
+    clashes = {p.resolve() for p in inputs} & {p.resolve() for p in outputs}
+    if clashes:
+        msg = f"Output would overwrite input {min(clashes)}; set -o/--output."
+        raise click.BadParameter(msg)
 
 
 def _plot_bias(
@@ -104,6 +132,78 @@ class _VerbosityLevel(int):
     HIGH = 3
 
 
+def _drop_unset(options: dict[str, Any]) -> dict[str, Any]:
+    """Return the options that were set, i.e. not None (zeros are kept).
+
+    Parameters
+    ----------
+    options : dict[str, Any]
+        Option names mapped to their command-line values.
+
+    Returns
+    -------
+    dict[str, Any]
+        The options whose value is not None.
+    """
+    return {k: v for k, v in options.items() if v is not None}
+
+
+def _check_shading_pair(flat_f: Path | None, dark_f: Path | None) -> None:
+    """Require flat and dark images together for shading correction.
+
+    Parameters
+    ----------
+    flat_f : Path | None
+        Flat image path.
+    dark_f : Path | None
+        Dark image path.
+
+    Raises
+    ------
+    click.UsageError
+        If only one of the two is given.
+    """
+    if (flat_f is None) != (dark_f is None):
+        msg = "Shading correction needs both -f/--flat and -d/--dark."
+        raise click.UsageError(msg)
+
+
+def _parse_radii(
+    _ctx: click.Context, _param: click.Parameter, value: str | None
+) -> tuple[int, ...] | None:
+    """Parse comma-separated positive integer radii, e.g. ``"7,3"``.
+
+    Parameters
+    ----------
+    _ctx : click.Context
+        Click context (unused).
+    _param : click.Parameter
+        Click parameter (unused).
+    value : str | None
+        Raw option value.
+
+    Returns
+    -------
+    tuple[int, ...] | None
+        The parsed radii, or None when the option is not given.
+
+    Raises
+    ------
+    click.BadParameter
+        If any radius is not a positive integer.
+    """
+    if value is None:
+        return None
+    try:
+        radii = tuple(int(r) for r in value.split(","))
+    except ValueError:
+        radii = ()
+    if not radii or min(radii) < 1:
+        msg = f"expected comma-separated positive integers, got {value!r}"
+        raise click.BadParameter(msg)
+    return radii
+
+
 @click.command()
 @click.version_option(version=__version__, message="%(version)s")
 @click.option("--verbose", "-v", count=True, help="Verbosity of messages.")
@@ -121,21 +221,21 @@ class _VerbosityLevel(int):
               type=click.Choice(["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False),  # noqa: E501
               default="li_adaptive",
               help="Background estimation algorithm [default: li_adaptive].")  # fmt: skip # noqa: E501
-@click.option("--bg-downscale", type=(int, int),
+@click.option("--bg-downscale", type=(click.IntRange(min=1), click.IntRange(min=1)),
               help="Binning Y X.")  # fmt: skip
-@click.option("--bg-radius", type=float,
+@click.option("--bg-radius", type=click.IntRange(min=1),
               help="Radius for entropy or arcsinh methods [default: 10].")  # fmt: skip
-@click.option("--bg-adaptive-radius", type=float,
+@click.option("--bg-adaptive-radius", type=click.IntRange(min=1),
               help="Radius for adaptive methods [default: X/2].")  # fmt: skip
-@click.option("--bg-percentile", type=float,
+@click.option("--bg-percentile", type=click.FloatRange(0, 100),
               help="Percentile for entropy or arcsinh methods [default: 10].")  # fmt: skip # noqa: E501
-@click.option("--bg-percentile-filter", type=float,
+@click.option("--bg-percentile-filter", type=click.FloatRange(0, 100),
               help="Percentile filter for arcsinh method [default: 80].")  # fmt: skip
 # Segmentation and measurement options
 @click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen",  # noqa: E501
               help="Segmentation algorithm [default: yen].")  # fmt: skip
-@click.option("--min-size", type=float,
-              help="Minimum size of labeled objects [default: 2000].")  # fmt: skip
+@click.option("--min-size", type=click.IntRange(min=1),
+              help="Minimum size of labeled objects [default: 640].")  # fmt: skip
 @click.option("--clear-border", is_flag=True,
               help="Remove labels touching image borders [default: 0].")  # fmt: skip
 @click.option("--wiener", is_flag=True,
@@ -146,7 +246,7 @@ class _VerbosityLevel(int):
               help="Apply randomwalk binary mask (labeling) [default: 0].")  # fmt: skip
 @click.option("--image-ratios/--no-image-ratios", default=True,
               help="Compute ratio images? [default: True].")  # fmt: skip
-@click.option("--ratio-median-radii", type=str,
+@click.option("--ratio-median-radii", type=str, callback=_parse_radii,
               help="Median filter ratio images with radii [default: (7, 3)].")  # fmt: skip # noqa: E501
 @click.option("--channels-cl", type=(str, str), default=("C", "R"),
               help="Channels for Cl ratio [default: C/R].")  # fmt: skip
@@ -163,18 +263,18 @@ def main(  # noqa: PLR0913
     dark_f: Path | None,
     bg_method: str,
     bg_downscale: tuple[int, int] | None,
-    bg_radius: float | None,
-    bg_adaptive_radius: float | None,
+    bg_radius: int | None,
+    bg_adaptive_radius: int | None,
     bg_percentile: float | None,
     bg_percentile_filter: float | None,
     fg_method: str,
-    min_size: float | None,
+    min_size: int | None,
     clear_border: bool | None,  # noqa: FBT001
     wiener: bool | None,  # noqa: FBT001
     watershed: bool | None,  # noqa: FBT001
     randomwalk: bool | None,  # noqa: FBT001
     image_ratios: bool,  # noqa: FBT001
-    ratio_median_radii: str | None,
+    ratio_median_radii: tuple[int, ...] | None,
     channels_cl: tuple[str, str],
     channels_ph: tuple[str, str],
     tiffstk: Path,
@@ -202,6 +302,7 @@ def main(  # noqa: PLR0913
     6. For each label: Ratio images saved as `BN/label[1,2,⋯]_r[cl,pH].tif`.
 
     """
+    _check_shading_pair(flat_f, dark_f)
     verbose = 0 if silent else max(1, min(4, verbose))
     channels = ("G", "R", "C") if len(channels) == 0 else channels
     if verbose > _VerbosityLevel.SILENT:
@@ -214,7 +315,6 @@ def main(  # noqa: PLR0913
     if hotpixels:
         im = nima.median(im)
     if flat_f and dark_f:
-        # XXX: this is imperfect: dark must be present of flat
         dark_im = io.read_image(Path(dark_f), channels)
         flat_im = io.read_image(Path(flat_f), channels)
         im = nima.shading(im, dark_im, flat_im, clip=True)
@@ -227,9 +327,8 @@ def main(  # noqa: PLR0913
         "perc": bg_percentile,
         "arcsinh_perc": bg_percentile_filter,
     }
-    kwargs_bg.update({key: value for key, value in optional_keys.items() if value})
+    kwargs_bg.update(_drop_unset(optional_keys))
     im, bgs, ff = nima.bg(im, BgParams(**kwargs_bg), downscale=bg_downscale)
-    print(BgParams(**kwargs_bg))
 
     # Segment
     kwargs_mask_label: dict[str, Any] = {
@@ -243,17 +342,15 @@ def main(  # noqa: PLR0913
         "watershed": watershed,
         "randomwalk": randomwalk,
     }
-    kwargs_mask_label.update({k: v for k, v in optional_keys.items() if v})
+    kwargs_mask_label.update(_drop_unset(optional_keys))
     click.secho(str(kwargs_mask_label))
     labels = nima.segment(im, **kwargs_mask_label)
 
     # Measure
     kwargs_meas_props: dict[str, Any] = {"channels": channels}
     kwargs_meas_props["ratios_from_image"] = image_ratios
-    if ratio_median_radii:
-        kwargs_meas_props["radii"] = tuple(
-            int(r) for r in ratio_median_radii.split(",")
-        )
+    if ratio_median_radii is not None:
+        kwargs_meas_props["radii"] = ratio_median_radii
     click.secho(str(kwargs_meas_props))
 
     meas, _ = nima.measure(
@@ -380,11 +477,6 @@ def bias(ctx: click.Context, fpath: Path) -> None:
     fpath : Path
         Path to the bias stack (Light Off - 0 acquisition time).
 
-    Raises
-    ------
-    click.BadParameter
-        If an output file would overwrite the input stack.
-
     Notes
     -----
     Saves:
@@ -427,10 +519,9 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
     # hotpixels
     output = ctx.obj["output"] or fpath.with_name(f"{fpath.stem}_bias.png")
-    targets = (output, output.with_suffix(".csv"), output.with_suffix(".tiff"))
-    if fpath.resolve() in {p.resolve() for p in targets}:
-        msg = f"Output would overwrite the input stack {fpath}; set -o/--output."
-        raise click.BadParameter(msg, param_hint="FPATH")
+    _check_no_overwrite(
+        [fpath], [output, output.with_suffix(".csv"), output.with_suffix(".tiff")]
+    )
 
     err, hpix = _compute_bias_hpix(bias_im, err)
     if not hpix.empty:
@@ -453,11 +544,11 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(),
+@click.option("--bias", "bias_fp", type=PATH_IN,
               help="File path to the bias stack (Light Off - Long acquisition time).")  # fmt: skip # noqa: E501
 @click.option("--time", type=float,
               help="Acquisition time.")  # fmt: skip
-@click.argument("fpath", type=click.Path())
+@click.argument("fpath", type=PATH_IN)
 def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> None:
     """Compute DARK.
 
@@ -472,12 +563,15 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> 
 
     """
     dark_thr = 4.5
+    output = ctx.obj["output"] or fpath.with_name(f"{fpath.stem}_dark.png")
+    _check_no_overwrite(
+        [fpath], [output, output.with_suffix(".png"), output.with_suffix(".tiff")]
+    )
     store = io.read_image(fpath)
     click.secho("Dark image-stack shape: " + str(store.shape), fg="green")
     dark_im = store.median(dim="T") if "T" in store.dims else store
     dark_im = dark_im.squeeze()
 
-    output = ctx.obj["output"] or fpath.with_suffix(".png")
     # Output summary graphics.
     title = os.fspath(output.with_suffix("").name)
     if bias_fp is not None:
@@ -497,7 +591,7 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> 
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(),
+@click.option("--bias", "bias_fp", type=PATH_IN,
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
 @click.argument("globpath", type=str)
 def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
@@ -514,6 +608,9 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
 
     """
     image_sequence = tifffile.TiffSequence(globpath)
+    stem = Path(Path(globpath).name.replace("*", "").replace("?", "")).stem
+    output_path = ctx.obj["output"] or Path(f"{stem}_flat.tiff")
+    _check_no_overwrite([Path(f) for f in image_sequence], _flat_outputs(output_path))
     sequence_info = f"{image_sequence.axes} {image_sequence.shape}"
     click.secho(sequence_info, fg="green")
     # Use synchronous scheduler to avoid distributed client issues in tests
@@ -530,16 +627,6 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
         mean_projection = da.mean(dask_array, axis=0)
         # Compute the mean projection
         tprojection = mean_projection.compute()
-    # Determine the output file path
-    output_path = (
-        ctx.obj["output"]
-        if ctx.obj.get("output")
-        else (
-            Path(Path(globpath).name.replace("*", "").replace("?", "")).with_suffix(
-                ".tiff"
-            )
-        )
-    )
     # Read the bias file (if provided)
     bias_frame = None
     if bias_fp:
@@ -550,9 +637,9 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
 
 @bima.command()
 @click.pass_context
-@click.option("--bias", "bias_fp", type=click.Path(),
+@click.option("--bias", "bias_fp", type=PATH_IN,
               help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
-@click.argument("fpath", type=click.Path())
+@click.argument("fpath", type=PATH_IN)
 def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     """Flat from (.tf8) file stack.
 
@@ -566,6 +653,8 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     2. Plot (.png): Includes histograms, mean projection, ...
 
     """
+    output = ctx.obj["output"] or fpath.with_name(f"{fpath.stem}_flat.tiff")
+    _check_no_overwrite([fpath], _flat_outputs(output))
     stack = io.read_image(fpath)
     # store is TCZYX. We want mean over T.
     click.secho(f"Flat image-stack shape: {stack.shape}", fg="green")
@@ -574,11 +663,15 @@ def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     f = f.squeeze()
     with ProgressBar():  # type: ignore[no-untyped-call]
         tprojection = f.compute().to_numpy()
-    output = ctx.obj["output"] or fpath.with_suffix(".tiff")
     bias_frame = None
     if bias_fp:
         bias_frame = np.array(tifffile.imread(bias_fp))
     _output_flat(output, tprojection, bias_frame)
+
+
+def _flat_outputs(output: Path) -> list[Path]:
+    """Return the paths written by :func:`_output_flat`."""
+    return [output, output.with_stem(f"{output.stem}-raw"), output.with_suffix(".png")]
 
 
 def _output_flat(
@@ -605,20 +698,19 @@ def _output_flat(
 
     Notes
     -----
-    The constant value (e.g., 20) added to 'tprojection' before subtracting
-    'bias' in the function's implementation may need further review or
-    adjustment based on the specific requirements of the flat field correction.
+    Uses the undocumented constants ``FLAT_BIAS_PEDESTAL`` and
+    ``FLAT_SMOOTH_SIGMA``; see their definition for what is known.
 
     """
     # Ensure the parent directories exist
     output.parent.mkdir(parents=True, exist_ok=True)
     tifffile.imwrite(output.with_stem(f"{output.stem}-raw"), tprojection)
     if bias_im is None:
-        flat_im = ndimage.gaussian_filter(tprojection, sigma=100)
+        flat_im = ndimage.gaussian_filter(tprojection, sigma=FLAT_SMOOTH_SIGMA)
     else:
         flat_im = ndimage.gaussian_filter(
-            tprojection + 20 - bias_im, sigma=100
-        )  # FIXME
+            tprojection + FLAT_BIAS_PEDESTAL - bias_im, sigma=FLAT_SMOOTH_SIGMA
+        )
         # MAYBE: consider skimage.filters.gaussian and  cmap=plt.cm.Set2_r
     flat_im /= flat_im.mean()
     tifffile.imwrite(output, flat_im)
@@ -628,7 +720,7 @@ def _output_flat(
 
 @bima.command()
 @click.pass_context
-@click.argument("fpath", type=click.Path(exists=True))
+@click.argument("fpath", type=PATH_IN)
 def plot(ctx: click.Context, fpath: Path) -> None:
     """Plot profiles of a 2D image.
 
@@ -640,8 +732,9 @@ def plot(ctx: click.Context, fpath: Path) -> None:
     A plot of profiles is saved as a '.png' file.
 
     """
-    img = io.read_image(fpath).squeeze()
     output = ctx.obj["output"] or fpath.with_suffix(".png")
+    _check_no_overwrite([fpath], [output.with_suffix(".png")])
+    img = io.read_image(fpath).squeeze()
     title = os.fspath(output.with_suffix("").name)
     plt_img_profiles(img, title, output)
 
@@ -661,10 +754,10 @@ def plt_img_profiles(
         # mark f.savefig(output.with_suffix(".2.png"), dpi=250, facecolor="w")
     else:
         for i in range(img.shape[0]):
-            title += f" C:{i}"
-            f = nima.plt_img_profile(img[i], title=title)
+            ch_title = f"{title} C:{i}"
+            f = nima.plt_img_profile(img[i], title=ch_title)
             f.savefig(output.with_suffix(f".C{i}.png"), dpi=250, facecolor="w")
             plt.close(f)
-            f = nima.plt_img_profile_2(img[i], title=title)
+            f = nima.plt_img_profile_2(img[i], title=ch_title)
             f.savefig(output.with_suffix(f".C{i}.2.png"), dpi=250, facecolor="w")
             plt.close(f)

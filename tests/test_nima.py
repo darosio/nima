@@ -640,3 +640,44 @@ class TestXArrayBehavior:
         # Let's check.
         res_med = nima.median(da)
         assert res_med.chunks is not None
+
+
+def test_plot_img_profile_default_color_limits() -> None:
+    """Default color limits span the 18.4-81.6 percentiles (central 1 - 1/e)."""
+    img = xr.DataArray(np.arange(100, dtype=np.float64).reshape(10, 10))
+    f = nima.plt_img_profile(img)
+    vmin, vmax = f.get_axes()[0].images[0].get_clim()
+    assert vmin == pytest.approx(np.percentile(img, 18.4))
+    assert vmax == pytest.approx(np.percentile(img, 81.6))
+
+
+class TestCorrectHotpixel:
+    """Test hot-pixel correction with the median of in-image 4-neighbours."""
+
+    @staticmethod
+    def _frame() -> np.ndarray:
+        """Return a 5x5 frame; the neighbours of (0, 2) have median 4."""
+        data = np.zeros((5, 5))
+        data[0, 2] = 100.0  # hot pixel on the top edge
+        data[1, 2], data[0, 1], data[0, 3] = 2.0, 4.0, 6.0
+        data[4, 2] = 50.0  # would be picked up if the index wrapped around
+        return data
+
+    def test_top_edge_does_not_wrap(self) -> None:
+        """Rows outside the frame are not taken from the opposite edge."""
+        out = nima.correct_hotpixel(xr.DataArray(self._frame()), 0, 2)
+        assert float(out[0, 2]) == 4.0
+
+    def test_bottom_right_corner(self) -> None:
+        """A hot pixel in the last row and column is corrected, not an error."""
+        data = np.ones((5, 5))
+        data[4, 4] = 100.0
+        out = nima.correct_hotpixel(xr.DataArray(data), 4, 4)
+        assert float(out[4, 4]) == 1.0
+
+    def test_dask_backed_input(self) -> None:
+        """The correction is kept for dask-backed arrays and the input untouched."""
+        img = xr.DataArray(da.from_array(self._frame()))  # type: ignore[no-untyped-call]
+        out = nima.correct_hotpixel(img, 0, 2)
+        assert float(out[0, 2]) == 4.0
+        assert float(img[0, 2]) == 100.0

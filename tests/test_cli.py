@@ -8,9 +8,12 @@ import pypdf
 import pytest
 import skimage.io
 import tifffile as tff
+import xarray as xr
 from click.testing import CliRunner, Result
+from matplotlib.figure import Figure
 
-from nima.__main__ import bima, main
+from nima import nima as nima_mod
+from nima.__main__ import _drop_unset, bima, main, plt_img_profiles  # noqa: PLC2701
 
 # tests path
 TESTS_PATH = Path(__file__).parent
@@ -333,3 +336,130 @@ def test_nima_bg_downscale(tmp_path: Path) -> None:
         [str(filename), "G", "R", "C", "-o", str(tmp_path), "--bg-downscale", "2", "2"],
     )
     assert result.exit_code == 0, result.output
+
+
+def _write_tyx_stack(filename: Path) -> bytes:
+    """Write a small TYX stack and return its bytes."""
+    rng = np.random.default_rng()
+    data = rng.integers(100, 200, (3, 10, 10), dtype=np.uint16)
+    tff.imwrite(filename, data, photometric="minisblack", metadata={"axes": "TYX"})
+    return filename.read_bytes()
+
+
+@pytest.mark.parametrize(
+    ("command", "expected"),
+    [
+        ("dark", ["stack_dark.tiff", "stack_dark.png"]),
+        ("flat", ["stack_flat.tiff", "stack_flat-raw.tiff", "stack_flat.png"]),
+    ],
+)
+def test_bima_default_output(tmp_path: Path, command: str, expected: list[str]) -> None:
+    """Without -o, `bima dark|flat stack.tiff` writes stack_<cmd>.* beside input."""
+    filename = tmp_path / "stack.tiff"
+    original = _write_tyx_stack(filename)
+
+    result = CliRunner().invoke(bima, [command, str(filename)])
+
+    assert result.exit_code == 0, result.output
+    assert filename.read_bytes() == original
+    for name in expected:
+        assert (tmp_path / name).exists(), name
+
+
+@pytest.mark.parametrize("command", ["dark", "flat"])
+def test_bima_refuses_output_colliding_with_input(tmp_path: Path, command: str) -> None:
+    """An explicit -o that would overwrite the input stack is rejected."""
+    filename = tmp_path / "stack.tiff"
+    original = _write_tyx_stack(filename)
+
+    result = CliRunner().invoke(bima, ["-o", str(filename), command, str(filename)])
+
+    assert result.exit_code != 0
+    assert filename.read_bytes() == original
+
+
+def test_bima_mflat_does_not_overwrite_input(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`bima mflat "a*.tiff"` without -o must not overwrite a matched `a.tiff`."""
+    monkeypatch.chdir(tmp_path)
+    for name in ("a.tiff", "a1.tiff"):
+        tff.imwrite(tmp_path / name, np.full((10, 10), 150, dtype=np.uint16))
+    original = (tmp_path / "a.tiff").read_bytes()
+
+    result = CliRunner().invoke(bima, ["mflat", "a*.tiff"])
+
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "a.tiff").read_bytes() == original
+    assert (tmp_path / "a_flat.tiff").exists()
+
+
+def test_bima_plot_default_output(tmp_path: Path) -> None:
+    """Without -o, `bima plot img.tif` writes img.png."""
+    filename = tmp_path / "img.tif"
+    tff.imwrite(filename, np.full((10, 10), 5, dtype=np.uint16))
+
+    result = CliRunner().invoke(bima, ["plot", str(filename)])
+
+    assert result.exit_code == 0, result.output
+    assert (tmp_path / "img.png").exists()
+
+
+@pytest.mark.parametrize(
+    "bad_option",
+    [
+        ["--bg-percentile", "150"],
+        ["--bg-percentile-filter", "-1"],
+        ["--bg-radius", "0"],
+        ["--bg-adaptive-radius", "0"],
+        ["--bg-downscale", "0", "2"],
+        ["--min-size", "0"],
+        ["--ratio-median-radii", "a,b"],
+        ["--ratio-median-radii", "7,0"],
+    ],
+)
+def test_nima_rejects_invalid_option(tmp_path: Path, bad_option: list[str]) -> None:
+    """Out-of-range or malformed options fail as usage errors (exit code 2)."""
+    filename = TESTS_PATH / "data" / "1b_c16_15.tif"
+    result = CliRunner().invoke(
+        main, [str(filename), "G", "R", "C", "-o", str(tmp_path), *bad_option]
+    )
+    assert result.exit_code == 2, result.output
+
+
+@pytest.mark.parametrize("option", ["-f", "-d"])
+def test_nima_rejects_flat_without_dark(tmp_path: Path, option: str) -> None:
+    """Shading correction needs both -f and -d; one alone is a usage error."""
+    filename = TESTS_PATH / "data" / "1b_c16_15.tif"
+    result = CliRunner().invoke(
+        main,
+        [str(filename), "G", "R", "C", "-o", str(tmp_path), option, str(filename)],
+    )
+    assert result.exit_code == 2, result.output
+
+
+def test_drop_unset_keeps_zero() -> None:
+    """Only options left unset (None) are dropped; explicit zeros are kept."""
+    assert _drop_unset({"perc": 0.0, "radius": None, "clip": False}) == {
+        "perc": 0.0,
+        "clip": False,
+    }
+
+
+def test_plt_img_profiles_title_per_channel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Each channel figure gets the base title plus its own channel only."""
+    titles: list[str] = []
+
+    def record(img: xr.DataArray, title: str = "", **_kwargs: object) -> Figure:
+        del img
+        titles.append(title)
+        return Figure()
+
+    monkeypatch.setattr(nima_mod, "plt_img_profile", record)
+    monkeypatch.setattr(nima_mod, "plt_img_profile_2", record)
+
+    plt_img_profiles(xr.DataArray(np.zeros((2, 4, 4))), "t", tmp_path / "o.png")
+
+    assert titles == ["t C:0", "t C:0", "t C:1", "t C:1"]

@@ -115,7 +115,7 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
                 r.append(channel_mean(img))
             else:
                 msg = (
-                    f"Expected an ImArray with dtype np.float_ or np.int_, "
+                    f"Expected an image with a floating or integer dtype, "
                     f"but received dtype {img.dtype}"
                 )
                 raise TypeError(msg)
@@ -123,8 +123,8 @@ def ratio_df(filelist: list[str]) -> pd.DataFrame:
     if "YFP" in combined_df:
         combined_df["norm"] = combined_df["YFP"] / combined_df["YFP"][:5].mean()
     else:
-        combined_df["r_Cl"] = combined_df[2] / combined_df[1]
-        combined_df["r_pH"] = combined_df[0] / combined_df[2]
+        combined_df["r_Cl"] = combined_df["2"] / combined_df["1"]
+        combined_df["r_pH"] = combined_df["0"] / combined_df["2"]
     return combined_df
 
 

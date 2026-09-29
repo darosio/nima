@@ -108,28 +108,21 @@ def test_ratio_df_with_yfp_column(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_ratio_df_adds_channel_ratios(monkeypatch: pytest.MonkeyPatch) -> None:
-    """ratio_df should compute r_Cl and r_pH when channels 0, 1, 2 exist."""
-    monkeypatch.setattr(
-        "nima.utils.tff.imread", lambda _path: np.ones((2, 2), dtype=np.float64)
-    )
+    """ratio_df computes r_Cl = ch2/ch1 and r_pH = ch0/ch2 from real channel_mean."""
+    img = np.zeros((2, 3, 2, 2), dtype=np.float64)
+    img[:, 0], img[:, 1], img[:, 2] = 10.0, 5.0, 2.0
+    monkeypatch.setattr("nima.utils.tff.imread", lambda _path: img)
 
-    def fake_channel_mean(_img: np.ndarray) -> pd.DataFrame:
-        return pd.DataFrame(
-            {0: [10.0, 20.0], 1: [5.0, 10.0], 2: [2.0, 4.0]}, dtype=np.float64
-        )
+    def fake_ave(frame: np.ndarray, *_args: object, **_kwargs: object) -> float:
+        return float(frame.mean())
 
-    monkeypatch.setattr(utils, "channel_mean", fake_channel_mean)
+    monkeypatch.setattr(utils, "ave", fake_ave)
+    monkeypatch.setattr(utils, "_bgmax", lambda _img: 1.0)
 
     df = utils.ratio_df(["file1.tif"])
 
-    assert_allclose(
-        df["r_Cl"].to_numpy(dtype=np.float64),
-        (df[2] / df[1]).to_numpy(dtype=np.float64),
-    )
-    assert_allclose(
-        df["r_pH"].to_numpy(dtype=np.float64),
-        (df[0] / df[2]).to_numpy(dtype=np.float64),
-    )
+    assert_allclose(df["r_Cl"].to_numpy(dtype=np.float64), [0.4, 0.4])
+    assert_allclose(df["r_pH"].to_numpy(dtype=np.float64), [5.0, 5.0])
 
 
 def test_mask_all_channels_value_error() -> None:
