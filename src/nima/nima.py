@@ -272,9 +272,7 @@ def bg(
                 # Downscale using coarsen (lazy)
                 # downscale is (Y, X) factors
                 coarsen_dict = {"Y": downscale[0], "X": downscale[1]}
-                frame_for_bg = (
-                    frame_da.coarsen(coarsen_dict, boundary="trim").mean()  # type: ignore[attr-defined]
-                )
+                frame_for_bg = frame_da.coarsen(coarsen_dict, boundary="trim").mean()
             else:
                 frame_for_bg = frame_da
 
