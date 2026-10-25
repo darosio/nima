@@ -22,7 +22,7 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.0.1
+        uses: astral-sh/setup-uv@v10.3.2
 
       - name: Sync dev tools (installs cruft from dev group)
         run: uv sync --group dev
@@ -36,8 +36,15 @@ jobs:
           echo "has_changes=false" >> "$GITHUB_OUTPUT"
           if ! uv run cruft check; then
             uv run cruft update -y --allow-untracked-files
-            # Remove any leftover .rej files from conflicts
-            find . -name "*.rej" -type f -delete
+            # Cruft leaves .rej files when a hunk cannot be applied. Never
+            # delete them: that silently drops template changes. Fail instead
+            # so a maintainer can resolve the conflicts locally.
+            rejects=$(find . -name "*.rej" -type f)
+            if [ -n "$rejects" ]; then
+              echo "::error::Cruft update produced conflicts; resolve them locally."
+              printf '%s\n' "$rejects"
+              exit 1
+            fi
             # Always regenerate lock file to ensure consistency after template update
             uv lock
             if ! git diff --quiet HEAD; then
@@ -45,20 +52,44 @@ jobs:
             fi
           fi
 
+      - name: Generate GitHub App token
+        id: app_token
+        if: ${{ steps.cruft_update.outputs.has_changes == 'true' }}
+        uses: actions/create-github-app-token@v3
+        continue-on-error: true
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Create Pull Request
         if: ${{ steps.cruft_update.outputs.has_changes == 'true' }}
         env:
-          # PAT_WORKFLOWS is needed when Cruft changes workflow files; github.token is a fallback for ordinary updates.
-          GH_TOKEN: ${{ secrets.PAT_WORKFLOWS || github.token }}
+          # The App token can push to .github/workflows/* (unlike github.token); it's the primary credential.
+          # github.token is a fallback for ordinary updates when the App isn't installed/configured yet.
+          APP_TOKEN: ${{ steps.app_token.outputs.token }}
+          DEFAULT_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           BRANCH="chore/update-template"
           git checkout -B "$BRANCH"
           git add -A
           git commit -m "chore(template): apply cookiecutter updates via Cruft"
-          git push -f origin "$BRANCH"
+
+          push_with_token() {
+            git remote set-url origin "https://x-access-token:${1}@github.com/${{ github.repository }}.git"
+            git push -f origin "$BRANCH"
+          }
+
+          if [ -n "$APP_TOKEN" ] && push_with_token "$APP_TOKEN"; then
+            GH_TOKEN="$APP_TOKEN"
+          else
+            echo "::warning::GitHub App token missing or push failed; falling back to github.token (this fails if Cruft touched .github/workflows/*)."
+            push_with_token "$DEFAULT_TOKEN"
+            GH_TOKEN="$DEFAULT_TOKEN"
+          fi
+          export GH_TOKEN
+
           if gh pr view "$BRANCH" --json state -q .state 2>/dev/null | grep -q "OPEN"; then
             echo "PR already exists, updated branch."
           else
