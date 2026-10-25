@@ -125,7 +125,7 @@ class BgParams:
 
     @property
     def perc_fraction(self) -> float:
-        """Return `perc` as a fraction of 1."""
+        """Fraction of 1 corresponding to `perc`."""
         return self.perc / 100
 
 

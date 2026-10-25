@@ -17,7 +17,7 @@ import os
 
 project = "nima"
 author = "Daniele Arosio"
-copyright = f"2023, {author}"  # noqa: A001
+copyright = f"2023, {author}"  # ruff: ignore[builtin-variable-shadowing]
 html_static_path = ["_static"]
 
 # -- General configuration ---------------------------------------------------

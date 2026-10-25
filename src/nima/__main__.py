@@ -218,9 +218,9 @@ def _parse_radii(
               help="Path to dark image for shading correction.")  # fmt: skip
 # Background estimation options
 @click.option("--bg-method",
-              type=click.Choice(["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False),  # noqa: E501
+              type=click.Choice(["li_adaptive", "entropy", "arcsinh", "adaptive", "li_li"], case_sensitive=False),  # ruff: ignore[line-too-long]
               default="li_adaptive",
-              help="Background estimation algorithm [default: li_adaptive].")  # fmt: skip # noqa: E501
+              help="Background estimation algorithm [default: li_adaptive].")  # fmt: skip # ruff: ignore[line-too-long]
 @click.option("--bg-downscale", type=(click.IntRange(min=1), click.IntRange(min=1)),
               help="Binning Y X.")  # fmt: skip
 @click.option("--bg-radius", type=click.IntRange(min=1),
@@ -228,11 +228,11 @@ def _parse_radii(
 @click.option("--bg-adaptive-radius", type=click.IntRange(min=1),
               help="Radius for adaptive methods [default: X/2].")  # fmt: skip
 @click.option("--bg-percentile", type=click.FloatRange(0, 100),
-              help="Percentile for entropy or arcsinh methods [default: 10].")  # fmt: skip # noqa: E501
+              help="Percentile for entropy or arcsinh methods [default: 10].")  # fmt: skip # ruff: ignore[line-too-long]
 @click.option("--bg-percentile-filter", type=click.FloatRange(0, 100),
               help="Percentile filter for arcsinh method [default: 80].")  # fmt: skip
 # Segmentation and measurement options
-@click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen",  # noqa: E501
+@click.option("--fg-method", type=click.Choice(["yen", "li"], case_sensitive=False), default="yen",  # ruff: ignore[line-too-long]
               help="Segmentation algorithm [default: yen].")  # fmt: skip
 @click.option("--min-size", type=click.IntRange(min=1),
               help="Minimum size of labeled objects [default: 640].")  # fmt: skip
@@ -247,18 +247,18 @@ def _parse_radii(
 @click.option("--image-ratios/--no-image-ratios", default=True,
               help="Compute ratio images? [default: True].")  # fmt: skip
 @click.option("--ratio-median-radii", type=str, callback=_parse_radii,
-              help="Median filter ratio images with radii [default: (7, 3)].")  # fmt: skip # noqa: E501
+              help="Median filter ratio images with radii [default: (7, 3)].")  # fmt: skip # ruff: ignore[line-too-long]
 @click.option("--channels-cl", type=(str, str), default=("C", "R"),
               help="Channels for Cl ratio [default: C/R].")  # fmt: skip
 @click.option("--channels-ph", type=(str, str), default=("G", "C"),
               help="Channels for pH ratio [default: G/C].")  # fmt: skip
 @click.argument("tiffstk", type=PATH_IN)
 @click.argument("channels", type=str, nargs=-1)
-def main(  # noqa: PLR0913
+def main(  # ruff: ignore[too-many-arguments]
     verbose: int,
-    silent: bool | None,  # noqa: FBT001
+    silent: bool | None,  # ruff: ignore[boolean-type-hint-positional-argument]
     output: Path,
-    hotpixels: bool,  # noqa: FBT001
+    hotpixels: bool,  # ruff: ignore[boolean-type-hint-positional-argument]
     flat_f: Path | None,
     dark_f: Path | None,
     bg_method: str,
@@ -269,11 +269,11 @@ def main(  # noqa: PLR0913
     bg_percentile_filter: float | None,
     fg_method: str,
     min_size: int | None,
-    clear_border: bool | None,  # noqa: FBT001
-    wiener: bool | None,  # noqa: FBT001
-    watershed: bool | None,  # noqa: FBT001
-    randomwalk: bool | None,  # noqa: FBT001
-    image_ratios: bool,  # noqa: FBT001
+    clear_border: bool | None,  # ruff: ignore[boolean-type-hint-positional-argument]
+    wiener: bool | None,  # ruff: ignore[boolean-type-hint-positional-argument]
+    watershed: bool | None,  # ruff: ignore[boolean-type-hint-positional-argument]
+    randomwalk: bool | None,  # ruff: ignore[boolean-type-hint-positional-argument]
+    image_ratios: bool,  # ruff: ignore[boolean-type-hint-positional-argument]
     ratio_median_radii: tuple[int, ...] | None,
     channels_cl: tuple[str, str],
     channels_ph: tuple[str, str],
@@ -382,7 +382,7 @@ def main(  # noqa: PLR0913
     )
 
 
-def output_results(  # noqa: PLR0913
+def output_results(  # ruff: ignore[too-many-arguments]
     output_dir: Path,
     tiffstk: Path,
     ff: dict[str, list[list[Figure]]],
@@ -545,7 +545,7 @@ def bias(ctx: click.Context, fpath: Path) -> None:
 @bima.command()
 @click.pass_context
 @click.option("--bias", "bias_fp", type=PATH_IN,
-              help="File path to the bias stack (Light Off - Long acquisition time).")  # fmt: skip # noqa: E501
+              help="File path to the bias stack (Light Off - Long acquisition time).")  # fmt: skip # ruff: ignore[line-too-long]
 @click.option("--time", type=float,
               help="Acquisition time.")  # fmt: skip
 @click.argument("fpath", type=PATH_IN)
@@ -592,7 +592,7 @@ def dark(ctx: click.Context, fpath: Path, bias_fp: Path | None, time: float) -> 
 @bima.command()
 @click.pass_context
 @click.option("--bias", "bias_fp", type=PATH_IN,
-              help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
+              help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # ruff: ignore[line-too-long]
 @click.argument("globpath", type=str)
 def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
     """Compute the flat field from a collection of (.tif) files.
@@ -638,7 +638,7 @@ def mflat(ctx: click.Context, globpath: str, bias_fp: Path | None) -> None:
 @bima.command()
 @click.pass_context
 @click.option("--bias", "bias_fp", type=PATH_IN,
-              help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # noqa: E501
+              help="Path to the bias stack (Light Off - 0 acquisition time).")  # fmt: skip # ruff: ignore[line-too-long]
 @click.argument("fpath", type=PATH_IN)
 def flat(ctx: click.Context, fpath: Path, bias_fp: Path | None) -> None:
     """Flat from (.tf8) file stack.

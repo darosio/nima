@@ -13,7 +13,7 @@ from click.testing import CliRunner, Result
 from matplotlib.figure import Figure
 
 from nima import nima as nima_mod
-from nima.__main__ import _drop_unset, bima, main, plt_img_profiles  # noqa: PLC2701
+from nima.__main__ import _drop_unset, bima, main, plt_img_profiles  # ruff: ignore[import-private-name]
 
 # tests path
 TESTS_PATH = Path(__file__).parent

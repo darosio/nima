@@ -43,7 +43,7 @@ def plot_img(
     im: xr.DataArray,
     labels: xr.DataArray | None = None,
     channels: Sequence[str] | None = None,
-    **kws: Any,  # noqa: ANN401
+    **kws: Any,  # ruff: ignore[any-type]
 ) -> Figure:
     """Plot channels and optionally labels.
 
@@ -337,7 +337,7 @@ def _label_2d(m: NDArray[np.bool_]) -> NDArray[np.int32]:
     return labeled.astype(np.int32)
 
 
-def segment(  # noqa: PLR0913
+def segment(  # ruff: ignore[too-many-arguments]
     im: xr.DataArray,
     min_size: int | None = 640,
     channels: tuple[str, ...] = ("C", "G", "R"),
@@ -678,7 +678,7 @@ def ratio(
     return ratio
 
 
-def measure(  # noqa: PLR0913
+def measure(  # ruff: ignore[too-many-arguments]
     im: xr.DataArray,
     labels: xr.DataArray,
     channels: Sequence[str] = ("C", "G", "R"),
@@ -759,23 +759,23 @@ def measure(  # noqa: PLR0913
                 # Find the prop with this label
                 # This search might be inefficient for many labels
                 prop = next(p for p in props if p.label == lbl)
-                idx.append(t)
-                d["equivalent_diameter"].append(prop.equivalent_diameter_area)
-                d["eccentricity"].append(prop.eccentricity)
-                d["area"].append(prop.area)
-
-                # Get mean intensity for all channels
-                # We assume consistent ordering/existence of props across channels
-                # But safer to find by label again or assume same index if sorted
-                # regionprops returns properties sorted by label.
-                # So if label exists in ch0, it exists in others (same label image)
-                i_label = [p.label for p in props].index(lbl)
-
-                for ch in channels:
-                    d[ch].append(pr[ch][t][i_label].intensity_mean)
-
             except StopIteration:
-                pass  # Label absent at this time
+                continue  # Label absent at this time
+
+            idx.append(t)
+            d["equivalent_diameter"].append(prop.equivalent_diameter_area)
+            d["eccentricity"].append(prop.eccentricity)
+            d["area"].append(prop.area)
+
+            # Get mean intensity for all channels
+            # We assume consistent ordering/existence of props across channels
+            # But safer to find by label again or assume same index if sorted
+            # regionprops returns properties sorted by label.
+            # So if label exists in ch0, it exists in others (same label image)
+            i_label = [p.label for p in props].index(lbl)
+
+            for ch in channels:
+                d[ch].append(pr[ch][t][i_label].intensity_mean)
 
         res_df = pd.DataFrame({k: np.array(v) for k, v in d.items()}, index=idx)
         res_df["r_cl"] = res_df[channels_cl[0]] / res_df[channels_cl[1]]
@@ -908,7 +908,7 @@ def plot_meas(
     return fig
 
 
-def plt_img_profile(  # noqa: PLR0915
+def plt_img_profile(  # ruff: ignore[too-many-statements]
     img: xr.DataArray,
     title: str | None = None,
     hpix: pd.DataFrame | None = None,
@@ -966,7 +966,7 @@ def plt_img_profile(  # noqa: PLR0915
     # sigfig: ax_hist.set_title("err: " + str(sigfig.
     # sigfig: round(da.std(da.from_zarr(zim)).compute(), sigfigs=3)))
 
-    def img_hist(  # noqa: PLR0913
+    def img_hist(  # ruff: ignore[too-many-arguments]
         im: ImSequence,
         ax: Axes,
         ax_px: Axes,

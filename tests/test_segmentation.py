@@ -30,7 +30,7 @@ class TestSegmentationFunctions:
     def test_bg_arcsinh(self, im: xr.DataArray) -> None:
         """Test arcsinh bg calculation."""
         params = BgParams(kind="arcsinh", radius=5, perc=10, arcsinh_perc=50)
-        mask, _title, _lim = segmentation._bg_arcsinh(im, params)  # noqa: SLF001
+        mask, _title, _lim = segmentation._bg_arcsinh(im, params)  # ruff: ignore[private-member-access]
         assert mask.shape == im.shape
         assert mask.dtype == bool
         # Corner should be background (True)
@@ -44,7 +44,7 @@ class TestSegmentationFunctions:
         # Normalize to 0-1 range for entropy test to avoid skimage error
         # or use uint8 input
         im_norm = (im - im.min()) / (im.max() - im.min())
-        mask, _title, _lim = segmentation._bg_entropy(im_norm, params)  # noqa: SLF001
+        mask, _title, _lim = segmentation._bg_entropy(im_norm, params)  # ruff: ignore[private-member-access]
         assert mask.shape == im.shape
         assert mask.dtype == bool
         # mask is now DataArray
@@ -53,7 +53,7 @@ class TestSegmentationFunctions:
     def test_bg_adaptive(self, im: xr.DataArray) -> None:
         """Test adaptive bg calculation."""
         params = BgParams(kind="adaptive", adaptive_radius=21)
-        mask, _title, _ = segmentation._bg_adaptive(im, params)  # noqa: SLF001
+        mask, _title, _ = segmentation._bg_adaptive(im, params)  # ruff: ignore[private-member-access]
         assert mask.shape == im.shape
         assert mask.dtype == bool
         # Check that the object is detected as foreground (False)
@@ -66,7 +66,7 @@ class TestSegmentationFunctions:
     def test_bg_li_adaptive(self, im: xr.DataArray) -> None:
         """Test adaptive after li bg calculation."""
         params = BgParams(kind="li_adaptive", adaptive_radius=21)
-        mask, _title, _ = segmentation._bg_li_adaptive(im, params)  # noqa: SLF001
+        mask, _title, _ = segmentation._bg_li_adaptive(im, params)  # ruff: ignore[private-member-access]
         assert mask.shape == im.shape
         assert mask.dtype == bool
         assert not mask[30, 30]
@@ -77,7 +77,7 @@ class TestSegmentationFunctions:
     def test_bg_li_li(self, im: xr.DataArray) -> None:
         """Test li after li bg calculation."""
         params = BgParams(kind="li_li")
-        mask, _title, _ = segmentation._bg_li_li(im, params)  # noqa: SLF001
+        mask, _title, _ = segmentation._bg_li_li(im, params)  # ruff: ignore[private-member-access]
         assert mask.shape == im.shape
         assert mask.dtype == bool
         assert not mask[30, 30]
@@ -90,7 +90,7 @@ class TestSegmentationFunctions:
         # results but let's check it runs.
         params = BgParams(kind="inverse_yen")
         # 1/im can be small.
-        mask, _title, _ = segmentation._bg_inverse_yen(im, params)  # noqa: SLF001
+        mask, _title, _ = segmentation._bg_inverse_yen(im, params)  # ruff: ignore[private-member-access]
         assert mask.shape == im.shape
         assert mask.dtype == bool
 
@@ -101,13 +101,13 @@ class TestSegmentationFunctions:
 
         # 1. arcsinh
         params = BgParams(kind="arcsinh", radius=5, perc=10, arcsinh_perc=50)
-        mask, _, _ = segmentation._bg_arcsinh(im_da, params)  # noqa: SLF001
+        mask, _, _ = segmentation._bg_arcsinh(im_da, params)  # ruff: ignore[private-member-access]
         assert isinstance(mask.data, da.Array)
         assert mask.compute().shape == im.shape
 
         # 2. adaptive
         params = BgParams(kind="adaptive", adaptive_radius=21)
-        mask, _, _ = segmentation._bg_adaptive(im_da, params)  # noqa: SLF001
+        mask, _, _ = segmentation._bg_adaptive(im_da, params)  # ruff: ignore[private-member-access]
         assert isinstance(mask.data, da.Array)
         assert mask.compute().shape == im.shape
 
@@ -115,25 +115,25 @@ class TestSegmentationFunctions:
         params = BgParams(kind="entropy", radius=5, perc=10)
         # Normalize for entropy
         im_norm = (im_da - im_da.min()) / (im_da.max() - im_da.min())
-        mask, _, _ = segmentation._bg_entropy(im_norm, params)  # noqa: SLF001
+        mask, _, _ = segmentation._bg_entropy(im_norm, params)  # ruff: ignore[private-member-access]
         assert isinstance(mask.data, da.Array)
         assert mask.compute().shape == im.shape
 
         # 4. li_adaptive
         params = BgParams(kind="li_adaptive", adaptive_radius=21, erosion_disk=1)
-        mask, _, _ = segmentation._bg_li_adaptive(im_da, params)  # noqa: SLF001
+        mask, _, _ = segmentation._bg_li_adaptive(im_da, params)  # ruff: ignore[private-member-access]
         assert isinstance(mask.data, da.Array)
 
         # 5. li_li
         params = BgParams(kind="li_li", erosion_disk=1)
-        mask, _, _ = segmentation._bg_li_li(im_da, params)  # noqa: SLF001
+        mask, _, _ = segmentation._bg_li_li(im_da, params)  # ruff: ignore[private-member-access]
         assert isinstance(mask.data, da.Array)
 
         # 6. inverse_yen
         params = BgParams(kind="inverse_yen")
         # Avoid div by zero
         im_safe = im_da + 0.1
-        mask, _, _ = segmentation._bg_inverse_yen(im_safe, params)  # noqa: SLF001
+        mask, _, _ = segmentation._bg_inverse_yen(im_safe, params)  # ruff: ignore[private-member-access]
         assert isinstance(mask.data, da.Array)
 
 

@@ -104,7 +104,7 @@ def channel_mean(img: ImFrame) -> pd.DataFrame:
 
 
 def ratio_df(filelist: list[str]) -> pd.DataFrame:
-    """Compute ratios from a list of files."""  # noqa: DOC501
+    """Compute ratios from a list of files."""  # ruff: ignore[docstring-missing-exception]
     r = []
     for f in filelist:
         img = tff.imread(f)

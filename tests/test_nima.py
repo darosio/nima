@@ -484,7 +484,7 @@ class TestEdgeCases:
         try:
             res_seg = nima.segment(da, threshold_method="yen", min_size=0)
             assert res_seg.shape == (1, 1, 1)  # T, Y, X (C squeezed/reduced)
-        except Exception:  # noqa: BLE001, S110
+        except Exception:  # ruff: ignore[blind-except, try-except-pass]
             # Some scikit-image threshold methods might complain about constant input
             pass
 

@@ -111,7 +111,7 @@ def gen_objs(
     return cast("NDArray[np.float64]", np.sum(objs, axis=0))
 
 
-def gen_frame(  # noqa: PLR0913
+def gen_frame(  # ruff: ignore[too-many-arguments]
     objs: NDArray[np.float64],
     bias: NDArray[np.float64] | None = None,
     flat: NDArray[np.float64] | None = None,
@@ -139,9 +139,9 @@ def gen_frame(  # noqa: PLR0913
 
 def safe_call(
     func: Callable[..., Any],
-    *args: Any,  # noqa: ANN401
-    **kwargs: Any,  # noqa: ANN401
-) -> Any:  # noqa: ANN401
+    *args: Any,  # ruff: ignore[any-type]
+    **kwargs: Any,  # ruff: ignore[any-type]
+) -> Any:  # ruff: ignore[any-type]
     """Wrap a function call to handle exceptions.
 
     Parameters
@@ -160,12 +160,12 @@ def safe_call(
     """
     try:
         return func(*args, **kwargs)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # ruff: ignore[blind-except]
         print(f"An error occurred in {func.__name__}: {e}")
         return np.nan
 
 
-def run_simulation(  # noqa: PLR0913
+def run_simulation(  # ruff: ignore[too-many-arguments]
     num_repeats: int = 1,
     noise_sd: float = 4,
     objs_pars: ImageObjsParams | None = None,
@@ -286,7 +286,7 @@ def run_simulation(  # noqa: PLR0913
                     # Check if extracted value is nan
                     if np.isnan(val):
                         is_failure = True
-                except Exception:  # noqa: BLE001
+                except Exception:  # ruff: ignore[blind-except]
                     is_failure = True
 
             if is_failure:
