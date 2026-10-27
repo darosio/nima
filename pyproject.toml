@@ -55,6 +55,7 @@ docs = [
   "selenium>=4.51.0",
   "sphinx-autoapi>=3.8.1",
   "sphinx-click>=6.2.0",
+  "sphinx-copybutton>=0.5.2",
   "sphinx>=9.2.0",
   "statsmodels>=0.15.0",
 ]
